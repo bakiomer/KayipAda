@@ -1,0 +1,66 @@
+// GameConfig.cs
+// Oyunun tüm ayar sayılarını (hız, kapasite, aralıklar, kamera, joystick...) tutan ayar dosyası.
+// Assets/_Game/Data/GameConfig.asset olarak bulunur; Inspector'dan değiştirilir.
+// Kural: oynanışı etkileyen hiçbir sayı kodun içine yazılmaz, buraya eklenir.
+
+using UnityEngine;
+
+namespace KayipAda
+{
+    [CreateAssetMenu(fileName = "GameConfig", menuName = "Kayıp Ada/Oyun Ayarları")]
+    public class GameConfig : ScriptableObject
+    {
+        [field: Header("Oyuncu")]
+        [field: Tooltip("Oyuncunun yürüme hızı (birim/saniye).")]
+        [field: SerializeField, Min(0f)] public float PlayerSpeed { get; private set; } = 5f;
+
+        [field: Tooltip("Oyuncunun sırtında taşıyabileceği en fazla kaynak sayısı.")]
+        [field: SerializeField, Min(1)] public int CarryCapacity { get; private set; } = 10;
+
+        [field: Header("Toplama ve Satış")]
+        [field: Tooltip("Kaynak noktası kaç saniyede bir kaynak verir.")]
+        [field: SerializeField, Min(0.01f)] public float GatherInterval { get; private set; } = 0.35f;
+
+        [field: Tooltip("Satış alanı kaç saniyede bir kaynak satar.")]
+        [field: SerializeField, Min(0.01f)] public float SellInterval { get; private set; } = 0.1f;
+
+        [field: Header("Ekonomi")]
+        [field: SerializeField, Min(0)] public int StartingCoins { get; private set; } = 0;
+
+        [field: Header("Dünya")]
+        [field: Tooltip("Oyuncunun ada merkezinden yatay (x) ve dikey (y) en fazla uzaklaşabileceği mesafe.")]
+        [field: SerializeField] public Vector2 MoveBounds { get; private set; } = new Vector2(7f, 11f);
+
+        [field: Header("Kamera")]
+        [field: Tooltip("Kameranın yakınlığı: küçük değer = daha yakın.")]
+        [field: SerializeField, Min(1f)] public float CameraSize { get; private set; } = 8f;
+
+        [field: SerializeField, Min(0f)] public float CameraFollowSpeed { get; private set; } = 6f;
+
+        [field: Tooltip("Kamera oyuncunun ne kadar yukarısına bakar (oyuncu ekranın biraz altında durur).")]
+        [field: SerializeField] public float CameraOffsetY { get; private set; } = 2f;
+
+        [field: Header("Joystick")]
+        [field: Tooltip("Joystick topunun merkezden en fazla uzaklaşabileceği mesafe (UI birimi).")]
+        [field: SerializeField, Min(1f)] public float JoystickRange { get; private set; } = 110f;
+
+        [field: Tooltip("Bu değerin altındaki küçük parmak hareketleri yok sayılır (0-1).")]
+        [field: SerializeField, Range(0f, 0.9f)] public float JoystickDeadZone { get; private set; } = 0.1f;
+
+        [field: Header("Yığın ve Efektler")]
+        [field: Tooltip("Sırttaki kaynakların üst üste aralığı.")]
+        [field: SerializeField, Min(0f)] public float StackSpacing { get; private set; } = 0.22f;
+
+        [field: Tooltip("Kaynakların yığındaki yerine uçma hızı.")]
+        [field: SerializeField, Min(0.1f)] public float ItemFlySpeed { get; private set; } = 15f;
+
+        [field: Tooltip("Satılan kaynağın satış alanına uçma süresi (saniye).")]
+        [field: SerializeField, Min(0.01f)] public float SellFlyDuration { get; private set; } = 0.25f;
+
+        [field: Tooltip("Kaynak verirken noktanın büyüme oranı (1 = efekt yok).")]
+        [field: SerializeField, Min(1f)] public float NodeBounceScale { get; private set; } = 1.15f;
+
+        [field: Tooltip("Zıplama efektinin normale dönme hızı.")]
+        [field: SerializeField, Min(0.1f)] public float NodeBounceRecover { get; private set; } = 10f;
+    }
+}

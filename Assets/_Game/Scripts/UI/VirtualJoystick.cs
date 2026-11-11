@@ -1,7 +1,8 @@
 // VirtualJoystick.cs
-// "Yüzen" sanal joystick: ekranın neresine dokunulursa joystick orada belirir,
-// parmak sürüklendikçe Direction (-1..1 arası yön) değeri güncellenir.
-// Bu script ekranı kaplayan görünmez bir Image üzerine eklenir.
+// "Yüzen" sanal joystick: ekranın neresine dokunulursa (veya fareyle tıklanırsa) orada belirir,
+// sürükledikçe Direction (-1..1 arası yön) güncellenir. Dokunmatik ve fare aynı şekilde çalışır
+// çünkü ikisi de EventSystem (InputSystemUIInputModule) üzerinden gelir.
+// Bu script ekranı kaplayan görünmez bir Image üzerine eklenir. Ayarlar GameConfig'ten okunur.
 
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -10,12 +11,9 @@ namespace KayipAda
 {
     public class VirtualJoystick : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler
     {
+        [SerializeField] private GameConfig config;
         [SerializeField] private RectTransform background; // Dış halka
         [SerializeField] private RectTransform handle;     // İçteki top
-        [Tooltip("Topun merkezden en fazla ne kadar uzaklaşabileceği (UI birimi).")]
-        [SerializeField] private float handleRange = 110f;
-        [Tooltip("Bu değerin altındaki küçük hareketler yok sayılır (0-1).")]
-        [SerializeField] private float deadZone = 0.1f;
 
         public Vector2 Direction { get; private set; }
 
@@ -38,12 +36,13 @@ namespace KayipAda
 
         public void OnDrag(PointerEventData eventData)
         {
+            float range = config.JoystickRange;
             Vector2 offset = ScreenToLocal(eventData.position) - background.anchoredPosition;
-            offset = Vector2.ClampMagnitude(offset, handleRange);
+            offset = Vector2.ClampMagnitude(offset, range);
             handle.anchoredPosition = offset;
 
-            Vector2 dir = offset / handleRange;
-            Direction = dir.magnitude < deadZone ? Vector2.zero : dir;
+            Vector2 dir = offset / range;
+            Direction = dir.magnitude < config.JoystickDeadZone ? Vector2.zero : dir;
         }
 
         public void OnPointerUp(PointerEventData eventData)
