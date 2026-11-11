@@ -66,6 +66,14 @@ Sahne elle kurulmaz. **Tools > Kayıp Ada > Prototip Sahnesini Kur** menüsü
 - Unity'deki `Tree` sınıfıyla çakışmamak için ağaç bileşeninin adı `ResourceTree`'dir.
 - Sihirli sayılar yerine Inspector'dan ayarlanabilen alanlar kullanılır (hız, kapasite, fiyat...).
 
+## Git Çalışma Düzeni
+- Depo: https://github.com/bakiomer/KayipAda (dal: `main`). Kullanıcı Git bilmiyor; tüm Git işlemlerini Claude yapar ve kısaca Türkçe anlatır.
+- Her **çalışan** özellikten sonra kullanıcıya **"Kaydedeyim mi?"** diye sorulur. "Evet" derse: commit + `git push`.
+  Commit mesajları kısa, Türkçe ve ASCII karakterli (örn. `Satis alani eklendi`).
+- Kullanıcı **"geri al"** derse: son commit'ten sonraki tüm değişiklikler atılır ve proje son çalışan kayda döner
+  (`git reset --hard HEAD` + `git clean -fd -- Assets ProjectSettings Packages`). Önce neyin silineceği kısaca gösterilir.
+  Unity açıksa geri almadan sonra Unity'nin dosyaları yeniden yüklemesi beklenir.
+
 ## Çizim Sırası (Sorting Order)
 | Nesne | Order |
 |---|---|
