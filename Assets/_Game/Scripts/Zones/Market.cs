@@ -1,12 +1,12 @@
-// SellZone.cs
-// Satış alanı. Karakter içerideyken sırtındaki kaynaklar tek tek alınır ve satılır.
-// Her parça kendi türünün satış fiyatından (ResourceType.SellPrice) paraya çevrilir.
+// Market.cs
+// Pazar: Karakter içerideyken sırtındaki kaynaklar tek tek alınır ve satılır.
+// Tüm kaynak türlerini kabul eder; her parça kendi türünün fiyatından (ResourceType.SellPrice) paraya çevrilir.
 
 using UnityEngine;
 
 namespace KayipAda
 {
-    public class SellZone : InteractionZone
+    public class Market : InteractionZone
     {
         private float timer;
 

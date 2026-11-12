@@ -4,6 +4,7 @@
 // Kural: oynanışı etkileyen hiçbir sayı kodun içine yazılmaz, buraya eklenir.
 
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace KayipAda
 {
@@ -17,11 +18,9 @@ namespace KayipAda
         [field: Tooltip("Oyuncunun sırtında taşıyabileceği en fazla kaynak sayısı.")]
         [field: SerializeField, Min(1)] public int CarryCapacity { get; private set; } = 10;
 
-        [field: Header("Toplama ve Satış")]
-        [field: Tooltip("Kaynak noktası kaç saniyede bir kaynak verir.")]
-        [field: SerializeField, Min(0.01f)] public float GatherInterval { get; private set; } = 0.35f;
-
-        [field: Tooltip("Satış alanı kaç saniyede bir kaynak satar.")]
+        // Not: Toplama hızı, stok ve yeniden dolma süresi her nokta türüne özeldir → Data/NodeTypes
+        [field: Header("Satış")]
+        [field: Tooltip("Pazar kaç saniyede bir kaynak satar.")]
         [field: SerializeField, Min(0.01f)] public float SellInterval { get; private set; } = 0.1f;
 
         [field: Header("Ekonomi")]
@@ -60,7 +59,14 @@ namespace KayipAda
         [field: Tooltip("Kaynak verirken noktanın büyüme oranı (1 = efekt yok).")]
         [field: SerializeField, Min(1f)] public float NodeBounceScale { get; private set; } = 1.15f;
 
-        [field: Tooltip("Zıplama efektinin normale dönme hızı.")]
-        [field: SerializeField, Min(0.1f)] public float NodeBounceRecover { get; private set; } = 10f;
+        [field: Tooltip("Kaynak noktası görsel değişimlerinin (zıplama, küçülme, solma) hızı.")]
+        [field: FormerlySerializedAs("<NodeBounceRecover>k__BackingField")]
+        [field: SerializeField, Min(0.1f)] public float NodeAnimSpeed { get; private set; } = 10f;
+
+        [field: Tooltip("Tükenen kaynak noktasının küçüleceği oran (0.5 = yarı boyut).")]
+        [field: SerializeField, Range(0.1f, 1f)] public float NodeDepletedScale { get; private set; } = 0.55f;
+
+        [field: Tooltip("Tükenen kaynak noktasının saydamlığı (0 = görünmez, 1 = tam görünür).")]
+        [field: SerializeField, Range(0f, 1f)] public float NodeDepletedAlpha { get; private set; } = 0.35f;
     }
 }

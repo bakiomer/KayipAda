@@ -1,6 +1,6 @@
 # Kayıp Ada — Oyun Tasarımı ve Kod Kuralları
 
-> **Şu anki aşama: Aşama 0 — Temel düzen** (tamamlandı, test bekliyor). Sıradaki: Aşama 1 — Çoklu kaynaklar.
+> **Son tamamlanan: Aşama 1 — Çoklu kaynaklar.** Sıradaki: Aşama 2 — Açılabilir alanlar.
 
 ## Proje
 - **Motor:** Unity 6 (6000.6), Universal Render Pipeline 2D şablonu
@@ -28,8 +28,8 @@ Her aşama sonunda bu dosya ve sahne kurma komutu güncellenir.
 
 | # | Aşama | Bitti sayılır, eğer... | Durum |
 |---|---|---|---|
-| 0 | Temel düzen | Prototip aynı çalışıyor ama kod düzenli, sayılar ayar dosyasında, kamera oyuncuyu takip ediyor | ✅ Test bekliyor |
-| 1 | Çoklu kaynaklar | Odun, taş ve meyve toplanıp satılabiliyor | ⬜ |
+| 0 | Temel düzen | Prototip aynı çalışıyor ama kod düzenli, sayılar ayar dosyasında, kamera oyuncuyu takip ediyor | ✅ |
+| 1 | Çoklu kaynaklar | Odun, taş ve meyve toplanıp satılabiliyor | ✅ |
 | 2 | Açılabilir alanlar | Parayla yeni bölge açılıyor (UnlockPad) | ⬜ |
 | 3 | İşleme binaları | Odun kalasa, taş tuğlaya dönüşüyor | ⬜ |
 | 4 | İşçiler | İşçiler sen dokunmadan kaynak taşıyor | ⬜ |
@@ -55,12 +55,13 @@ Assets/_Game/
     Core/            Oyun geneli sistemler ve ayarlar
     Player/          Sadece oyuncuya özel davranışlar
     ResourceSystem/  Kaynak türleri, kaynak parçaları, taşıma yığını, kaynak noktaları
-    Zones/           Üzerine girilince çalışan alanlar (satış alanı, ileride açma kareleri, bina girişleri)
+    Zones/           Üzerine girilince çalışan alanlar (Pazar, ileride açma kareleri, bina girişleri)
     UI/              Ekran arayüzü
     Editor/          Editör menü komutları (oyuna dahil edilmez)
   Data/
     GameConfig.asset           Tüm genel ayar sayıları
-    ResourceTypes/Wood.asset   Kaynak türleri (her tür bir dosya)
+    ResourceTypes/             Kaynak türleri: Wood, Stone, Fruit (ad, renk, satış fiyatı)
+    NodeTypes/                 Kaynak noktası türleri: Tree, Rock, FruitBush (stok, toplama aralığı, yeniden dolma süresi)
   Prefabs/           ResourceItem.prefab (tüm kaynak parçaları için tek prefab)
   Art/               WhiteSquare.png (tüm kutuların kullandığı beyaz kare; Aşama 10'da gerçek görseller)
   Scenes/            Prototype.unity (sahne kurma komutu üretir — elle düzenleme kaybolur)
@@ -72,7 +73,7 @@ Assets/_Game/
 ## Sınıfların Görevleri
 | Sınıf | Klasör | Görevi |
 |---|---|---|
-| `GameConfig` | Core | ScriptableObject. Hız, kapasite, toplama/satma aralığı, kamera, joystick, efekt sayıları |
+| `GameConfig` | Core | ScriptableObject. Oyuncu hızı/kapasitesi, satma aralığı, kamera, joystick, efekt sayıları (tükenen noktanın küçülme/solma oranı dahil) |
 | `SortOrder` | Core | Sprite çizim sıraları (sabitler) |
 | `CurrencyManager` | Core | Parayı tek yerde tutar (`Coins`), `Add` / `TrySpend`, değişince `CoinsChanged` olayı. Singleton |
 | `CameraFollow` | Core | Kamera oyuncuyu yumuşakça takip eder; oyuncu ekranın biraz altında kalır (`CameraOffsetY`) |
@@ -80,9 +81,10 @@ Assets/_Game/
 | `ResourceType` | ResourceSystem | ScriptableObject. Kimlik (`Id`), görünen ad, renk, satış fiyatı |
 | `ResourceItem` | ResourceSystem | Tek bir kaynak parçası; `Setup(type)` ile türü/rengi atanır, satılınca uçup kaybolur |
 | `CarryStack` | ResourceSystem | Karakterin sırtındaki karışık türlü yığın: `TryAdd`, `RemoveTop()`, `RemoveTop(type)`, `CountOf(type)`. İleride işçiler de kullanır |
-| `ResourceNode` | ResourceSystem | Kaynak noktası (ağaç...). İçerideki karaktere aralıklarla kendi türünden kaynak verir |
+| `ResourceNodeType` | ResourceSystem | ScriptableObject. Nokta türü: verdiği kaynak, stok, toplama aralığı, yeniden dolma süresi |
+| `ResourceNode` | ResourceSystem | Kaynak noktası (ağaç, kaya, çalı — hepsi aynı bileşen). İçerideki karaktere aralıklarla kaynak verir; stok bitince küçülüp solar, süre dolunca yeniden dolar. Görünümü `Visual` alt nesnesindedir |
 | `InteractionZone` | Zones | Trigger alanların ortak temeli; içerideki `CarryStack`'i `Visitor` olarak tutar |
-| `SellZone` | Zones | Satış alanı; yığından tek tek alır, `ResourceType.SellPrice` kadar para ekler |
+| `Market` | Zones | Pazar; tüm türleri kabul eder, yığından tek tek alır, her parçayı kendi `SellPrice`'ından satar |
 | `VirtualJoystick` | UI | Ekranın neresine dokunulursa orada beliren joystick; `Direction` verir |
 | `CurrencyUI` | UI | Üstteki para göstergesi; `CoinsChanged` olayını dinler |
 | `PrototypeSceneBuilder` | Editor | **Tools > Kayıp Ada > Prototip Sahnesini Kur** komutu |
@@ -95,6 +97,11 @@ Sahne elle kurulmaz. **Tools > Kayıp Ada > Prototip Sahnesini Kur**
 - `ResourceItem.prefab` ve `WhiteSquare.png` her seferinde yeniden üretilir (içlerinde ayar yok).
 - Sahneye yeni bir nesne eklenecekse **her aşamada** önce bu komut güncellenir.
 - Haritanın yerleşimi (konumlar, boyutlar, kutu renkleri) bu dosyanın başındaki "Sahne düzeni" bölümündedir.
+- **Yerleşim kuralı:** Oyun başlarken görünen nesneler üstteki para panelinin altında kalmamalı ve dar (20:9)
+  telefonlarda yandan taşmamalı. Başlangıç ekranında güvenli bölge yaklaşık x = -3.3..3.3, y = -8..6.
+  Komşu noktaların trigger alanları çakışmamalı; oyuncunun başlangıç noktası hiçbir alanın içinde olmamalı.
+- Kaynak noktaları `CreateNode(ad, konum, nokta türü, ..., görünüm metodu)` ile kurulur; yeni bir nokta türü için
+  sadece `BuildXxxVisual` metodu ve bir `CreateNodeTypeIfMissing` satırı eklenir.
 - Özel alanlara değer atamak için `SetField(bileşen, "alanAdı", değer)` yardımcısı kullanılır.
 - Yeni sahne açıldıktan **sonra** varlıklar `AssetDatabase.LoadAssetAtPath` ile yeniden yüklenmelidir
   (yoksa Unity referansları boşaltır ve alanlar `None` kalır).
@@ -108,7 +115,9 @@ Sahne elle kurulmaz. **Tools > Kayıp Ada > Prototip Sahnesini Kur**
 
 ### Sayılar ayar dosyasında
 - **Oynanışı etkileyen hiçbir sayı (fiyat, hız, kapasite, süre, aralık) kodun içine yazılmaz.**
-  Genel sayılar `GameConfig`'e, kaynağa özel sayılar `ResourceType`'a eklenir. İleride yeni ayar dosyaları
+  Genel sayılar `GameConfig`'e, kaynağa özel sayılar `ResourceType`'a, nokta türüne özel sayılar
+  `ResourceNodeType`'a eklenir. Builder bu dosyaları ilk kez oluştururken başlangıç değerlerini yazar
+  (`CreateResourceTypeIfMissing`, `CreateNodeTypeIfMissing` satırları); sonra değerler sadece Inspector'dan değişir. İleride yeni ayar dosyaları
   (örn. `UnlockPadConfig`, `BuildingConfig`) gerekirse `Data/` altına konur.
 - Kod ayarları **her kullanımda** dosyadan okur (Awake'te kopyalamaz) ki Play sırasında yapılan değişiklik hemen etkilesin.
 - Haritanın yerleşimi (nesne konumları, kutu boyutları/renkleri) oynanış ayarı değildir; sahne kurma komutundadır.
@@ -135,7 +144,7 @@ Sahne elle kurulmaz. **Tools > Kayıp Ada > Prototip Sahnesini Kur**
 | Nesne | Order |
 |---|---|
 | Zemin (ada) | 0 |
-| Alanlar (satış alanı) | 1 |
+| Alanlar (Pazar) | 1 |
 | Kaynak noktası alt / üst | 2 / 3 |
 | Dünya yazıları | 5 |
 | Karakterler | 10 |
