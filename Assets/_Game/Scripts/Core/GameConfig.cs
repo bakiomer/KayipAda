@@ -26,9 +26,20 @@ namespace KayipAda
         [field: Header("Ekonomi")]
         [field: SerializeField, Min(0)] public int StartingCoins { get; private set; } = 0;
 
-        [field: Header("Dünya")]
-        [field: Tooltip("Oyuncunun ada merkezinden yatay (x) ve dikey (y) en fazla uzaklaşabileceği mesafe.")]
-        [field: SerializeField] public Vector2 MoveBounds { get; private set; } = new Vector2(7f, 11f);
+        // Not: Adanın boyutu ve oyuncunun yürüyebileceği alan harita yerleşimidir → sahne kurma komutunda.
+
+        [field: Header("Bölge Açma (UnlockPad)")]
+        [field: Tooltip("Kareye basınca ödemenin başlaması için beklenen süre (saniye).")]
+        [field: SerializeField, Min(0f)] public float UnlockStartDelay { get; private set; } = 0.3f;
+
+        [field: Tooltip("Para parçalarının kaç saniyede bir aktığı.")]
+        [field: SerializeField, Min(0.01f)] public float UnlockPayInterval { get; private set; } = 0.05f;
+
+        [field: Tooltip("Paran yeterliyse fiyatın tamamının kaç saniyede ödeneceği (fiyat ne olursa olsun).")]
+        [field: SerializeField, Min(0.1f)] public float UnlockPayDuration { get; private set; } = 2f;
+
+        [field: Tooltip("Para parçasının oyuncudan kareye uçma süresi (saniye).")]
+        [field: SerializeField, Min(0.01f)] public float CoinFlyDuration { get; private set; } = 0.25f;
 
         [field: Header("Kamera")]
         [field: Tooltip("Kameranın yakınlığı: küçük değer = daha yakın.")]

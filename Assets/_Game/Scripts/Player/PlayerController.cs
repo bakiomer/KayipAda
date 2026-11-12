@@ -1,7 +1,7 @@
 // PlayerController.cs
 // Oyuncuyu sanal joystick'e göre hareket ettirir ve oyuncu ayarlarını (hız, taşıma kapasitesi)
 // GameConfig'ten uygular. Editörde test kolaylığı için joystick boştaysa WASD / ok tuşları da çalışır.
-// Oyuncu adanın sınırları (GameConfig.MoveBounds) dışına çıkamaz.
+// Oyuncu yürünebilir alanın (moveArea, sahne kurma komutu adaya göre ayarlar) dışına çıkamaz.
 
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -13,6 +13,8 @@ namespace KayipAda
     {
         [SerializeField] private GameConfig config;
         [SerializeField] private VirtualJoystick joystick;
+        [Tooltip("Oyuncunun yürüyebileceği dikdörtgen (dünya koordinatı). Harita yerleşimine aittir.")]
+        [SerializeField] private Rect moveArea = new Rect(-5f, -5f, 10f, 10f);
 
         private Rigidbody2D body;
         private CarryStack stack;
@@ -39,10 +41,9 @@ namespace KayipAda
 
         private void FixedUpdate()
         {
-            Vector2 bounds = config.MoveBounds;
             Vector2 next = body.position + input * config.PlayerSpeed * Time.fixedDeltaTime;
-            next.x = Mathf.Clamp(next.x, -bounds.x, bounds.x);
-            next.y = Mathf.Clamp(next.y, -bounds.y, bounds.y);
+            next.x = Mathf.Clamp(next.x, moveArea.xMin, moveArea.xMax);
+            next.y = Mathf.Clamp(next.y, moveArea.yMin, moveArea.yMax);
             body.MovePosition(next);
         }
 

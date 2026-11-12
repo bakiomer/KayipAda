@@ -2,12 +2,14 @@
 // Oyuncunun parasını tek bir yerde tutar. Para değişince CoinsChanged olayını yayınlar;
 // arayüz (CurrencyUI) bu olayı dinler, her karede kontrol etmez.
 // Sahnede tek bir tane bulunur, diğer scriptler CurrencyManager.Instance ile erişir.
+// DefaultExecutionOrder: diğer scriptlerin Awake'inden önce hazır olsun diye.
 
 using System;
 using UnityEngine;
 
 namespace KayipAda
 {
+    [DefaultExecutionOrder(-100)]
     public class CurrencyManager : MonoBehaviour
     {
         public static CurrencyManager Instance { get; private set; }
