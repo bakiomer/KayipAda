@@ -25,23 +25,26 @@ namespace KayipAda.EditorTools
         private const string ResourceTypesFolder = Root + "/Data/ResourceTypes";
         private const string NodeTypesFolder = Root + "/Data/NodeTypes";
         private const string AreasFolder = Root + "/Data/Areas";
+        private const string BuildingTypesFolder = Root + "/Data/Buildings";
         private const string ScenePath = Root + "/Scenes/Prototype.unity";
 
         // ---------------------------------------------------------------- Harita yerleşimi
         // Bunlar oynanış ayarı değil, haritanın yerleşimi ve görünümüdür.
         //
         //            ~~~~ deniz ~~~~
-        //               [iskele]            y 13..17 (denize uzanan tahta)
-        //   ┌──────── İSKELE ALANI ────────┐ y 10.8..12.8 (gemi için, ileride)
-        //   │  KAYALIK      │ MEYVE BAHÇESİ │ y 4..10 (başta çitle kapalı)
+        //               [iskele]              y 13..17 (denize uzanan tahta)
+        //   ┌──────── İSKELE ALANI ────────┐   y 10.8..12.8 (gemi için, ileride)
+        //   │ TAŞ ATÖLYESİ  │               │   y 7..10
+        //   │ KAYALIK       │ MEYVE BAHÇESİ │   y 4..10 (başta çitle kapalı)
+        //   │ kaya    kaya  │ çalı    çalı  │
         //   └───────────────┴──────────────┘
-        //      [kare 1]          [kare 2]     y 2.9
-        //    ağaç      ağaç      ağaç         BAŞLANGIÇ SAHİLİ
-        //             oyuncu                  y -3
-        //             PAZAR                   y -7
+        //      [kare 1]          [kare 2]       y 2.9
+        //    ağaç      ağaç      ağaç           BAŞLANGIÇ SAHİLİ
+        //             oyuncu                    y -3
+        //     PAZAR          BIÇKIHANE          y -8..-5
         //
         // Kamera oyuncuyu takip eder; harita tek ekrana sığmak zorunda değil. Başlangıç ekranında
-        // (kamera y≈-1, görünür y≈-9..7) ağaçlar, Pazar ve 1. kare tamamen görünür.
+        // (kamera y≈-1, görünür y≈-9..7) ağaçlar, Pazar, Bıçkıhane karesi ve 1. kare görünür.
         // Dar (20:9) telefonlarda yarım ekran genişliği ~3.6 birim → başlangıç nesneleri x = -3.3..3.3 içinde.
         private static readonly Rect IslandRect = new Rect(-6f, -10f, 12f, 23f);  // x -6..6, y -10..13
         private const float WalkMargin = 0.5f;                                      // oyuncu adanın kenarına kadar değil
@@ -49,13 +52,33 @@ namespace KayipAda.EditorTools
 
         // Başlangıç sahili (her zaman açık)
         private static readonly Vector2[] TreePositions = { new Vector2(-2.6f, 0f), new Vector2(0f, 1.2f), new Vector2(2.6f, 0f) };
-        private static readonly Vector2 MarketPosition = new Vector2(0f, -7f);
-        private static readonly Vector2 MarketSize = new Vector2(3f, 3f);
+        private static readonly Vector2 MarketPosition = new Vector2(-2.2f, -6.8f);   // x -3.5..-0.9
+        private static readonly Vector2 MarketSize = new Vector2(2.6f, 2.6f);
+        private static readonly Vector2 SawmillPosition = new Vector2(2.1f, -7.1f);    // x 0.6..3.6, y -8.2..-5.3
+
+        // İşleme binası düzeni (bina kökünün konumuna göre):
+        //        [=====ilerleme=====]
+        //        [   bina gövdesi   ]
+        //     [giriş]          [çıkış]       ← aralarında oyuncu ikisine birden değmesin diye boşluk var
+        private static readonly Vector2 BuildingBodyOffset = new Vector2(0f, 0.9f);
+        private static readonly Vector2 BuildingBodySize = new Vector2(2.2f, 1.2f);
+        private static readonly Vector2 BuildingBarOffset = new Vector2(0f, 1.75f);
+        private const float BuildingBarWidth = 1.8f;
+        private const float BuildingBarHeight = 0.18f;
+        private static readonly Vector2 BuildingInputOffset = new Vector2(-1f, -0.6f);
+        private static readonly Vector2 BuildingOutputOffset = new Vector2(1f, -0.6f);
+        private static readonly Vector2 BuildingSlotSize = new Vector2(1f, 1f);
+        private static readonly Vector2 BuildingFootprintOffset = new Vector2(0f, 0.35f); // kapalıyken görünen silik alan
+        private static readonly Vector2 BuildingFootprintSize = new Vector2(3f, 2.9f);
+        private static readonly Vector2 BuildingPadOffset = new Vector2(0f, -0.3f);       // açma karesi binanın yerinde durur
+        private const int PileColumns = 2;
+        private static readonly Vector2 PileSpacing = new Vector2(0.4f, 0.2f);
 
         // Açılabilir bölgeler
         private static readonly Rect RockyRect = new Rect(-5.6f, 4f, 5.2f, 6f);    // x -5.6..-0.4
         private static readonly Rect OrchardRect = new Rect(0.4f, 4f, 5.2f, 6f);   // x 0.4..5.6
-        private static readonly Vector2[] RockPositions = { new Vector2(-4f, 5.8f), new Vector2(-2f, 8.2f) };
+        private static readonly Vector2[] RockPositions = { new Vector2(-4.3f, 5.6f), new Vector2(-1.6f, 5.6f) };
+        private static readonly Vector2 StoneWorkshopPosition = new Vector2(-3f, 8.2f); // kayalığın üst kısmı
         private static readonly Vector2[] BushPositions = { new Vector2(2f, 5.8f), new Vector2(4f, 8.2f) };
         private static readonly Vector2 RockyPadPosition = new Vector2(-2.4f, 2.9f);
         private static readonly Vector2 OrchardPadPosition = new Vector2(2.4f, 2.9f);
@@ -90,11 +113,20 @@ namespace KayipAda.EditorTools
         private static readonly Color CoinColor = new Color(1.00f, 0.82f, 0.20f);
         private static readonly Color LabelColor = new Color(0.30f, 0.20f, 0.05f);
         private static readonly Color TopBarColor = new Color(0.12f, 0.16f, 0.22f);
+        private static readonly Color SawmillColor = new Color(0.70f, 0.45f, 0.25f);
+        private static readonly Color WorkshopColor = new Color(0.45f, 0.50f, 0.60f);
+        private static readonly Color RoofColor = new Color(0.30f, 0.20f, 0.15f);
+        private static readonly Color SlotColor = new Color(1.00f, 1.00f, 1.00f, 0.35f);
+        private static readonly Color FootprintColor = new Color(0.30f, 0.20f, 0.10f, 0.15f);
+        private static readonly Color BarBackColor = new Color(0.10f, 0.10f, 0.10f, 0.7f);
+        private static readonly Color BarFillColor = new Color(0.35f, 0.90f, 0.35f);
 
         // Kaynak türlerinin ilk değerleri (dosya zaten varsa dokunulmaz; sonradan Inspector'dan değiştir).
         private static readonly Color WoodColor = new Color(0.60f, 0.38f, 0.18f);
         private static readonly Color StoneColor = new Color(0.62f, 0.62f, 0.65f);
         private static readonly Color FruitColor = new Color(1.00f, 0.55f, 0.10f);
+        private static readonly Color PlankColor = new Color(0.90f, 0.72f, 0.45f);
+        private static readonly Color BrickColor = new Color(0.75f, 0.28f, 0.20f);
 
         private static Sprite square;
 
@@ -112,6 +144,8 @@ namespace KayipAda.EditorTools
             CreateResourceTypeIfMissing("Wood",  "wood",  "Odun",  WoodColor,  5);
             CreateResourceTypeIfMissing("Stone", "stone", "Taş",   StoneColor, 8);
             CreateResourceTypeIfMissing("Fruit", "fruit", "Meyve", FruitColor, 4);
+            CreateResourceTypeIfMissing("Plank", "plank", "Kalas", PlankColor, 14); // 2 odun (10) → 1 kalas (14)
+            CreateResourceTypeIfMissing("Brick", "brick", "Tuğla", BrickColor, 22); // 2 taş (16) → 1 tuğla (22)
             //                      dosya        kaynak   stok  toplama aralığı  yeniden dolma (sn)
             CreateNodeTypeIfMissing("Tree",      "Wood",  8,    0.35f,           10f);
             CreateNodeTypeIfMissing("Rock",      "Stone", 6,    0.6f,            15f); // ağaçtan yavaş
@@ -119,6 +153,11 @@ namespace KayipAda.EditorTools
             //                  dosya      kimlik     ad               fiyat
             CreateAreaIfMissing("Rocky",   "rocky",   "Kayalık",       60);
             CreateAreaIfMissing("Orchard", "orchard", "Meyve Bahçesi", 150);
+            CreateAreaIfMissing("Sawmill", "sawmill", "Bıçkıhane", 80);
+            CreateAreaIfMissing("StoneWorkshop", "stone_workshop", "Taş Atölyesi", 200);
+            //                          dosya            ad              girdi    adet  çıktı    adet  süre  giriş kap. çıkış kap.
+            CreateBuildingTypeIfMissing("Sawmill",       "Bıçkıhane",    "Wood",  2,    "Plank", 1,    2f,   10,        10);
+            CreateBuildingTypeIfMissing("StoneWorkshop", "Taş Atölyesi", "Stone", 2,    "Brick", 1,    3f,   10,        10);
             CreateItemPrefab();
             CreateCoinPrefab();
 
@@ -134,10 +173,15 @@ namespace KayipAda.EditorTools
             ResourceNodeType bushType = Load<ResourceNodeType>(NodeTypesFolder, "FruitBush");
             AreaDefinition rocky = Load<AreaDefinition>(AreasFolder, "Rocky");
             AreaDefinition orchard = Load<AreaDefinition>(AreasFolder, "Orchard");
+            AreaDefinition sawmillArea = Load<AreaDefinition>(AreasFolder, "Sawmill");
+            AreaDefinition workshopArea = Load<AreaDefinition>(AreasFolder, "StoneWorkshop");
+            BuildingType sawmillType = Load<BuildingType>(BuildingTypesFolder, "Sawmill");
+            BuildingType workshopType = Load<BuildingType>(BuildingTypesFolder, "StoneWorkshop");
             ResourceItem itemPrefab = AssetDatabase.LoadAssetAtPath<ResourceItem>(ItemPrefabPath);
             FlyingVisual coinPrefab = AssetDatabase.LoadAssetAtPath<FlyingVisual>(CoinPrefabPath);
             if (square == null || config == null || treeType == null || rockType == null || bushType == null
-                || rocky == null || orchard == null || itemPrefab == null || coinPrefab == null)
+                || rocky == null || orchard == null || sawmillArea == null || workshopArea == null
+                || sawmillType == null || workshopType == null || itemPrefab == null || coinPrefab == null)
             {
                 Debug.LogError("Kayıp Ada: Gerekli dosyalardan biri yüklenemedi. Komutu tekrar çalıştırın.");
                 return;
@@ -162,6 +206,7 @@ namespace KayipAda.EditorTools
                 CreateNode("Tree " + (i + 1), beach, TreePositions[i], treeType, config, itemPrefab, BuildTreeVisual);
             }
             CreateMarket(beach, config);
+            CreateBuilding("Sawmill", beach, SawmillPosition, sawmillType, sawmillArea, SawmillColor, config, itemPrefab);
 
             // 7) Açılabilir bölgeler ve açma kareleri
             Transform rockyContent = CreateArea("Area Rocky", rocky, RockyRect, RockyGroundColor);
@@ -169,6 +214,8 @@ namespace KayipAda.EditorTools
             {
                 CreateNode("Rock " + (i + 1), rockyContent, RockPositions[i], rockType, config, itemPrefab, BuildRockVisual);
             }
+            // Taş atölyesi kayalığın içinde: kayalık açılınca (kapalı haliyle) görünür, kendi karesiyle açılır.
+            CreateBuilding("StoneWorkshop", rockyContent, StoneWorkshopPosition, workshopType, workshopArea, WorkshopColor, config, itemPrefab);
 
             Transform orchardContent = CreateArea("Area Orchard", orchard, OrchardRect, OrchardGroundColor);
             for (int i = 0; i < BushPositions.Length; i++)
@@ -179,6 +226,10 @@ namespace KayipAda.EditorTools
             // 1. kare kayalığı açar; 2. kare kayalık açılınca görünür ve meyve bahçesini açar.
             CreateUnlockPad("Pad Rocky", RockyPadPosition, rocky, null, config, coinPrefab);
             CreateUnlockPad("Pad Orchard", OrchardPadPosition, orchard, rocky, config, coinPrefab);
+
+            // Bina kareleri binanın yerinde durur. Bıçkıhane baştan açılabilir; Taş Atölyesi kayalık açılınca görünür.
+            CreateUnlockPad("Pad Sawmill", SawmillPosition + BuildingPadOffset, sawmillArea, null, config, coinPrefab);
+            CreateUnlockPad("Pad StoneWorkshop", StoneWorkshopPosition + BuildingPadOffset, workshopArea, rocky, config, coinPrefab);
 
             // 8) İskele alanı (şimdilik boş)
             CreateDock();
@@ -201,7 +252,7 @@ namespace KayipAda.EditorTools
 
         private static void CreateFolders()
         {
-            string[] folders = { "Art", "Prefabs", "Data", "Data/ResourceTypes", "Data/NodeTypes", "Data/Areas", "Scenes" };
+            string[] folders = { "Art", "Prefabs", "Data", "Data/ResourceTypes", "Data/NodeTypes", "Data/Areas", "Data/Buildings", "Scenes" };
             foreach (string folder in folders)
             {
                 string path = Root + "/" + folder;
@@ -274,6 +325,22 @@ namespace KayipAda.EditorTools
             AreaDefinition area = ScriptableObject.CreateInstance<AreaDefinition>();
             area.EditorSetup(id, displayName, price);
             AssetDatabase.CreateAsset(area, path);
+            AssetDatabase.SaveAssets();
+        }
+
+        private static void CreateBuildingTypeIfMissing(string fileName, string displayName, string inputFile, int inputAmount,
+                                                        string outputFile, int outputAmount, float processTime,
+                                                        int inputCapacity, int outputCapacity)
+        {
+            string path = BuildingTypesFolder + "/" + fileName + ".asset";
+            if (AssetDatabase.LoadAssetAtPath<BuildingType>(path) != null) return;
+
+            BuildingType type = ScriptableObject.CreateInstance<BuildingType>();
+            type.EditorSetup(displayName,
+                             Load<ResourceType>(ResourceTypesFolder, inputFile), inputAmount,
+                             Load<ResourceType>(ResourceTypesFolder, outputFile), outputAmount,
+                             processTime, inputCapacity, outputCapacity);
+            AssetDatabase.CreateAsset(type, path);
             AssetDatabase.SaveAssets();
         }
 
@@ -431,6 +498,100 @@ namespace KayipAda.EditorTools
             area.size = MarketSize;
 
             SetField(market.AddComponent<Market>(), "config", config);
+        }
+
+        // İşleme binası kurar. Bina bir açılabilir alandır: kapalıyken sadece silik bir zemin görünür
+        // (üstünde açma karesi durur), açılınca gövde, ilerleme çubuğu, giriş ve çıkış alanları ortaya çıkar.
+        //   Sawmill (UnlockableArea)
+        //   ├ Locked  : silik zemin
+        //   └ Content : ProcessingBuilding
+        //       ├ Body, Roof, Label, ProgressBar
+        //       ├ Input  (trigger + BuildingInput, içinde giriş yığını)
+        //       └ Output (trigger + BuildingOutput, içinde çıkış yığını)
+        private static void CreateBuilding(string name, Transform parent, Vector2 position, BuildingType type, AreaDefinition area,
+                                           Color bodyColor, GameConfig config, ResourceItem itemPrefab)
+        {
+            GameObject root = new GameObject(name);
+            root.transform.SetParent(parent, false);
+            root.transform.position = position;
+
+            GameObject locked = CreateBox("Locked", root.transform, BuildingFootprintOffset, BuildingFootprintSize, FootprintColor, SortOrder.Footprint);
+
+            GameObject content = new GameObject("Content");
+            content.transform.SetParent(root.transform, false);
+            content.SetActive(false); // UnlockableArea açık olup olmadığına göre gösterir
+
+            // Gövde, çatı şeridi ve ad
+            GameObject body = CreateBox("Body", content.transform, BuildingBodyOffset, BuildingBodySize, bodyColor, SortOrder.Building);
+            Vector2 roofOffset = BuildingBodyOffset + new Vector2(0f, BuildingBodySize.y * 0.4f);
+            CreateBox("Roof", content.transform, roofOffset, new Vector2(BuildingBodySize.x, BuildingBodySize.y * 0.2f), RoofColor, SortOrder.BuildingTop);
+            Text title = CreateWorldLabel(type.DisplayName, content.transform, BuildingBodyOffset + new Vector2(0f, -0.1f),
+                                          new Vector2(BuildingBodySize.x, 0.6f), 30);
+            title.color = Color.white;
+
+            // İlerleme çubuğu
+            GameObject barRoot = new GameObject("ProgressBar");
+            barRoot.transform.SetParent(content.transform, false);
+            barRoot.transform.localPosition = BuildingBarOffset;
+            CreateBox("Back", barRoot.transform, Vector2.zero, new Vector2(BuildingBarWidth, BuildingBarHeight), BarBackColor, SortOrder.BarBack);
+            GameObject fill = CreateBox("Fill", barRoot.transform, Vector2.zero, new Vector2(BuildingBarWidth, BuildingBarHeight), BarFillColor, SortOrder.BarFill);
+            ProgressBar bar = barRoot.AddComponent<ProgressBar>();
+            SetField(bar, "fill", fill.transform);
+            SetFloat(bar, "width", BuildingBarWidth);
+
+            ProcessingBuilding building = content.AddComponent<ProcessingBuilding>();
+
+            // Giriş ve çıkış alanları
+            GameObject inputSlot = CreateBuildingSlot("Input", content.transform, BuildingInputOffset,
+                                                      "Giriş: " + type.Input.DisplayName, config, out ItemPile inputPile);
+            BuildingInput input = inputSlot.AddComponent<BuildingInput>();
+            SetField(input, "config", config);
+            SetField(input, "building", building);
+
+            GameObject outputSlot = CreateBuildingSlot("Output", content.transform, BuildingOutputOffset,
+                                                       "Çıkış: " + type.Output.DisplayName, config, out ItemPile outputPile);
+            BuildingOutput output = outputSlot.AddComponent<BuildingOutput>();
+            SetField(output, "config", config);
+            SetField(output, "building", building);
+
+            SetField(building, "type", type);
+            SetField(building, "inputPile", inputPile);
+            SetField(building, "outputPile", outputPile);
+            SetField(building, "progressBar", bar);
+            SetField(building, "itemPrefab", itemPrefab);
+            SetField(building, "productSpawnPoint", body.transform);
+
+            UnlockableArea unlockable = root.AddComponent<UnlockableArea>();
+            SetField(unlockable, "area", area);
+            SetField(unlockable, "content", content);
+            SetField(unlockable, "lockedVisual", locked);
+        }
+
+        // Binanın giriş veya çıkış alanı: yarı saydam kare (trigger) + altta yazı + içinde yerde yığın.
+        private static GameObject CreateBuildingSlot(string name, Transform parent, Vector2 offset, string labelText,
+                                                     GameConfig config, out ItemPile pile)
+        {
+            GameObject slot = new GameObject(name);
+            slot.transform.SetParent(parent, false);
+            slot.transform.localPosition = offset;
+
+            CreateBox("Visual", slot.transform, Vector2.zero, BuildingSlotSize, SlotColor, SortOrder.Zone);
+            CreateWorldLabel(labelText, slot.transform, new Vector2(0f, -BuildingSlotSize.y * 0.5f - 0.2f),
+                             new Vector2(BuildingSlotSize.x * 1.6f, 0.4f), 22);
+
+            BoxCollider2D trigger = slot.AddComponent<BoxCollider2D>();
+            trigger.isTrigger = true;
+            trigger.size = BuildingSlotSize;
+
+            // Yığın karenin alt kısmından yukarı doğru dizilir.
+            GameObject pileGo = new GameObject("Pile");
+            pileGo.transform.SetParent(slot.transform, false);
+            pileGo.transform.localPosition = new Vector3(0f, -BuildingSlotSize.y * 0.35f, 0f);
+            pile = pileGo.AddComponent<ItemPile>();
+            SetField(pile, "config", config);
+            SetInt(pile, "columns", PileColumns);
+            SetVector2(pile, "spacing", PileSpacing);
+            return slot;
         }
 
         // Açılabilir bölge kurar ve içeriğin (kaynak noktaları) ekleneceği "Content" nesnesini döndürür.
@@ -666,6 +827,30 @@ namespace KayipAda.EditorTools
             SerializedProperty property = FindProperty(target, fieldName, out SerializedObject so);
             if (property == null) return;
             property.rectValue = value;
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void SetFloat(Object target, string fieldName, float value)
+        {
+            SerializedProperty property = FindProperty(target, fieldName, out SerializedObject so);
+            if (property == null) return;
+            property.floatValue = value;
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void SetInt(Object target, string fieldName, int value)
+        {
+            SerializedProperty property = FindProperty(target, fieldName, out SerializedObject so);
+            if (property == null) return;
+            property.intValue = value;
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void SetVector2(Object target, string fieldName, Vector2 value)
+        {
+            SerializedProperty property = FindProperty(target, fieldName, out SerializedObject so);
+            if (property == null) return;
+            property.vector2Value = value;
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 

@@ -26,6 +26,11 @@ namespace KayipAda
         [field: Header("Ekonomi")]
         [field: SerializeField, Min(0)] public int StartingCoins { get; private set; } = 0;
 
+        [field: Header("İşleme Binaları")]
+        [field: Tooltip("Bina giriş/çıkışında parçaların kaç saniyede bir alınıp verildiği.")]
+        [field: SerializeField, Min(0.01f)] public float BuildingTransferInterval { get; private set; } = 0.12f;
+        // Not: Tarif, işleme süresi ve kapasiteler her binaya özeldir → Data/Buildings
+
         // Not: Adanın boyutu ve oyuncunun yürüyebileceği alan harita yerleşimidir → sahne kurma komutunda.
 
         [field: Header("Bölge Açma (UnlockPad)")]
