@@ -1,6 +1,6 @@
 // BuildingOutput.cs
-// İşleme binasının çıkış alanı. Karakter içerideyken çıkış yığınındaki ürünleri
-// tek tek sırtına verir (sırtında yer olduğu sürece).
+// İşleme binasının çıkış alanı. İçerideki karakterlere (oyuncu, Taşıyıcı işçi) çıkış yığınındaki
+// ürünleri tek tek sırtına verir (sırtında yer olduğu sürece).
 
 using UnityEngine;
 
@@ -12,20 +12,30 @@ namespace KayipAda
 
         private float timer;
 
-        protected override void OnVisitorEnter()
-        {
-            timer = 0f;
-        }
+        public ProcessingBuilding Building => building;
+        public ItemPile Pile => building.OutputPile;
 
         private void Update()
         {
-            if (Visitor == null || Visitor.IsFull || building.OutputPile.IsEmpty) return;
+            if (timer > 0f)
+            {
+                timer -= Time.deltaTime;
+                return;
+            }
 
-            timer -= Time.deltaTime;
-            if (timer > 0f) return;
-            timer = config.BuildingTransferInterval;
+            bool moved = false;
+            for (int i = 0; i < Visitors.Count; i++)
+            {
+                if (Pile.IsEmpty) break;
 
-            Visitor.TryAdd(building.OutputPile.RemoveTop());
+                CarryStack visitor = Visitors[i];
+                if (!CanServe(visitor) || visitor.IsFull) continue;
+
+                visitor.TryAdd(Pile.RemoveTop());
+                moved = true;
+            }
+
+            if (moved) timer = config.BuildingTransferInterval;
         }
     }
 }

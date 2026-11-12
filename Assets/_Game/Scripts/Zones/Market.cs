@@ -1,5 +1,5 @@
 // Market.cs
-// Pazar: Karakter içerideyken sırtındaki kaynaklar tek tek alınır ve satılır.
+// Pazar: İçerideki karakterlerin sırtındaki kaynaklar tek tek alınır ve satılır (oyuncu ve Taşıyıcı işçiler).
 // Tüm kaynak türlerini kabul eder; her parça kendi türünün fiyatından (ResourceType.SellPrice) paraya çevrilir.
 
 using UnityEngine;
@@ -10,22 +10,28 @@ namespace KayipAda
     {
         private float timer;
 
-        protected override void OnVisitorEnter()
-        {
-            timer = 0f;
-        }
-
         private void Update()
         {
-            if (Visitor == null || Visitor.IsEmpty) return;
+            if (timer > 0f)
+            {
+                timer -= Time.deltaTime;
+                return;
+            }
 
-            timer -= Time.deltaTime;
-            if (timer > 0f) return;
-            timer = config.SellInterval;
+            // Her aralıkta içerideki her karakterden birer parça satılır.
+            bool sold = false;
+            for (int i = 0; i < Visitors.Count; i++)
+            {
+                CarryStack visitor = Visitors[i];
+                if (!CanServe(visitor) || visitor.IsEmpty) continue;
 
-            ResourceItem item = Visitor.RemoveTop();
-            CurrencyManager.Instance.Add(item.Type.SellPrice);
-            item.FlyToAndDestroy(transform.position, config.SellFlyDuration);
+                ResourceItem item = visitor.RemoveTop();
+                CurrencyManager.Instance.Add(item.Type.SellPrice);
+                item.FlyToAndDestroy(transform.position, config.SellFlyDuration);
+                sold = true;
+            }
+
+            if (sold) timer = config.SellInterval;
         }
     }
 }

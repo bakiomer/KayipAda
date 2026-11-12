@@ -24,6 +24,7 @@ namespace KayipAda
         {
             body = GetComponent<Rigidbody2D>();
             stack = GetComponent<CarryStack>();
+            stack.IsPlayer = true;
             ApplyStats();
         }
 

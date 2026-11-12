@@ -19,7 +19,7 @@ namespace KayipAda
         public const int PileItem = 10;     // + yerdeki yığındaki sırası (en fazla ~20 parça)
         public const int BarBack = 35;      // ilerleme çubuğu arka planı
         public const int BarFill = 36;      // ilerleme çubuğu dolan kısım
-        public const int Character = 40;    // oyuncu (ileride işçiler)
+        public const int Character = 40;    // oyuncu ve işçiler
         public const int CarriedItem = 50;  // + sırttaki yığındaki sırası
         public const int Effect = 100;      // uçan para vb.
     }

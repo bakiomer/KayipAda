@@ -1,7 +1,7 @@
 // CarryStack.cs
 // Bir karakterin sırtında taşıdığı kaynak yığını. Farklı türler karışık dizilebilir.
-// Şimdilik oyuncu kullanıyor; ileride işçiler de aynı bileşeni kullanacak.
-// Kapasiteyi sahibi belirler (oyuncu için PlayerController, GameConfig'ten).
+// Oyuncu ve işçiler aynı bileşeni kullanır.
+// Kapasiteyi sahibi belirler (oyuncu için PlayerController/GameConfig, işçi için Worker/WorkerType).
 
 using System.Collections.Generic;
 using UnityEngine;
@@ -20,6 +20,12 @@ namespace KayipAda
         public int Count => items.Count;
         public bool IsFull => items.Count >= Capacity;
         public bool IsEmpty => items.Count == 0;
+
+        // Oyuncunun yığını mı? (Para ödemek gibi işleri sadece oyuncu yapar.) PlayerController ayarlar.
+        public bool IsPlayer { get; set; }
+
+        // İşçiler için: şu an iş yaptığı alan. Alanlar işçiye sadece hedefiyse hizmet eder.
+        public InteractionZone WorkTarget { get; set; }
 
         // Yer varsa kaynağı yığının en üstüne ekler.
         public bool TryAdd(ResourceItem item)

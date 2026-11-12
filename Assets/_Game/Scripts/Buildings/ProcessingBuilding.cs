@@ -43,7 +43,7 @@ namespace KayipAda
             // Her karede: Play sırasında ayar dosyasında yapılan değişiklik hemen etkilesin.
             ApplyCapacities();
 
-            if (!HasEnoughInput())
+            if (!HasEnoughInput)
             {
                 progress = 0f; // ham madde yok → işlem başlamamış sayılır
             }
@@ -67,10 +67,8 @@ namespace KayipAda
             outputPile.Capacity = type.OutputCapacity;
         }
 
-        private bool HasEnoughInput()
-        {
-            return inputPile.Count >= type.InputAmount;
-        }
+        // Girişte bir işlem için yeterli ham madde var mı? (Taşıyıcı işçi "yeni ürün gelecek mi" diye bakar.)
+        public bool HasEnoughInput => inputPile.Count >= type.InputAmount;
 
         private bool HasRoomForOutput()
         {

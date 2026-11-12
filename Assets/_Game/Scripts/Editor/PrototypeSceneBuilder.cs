@@ -26,6 +26,7 @@ namespace KayipAda.EditorTools
         private const string NodeTypesFolder = Root + "/Data/NodeTypes";
         private const string AreasFolder = Root + "/Data/Areas";
         private const string BuildingTypesFolder = Root + "/Data/Buildings";
+        private const string WorkerTypesFolder = Root + "/Data/Workers";
         private const string ScenePath = Root + "/Scenes/Prototype.unity";
 
         // ---------------------------------------------------------------- Harita yerleşimi
@@ -40,7 +41,7 @@ namespace KayipAda.EditorTools
         //   └───────────────┴──────────────┘
         //      [kare 1]          [kare 2]       y 2.9
         //    ağaç      ağaç      ağaç           BAŞLANGIÇ SAHİLİ
-        //             oyuncu                    y -3
+        // KAMP [oduncu] oyuncu [taşıyıcı]       y -3 (işçi kareleri sırayla görünür)
         //     PAZAR          BIÇKIHANE          y -8..-5
         //
         // Kamera oyuncuyu takip eder; harita tek ekrana sığmak zorunda değil. Başlangıç ekranında
@@ -73,6 +74,15 @@ namespace KayipAda.EditorTools
         private static readonly Vector2 BuildingPadOffset = new Vector2(0f, -0.3f);       // açma karesi binanın yerinde durur
         private const int PileColumns = 2;
         private static readonly Vector2 PileSpacing = new Vector2(0.4f, 0.2f);
+
+        // İşçi kampı (sol kenarda; işçiler buradan çıkar) ve işçi tutma kareleri (oyuncunun iki yanında)
+        private static readonly Vector2 CampPosition = new Vector2(-4.7f, -3f);        // çadır x -5.4..-4.0
+        private static readonly Vector2 CampTentSize = new Vector2(1.4f, 1.1f);
+        private static readonly Vector2 CampSpawnOffset = new Vector2(0f, -1f);        // çadırın hemen altı
+        private static readonly Vector2 LumberjackPadPosition = new Vector2(-2.3f, -3.3f);
+        private static readonly Vector2 CarrierPadPosition = new Vector2(2.3f, -3.3f);
+        private const float WorkerSize = 0.75f;
+        private const float WorkerClearance = WorkerSize / 2f + 0.05f; // engellere bu kadar yaklaşır
 
         // Açılabilir bölgeler
         private static readonly Rect RockyRect = new Rect(-5.6f, 4f, 5.2f, 6f);    // x -5.6..-0.4
@@ -120,6 +130,9 @@ namespace KayipAda.EditorTools
         private static readonly Color FootprintColor = new Color(0.30f, 0.20f, 0.10f, 0.15f);
         private static readonly Color BarBackColor = new Color(0.10f, 0.10f, 0.10f, 0.7f);
         private static readonly Color BarFillColor = new Color(0.35f, 0.90f, 0.35f);
+        private static readonly Color TentColor = new Color(0.85f, 0.50f, 0.25f);
+        private static readonly Color LumberjackColor = new Color(0.20f, 0.45f, 0.85f); // mavi (oyuncu kırmızımsı)
+        private static readonly Color CarrierColor = new Color(0.60f, 0.30f, 0.80f);    // mor
 
         // Kaynak türlerinin ilk değerleri (dosya zaten varsa dokunulmaz; sonradan Inspector'dan değiştir).
         private static readonly Color WoodColor = new Color(0.60f, 0.38f, 0.18f);
@@ -155,6 +168,11 @@ namespace KayipAda.EditorTools
             CreateAreaIfMissing("Orchard", "orchard", "Meyve Bahçesi", 150);
             CreateAreaIfMissing("Sawmill", "sawmill", "Bıçkıhane", 80);
             CreateAreaIfMissing("StoneWorkshop", "stone_workshop", "Taş Atölyesi", 200);
+            CreateAreaIfMissing("HireLumberjack", "hire_lumberjack", "Oduncu", 120);  // işçi tutma fiyatları
+            CreateAreaIfMissing("HireCarrier",    "hire_carrier",    "Taşıyıcı", 180);
+            //                        dosya         ad          hız   kapasite  sayı
+            CreateWorkerTypeIfMissing("Lumberjack", "Oduncu",   3f,   6,        1);
+            CreateWorkerTypeIfMissing("Carrier",    "Taşıyıcı", 3.5f, 8,        1);
             //                          dosya            ad              girdi    adet  çıktı    adet  süre  giriş kap. çıkış kap.
             CreateBuildingTypeIfMissing("Sawmill",       "Bıçkıhane",    "Wood",  2,    "Plank", 1,    2f,   10,        10);
             CreateBuildingTypeIfMissing("StoneWorkshop", "Taş Atölyesi", "Stone", 2,    "Brick", 1,    3f,   10,        10);
@@ -177,11 +195,16 @@ namespace KayipAda.EditorTools
             AreaDefinition workshopArea = Load<AreaDefinition>(AreasFolder, "StoneWorkshop");
             BuildingType sawmillType = Load<BuildingType>(BuildingTypesFolder, "Sawmill");
             BuildingType workshopType = Load<BuildingType>(BuildingTypesFolder, "StoneWorkshop");
+            AreaDefinition hireLumberjack = Load<AreaDefinition>(AreasFolder, "HireLumberjack");
+            AreaDefinition hireCarrier = Load<AreaDefinition>(AreasFolder, "HireCarrier");
+            WorkerType lumberjackType = Load<WorkerType>(WorkerTypesFolder, "Lumberjack");
+            WorkerType carrierType = Load<WorkerType>(WorkerTypesFolder, "Carrier");
             ResourceItem itemPrefab = AssetDatabase.LoadAssetAtPath<ResourceItem>(ItemPrefabPath);
             FlyingVisual coinPrefab = AssetDatabase.LoadAssetAtPath<FlyingVisual>(CoinPrefabPath);
             if (square == null || config == null || treeType == null || rockType == null || bushType == null
                 || rocky == null || orchard == null || sawmillArea == null || workshopArea == null
-                || sawmillType == null || workshopType == null || itemPrefab == null || coinPrefab == null)
+                || sawmillType == null || workshopType == null || itemPrefab == null || coinPrefab == null
+                || hireLumberjack == null || hireCarrier == null || lumberjackType == null || carrierType == null)
             {
                 Debug.LogError("Kayıp Ada: Gerekli dosyalardan biri yüklenemedi. Komutu tekrar çalıştırın.");
                 return;
@@ -201,12 +224,14 @@ namespace KayipAda.EditorTools
 
             // 6) Başlangıç sahili: ağaçlar ve Pazar
             Transform beach = new GameObject("Beach").transform;
+            ResourceNode[] trees = new ResourceNode[TreePositions.Length];
             for (int i = 0; i < TreePositions.Length; i++)
             {
-                CreateNode("Tree " + (i + 1), beach, TreePositions[i], treeType, config, itemPrefab, BuildTreeVisual);
+                trees[i] = CreateNode("Tree " + (i + 1), beach, TreePositions[i], treeType, config, itemPrefab, BuildTreeVisual);
             }
-            CreateMarket(beach, config);
-            CreateBuilding("Sawmill", beach, SawmillPosition, sawmillType, sawmillArea, SawmillColor, config, itemPrefab);
+            Market market = CreateMarket(beach, config);
+            CreateBuilding("Sawmill", beach, SawmillPosition, sawmillType, sawmillArea, SawmillColor, config, itemPrefab,
+                           out BuildingInput sawmillInput, out BuildingOutput sawmillOutput);
 
             // 7) Açılabilir bölgeler ve açma kareleri
             Transform rockyContent = CreateArea("Area Rocky", rocky, RockyRect, RockyGroundColor);
@@ -215,7 +240,8 @@ namespace KayipAda.EditorTools
                 CreateNode("Rock " + (i + 1), rockyContent, RockPositions[i], rockType, config, itemPrefab, BuildRockVisual);
             }
             // Taş atölyesi kayalığın içinde: kayalık açılınca (kapalı haliyle) görünür, kendi karesiyle açılır.
-            CreateBuilding("StoneWorkshop", rockyContent, StoneWorkshopPosition, workshopType, workshopArea, WorkshopColor, config, itemPrefab);
+            CreateBuilding("StoneWorkshop", rockyContent, StoneWorkshopPosition, workshopType, workshopArea, WorkshopColor, config, itemPrefab,
+                           out BuildingInput _, out BuildingOutput workshopOutput);
 
             Transform orchardContent = CreateArea("Area Orchard", orchard, OrchardRect, OrchardGroundColor);
             for (int i = 0; i < BushPositions.Length; i++)
@@ -231,16 +257,35 @@ namespace KayipAda.EditorTools
             CreateUnlockPad("Pad Sawmill", SawmillPosition + BuildingPadOffset, sawmillArea, null, config, coinPrefab);
             CreateUnlockPad("Pad StoneWorkshop", StoneWorkshopPosition + BuildingPadOffset, workshopArea, rocky, config, coinPrefab);
 
+            // İşçi kareleri: Oduncu, Bıçkıhane açılınca; Taşıyıcı, Oduncu tutulunca görünür.
+            CreateUnlockPad("Pad Lumberjack", LumberjackPadPosition, hireLumberjack, sawmillArea, config, coinPrefab);
+            CreateUnlockPad("Pad Carrier", CarrierPadPosition, hireCarrier, hireLumberjack, config, coinPrefab);
+
             // 8) İskele alanı (şimdilik boş)
             CreateDock();
 
-            // 9) Oyuncu ve kamera
+            // 9) İşçi kampı (işçiler oyuncuyla aynı alanda yürür)
             Rect walkArea = new Rect(IslandRect.xMin + WalkMargin, IslandRect.yMin + WalkMargin,
                                      IslandRect.width - WalkMargin * 2f, IslandRect.height - WalkMargin * 2f);
+            Transform camp = CreateCamp(out Transform spawnPoint);
+
+            LumberjackWorker lumberjack = CreateWorkerTemplate<LumberjackWorker>("Lumberjack", lumberjackType, LumberjackColor,
+                                                                                  spawnPoint.position, config, walkArea);
+            SetArray(lumberjack, "trees", trees);
+            SetField(lumberjack, "buildingInput", sawmillInput);
+            CreateSpawner("Lumberjacks", camp, hireLumberjack, lumberjackType, lumberjack, spawnPoint, config);
+
+            CarrierWorker carrier = CreateWorkerTemplate<CarrierWorker>("Carrier", carrierType, CarrierColor,
+                                                                         spawnPoint.position, config, walkArea);
+            SetArray(carrier, "sources", new Object[] { sawmillOutput, workshopOutput });
+            SetField(carrier, "market", market);
+            CreateSpawner("Carriers", camp, hireCarrier, carrierType, carrier, spawnPoint, config);
+
+            // 10) Oyuncu ve kamera
             GameObject player = CreatePlayer(config, joystick, walkArea);
             CreateCamera(config, player.transform, topBar);
 
-            // 10) Kaydet ve proje ayarları
+            // 11) Kaydet ve proje ayarları
             EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene(), ScenePath);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
             PlayerSettings.defaultInterfaceOrientation = UIOrientation.Portrait;
@@ -252,7 +297,7 @@ namespace KayipAda.EditorTools
 
         private static void CreateFolders()
         {
-            string[] folders = { "Art", "Prefabs", "Data", "Data/ResourceTypes", "Data/NodeTypes", "Data/Areas", "Data/Buildings", "Scenes" };
+            string[] folders = { "Art", "Prefabs", "Data", "Data/ResourceTypes", "Data/NodeTypes", "Data/Areas", "Data/Buildings", "Data/Workers", "Scenes" };
             foreach (string folder in folders)
             {
                 string path = Root + "/" + folder;
@@ -340,6 +385,17 @@ namespace KayipAda.EditorTools
                              Load<ResourceType>(ResourceTypesFolder, inputFile), inputAmount,
                              Load<ResourceType>(ResourceTypesFolder, outputFile), outputAmount,
                              processTime, inputCapacity, outputCapacity);
+            AssetDatabase.CreateAsset(type, path);
+            AssetDatabase.SaveAssets();
+        }
+
+        private static void CreateWorkerTypeIfMissing(string fileName, string displayName, float moveSpeed, int carryCapacity, int count)
+        {
+            string path = WorkerTypesFolder + "/" + fileName + ".asset";
+            if (AssetDatabase.LoadAssetAtPath<WorkerType>(path) != null) return;
+
+            WorkerType type = ScriptableObject.CreateInstance<WorkerType>();
+            type.EditorSetup(displayName, moveSpeed, carryCapacity, count);
             AssetDatabase.CreateAsset(type, path);
             AssetDatabase.SaveAssets();
         }
@@ -440,7 +496,7 @@ namespace KayipAda.EditorTools
         // Her türlü kaynak noktası (ağaç, kaya, çalı) bununla kurulur; sadece görünümü ve türü farklıdır.
         //   Kök: trigger alanı + ResourceNode
         //   └ Visual: kutulardan oluşan görünüm (küçülme/solma/zıplama buna uygulanır)
-        private static void CreateNode(string name, Transform parent, Vector2 position, ResourceNodeType nodeType,
+        private static ResourceNode CreateNode(string name, Transform parent, Vector2 position, ResourceNodeType nodeType,
                                        GameConfig config, ResourceItem itemPrefab, System.Action<Transform> buildVisual)
         {
             GameObject root = new GameObject(name);
@@ -461,6 +517,7 @@ namespace KayipAda.EditorTools
             SetField(node, "nodeType", nodeType);
             SetField(node, "itemPrefab", itemPrefab);
             SetField(node, "visual", visual);
+            return node;
         }
 
         private static void BuildTreeVisual(Transform visual)
@@ -484,7 +541,7 @@ namespace KayipAda.EditorTools
             CreateBox("Fruit 3", visual, new Vector2(0.05f, -0.2f), fruitSize, FruitColor, SortOrder.NodeTop);
         }
 
-        private static void CreateMarket(Transform parent, GameConfig config)
+        private static Market CreateMarket(Transform parent, GameConfig config)
         {
             GameObject market = new GameObject("Market");
             market.transform.SetParent(parent, false);
@@ -497,7 +554,9 @@ namespace KayipAda.EditorTools
             area.isTrigger = true;
             area.size = MarketSize;
 
-            SetField(market.AddComponent<Market>(), "config", config);
+            Market component = market.AddComponent<Market>();
+            SetField(component, "config", config);
+            return component;
         }
 
         // İşleme binası kurar. Bina bir açılabilir alandır: kapalıyken sadece silik bir zemin görünür
@@ -505,11 +564,12 @@ namespace KayipAda.EditorTools
         //   Sawmill (UnlockableArea)
         //   ├ Locked  : silik zemin
         //   └ Content : ProcessingBuilding
-        //       ├ Body, Roof, Label, ProgressBar
+        //       ├ Body (NavObstacle: işçiler etrafından dolaşır), Roof, Label, ProgressBar
         //       ├ Input  (trigger + BuildingInput, içinde giriş yığını)
         //       └ Output (trigger + BuildingOutput, içinde çıkış yığını)
         private static void CreateBuilding(string name, Transform parent, Vector2 position, BuildingType type, AreaDefinition area,
-                                           Color bodyColor, GameConfig config, ResourceItem itemPrefab)
+                                           Color bodyColor, GameConfig config, ResourceItem itemPrefab,
+                                           out BuildingInput input, out BuildingOutput output)
         {
             GameObject root = new GameObject(name);
             root.transform.SetParent(parent, false);
@@ -523,6 +583,7 @@ namespace KayipAda.EditorTools
 
             // Gövde, çatı şeridi ve ad
             GameObject body = CreateBox("Body", content.transform, BuildingBodyOffset, BuildingBodySize, bodyColor, SortOrder.Building);
+            SetVector2(body.AddComponent<NavObstacle>(), "size", BuildingBodySize);
             Vector2 roofOffset = BuildingBodyOffset + new Vector2(0f, BuildingBodySize.y * 0.4f);
             CreateBox("Roof", content.transform, roofOffset, new Vector2(BuildingBodySize.x, BuildingBodySize.y * 0.2f), RoofColor, SortOrder.BuildingTop);
             Text title = CreateWorldLabel(type.DisplayName, content.transform, BuildingBodyOffset + new Vector2(0f, -0.1f),
@@ -544,13 +605,13 @@ namespace KayipAda.EditorTools
             // Giriş ve çıkış alanları
             GameObject inputSlot = CreateBuildingSlot("Input", content.transform, BuildingInputOffset,
                                                       "Giriş: " + type.Input.DisplayName, config, out ItemPile inputPile);
-            BuildingInput input = inputSlot.AddComponent<BuildingInput>();
+            input = inputSlot.AddComponent<BuildingInput>();
             SetField(input, "config", config);
             SetField(input, "building", building);
 
             GameObject outputSlot = CreateBuildingSlot("Output", content.transform, BuildingOutputOffset,
                                                        "Çıkış: " + type.Output.DisplayName, config, out ItemPile outputPile);
-            BuildingOutput output = outputSlot.AddComponent<BuildingOutput>();
+            output = outputSlot.AddComponent<BuildingOutput>();
             SetField(output, "config", config);
             SetField(output, "building", building);
 
@@ -652,6 +713,80 @@ namespace KayipAda.EditorTools
             SetField(unlockPad, "requiredArea", requiredArea);
             SetField(unlockPad, "label", label);
             SetField(unlockPad, "coinPrefab", coinPrefab);
+        }
+
+        // İşçi kampı: çadır (işçiler etrafından dolaşır) + "KAMP" yazısı + işçilerin çıktığı nokta.
+        //   Camp
+        //   ├ Tent (NavObstacle), Door, Label, SpawnPoint
+        //   ├ Lumberjacks (WorkerSpawner) └ Lumberjack (gizli hazır işçi)
+        //   └ Carriers    (WorkerSpawner) └ Carrier    (gizli hazır işçi)
+        private static Transform CreateCamp(out Transform spawnPoint)
+        {
+            GameObject camp = new GameObject("Camp");
+            camp.transform.position = CampPosition;
+
+            GameObject tent = CreateBox("Tent", camp.transform, Vector2.zero, CampTentSize, TentColor, SortOrder.Building);
+            SetVector2(tent.AddComponent<NavObstacle>(), "size", CampTentSize);
+            CreateBox("Door", camp.transform, new Vector2(0f, -CampTentSize.y * 0.25f), new Vector2(0.35f, CampTentSize.y * 0.5f),
+                      RoofColor, SortOrder.BuildingTop);
+            CreateWorldLabel("KAMP", camp.transform, new Vector2(0f, CampTentSize.y * 0.5f + 0.3f), new Vector2(2f, 0.5f), 36);
+
+            spawnPoint = new GameObject("SpawnPoint").transform;
+            spawnPoint.SetParent(camp.transform, false);
+            spawnPoint.localPosition = CampSpawnOffset;
+            return camp.transform;
+        }
+
+        // Gizli hazır işçi kurar (WorkerSpawner bunu kopyalar). Oyuncu gibi: Kinematic gövde + collider + yığın,
+        // ama joystick yerine WorkerMover ile yürür. Kinematic gövdeler birbirini itmez: oyuncu ve işçiler iç içe geçebilir.
+        private static T CreateWorkerTemplate<T>(string name, WorkerType type, Color color, Vector2 position,
+                                                 GameConfig config, Rect walkArea) where T : Worker
+        {
+            GameObject worker = new GameObject(name);
+            worker.transform.position = position;
+
+            CreateBox("Body", worker.transform, Vector2.zero, Vector2.one * WorkerSize, color, SortOrder.Character);
+
+            Rigidbody2D body = worker.AddComponent<Rigidbody2D>();
+            body.bodyType = RigidbodyType2D.Kinematic;
+            body.gravityScale = 0f;
+            body.interpolation = RigidbodyInterpolation2D.Interpolate;
+            body.sleepMode = RigidbodySleepMode2D.NeverSleep;
+            worker.AddComponent<CircleCollider2D>().radius = WorkerSize / 2f;
+
+            Transform stackRoot = new GameObject("StackRoot").transform;
+            stackRoot.SetParent(worker.transform, false);
+            stackRoot.localPosition = new Vector3(0f, WorkerSize * 0.66f, 0f);
+
+            CarryStack stack = worker.AddComponent<CarryStack>();
+            SetField(stack, "config", config);
+            SetField(stack, "stackRoot", stackRoot);
+
+            WorkerMover mover = worker.AddComponent<WorkerMover>();
+            SetRect(mover, "moveArea", walkArea);
+            SetFloat(mover, "clearance", WorkerClearance);
+
+            T component = worker.AddComponent<T>();
+            SetField(component, "type", type);
+            return component;
+        }
+
+        // Görev tutulunca hazır işçiyi kopyalayıp kamptan çıkaran nokta. Hazır işçi bunun altına taşınır ve gizlenir.
+        private static void CreateSpawner(string name, Transform camp, AreaDefinition hireArea, WorkerType type, Worker template,
+                                          Transform spawnPoint, GameConfig config)
+        {
+            GameObject go = new GameObject(name);
+            go.transform.SetParent(camp, false);
+
+            template.transform.SetParent(go.transform, true);
+            template.gameObject.SetActive(false);
+
+            WorkerSpawner spawner = go.AddComponent<WorkerSpawner>();
+            SetField(spawner, "config", config);
+            SetField(spawner, "hireArea", hireArea);
+            SetField(spawner, "workerType", type);
+            SetField(spawner, "template", template);
+            SetField(spawner, "spawnPoint", spawnPoint);
         }
 
         private static void CreateDock()
@@ -819,6 +954,19 @@ namespace KayipAda.EditorTools
             SerializedProperty property = FindProperty(target, fieldName, out SerializedObject so);
             if (property == null) return;
             property.objectReferenceValue = value;
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        // Nesne listesi alanına (örn. ağaçlar) değer atar.
+        private static void SetArray(Object target, string fieldName, Object[] values)
+        {
+            SerializedProperty property = FindProperty(target, fieldName, out SerializedObject so);
+            if (property == null) return;
+            property.arraySize = values.Length;
+            for (int i = 0; i < values.Length; i++)
+            {
+                property.GetArrayElementAtIndex(i).objectReferenceValue = values[i];
+            }
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 

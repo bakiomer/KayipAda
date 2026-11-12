@@ -41,11 +41,6 @@ namespace KayipAda
             Stock = nodeType.Stock;
         }
 
-        protected override void OnVisitorEnter()
-        {
-            gatherTimer = 0f; // girer girmez ilk kaynağı ver
-        }
-
         private void Update()
         {
             UpdateRegrow();
@@ -66,17 +61,31 @@ namespace KayipAda
 
         private void UpdateGather()
         {
-            if (IsDepleted || Visitor == null || Visitor.IsFull) return;
+            if (IsDepleted) return;
 
-            gatherTimer -= Time.deltaTime;
-            if (gatherTimer > 0f) return;
+            if (gatherTimer > 0f)
+            {
+                gatherTimer -= Time.deltaTime;
+                return;
+            }
+
+            // Her aralıkta içerideki her karaktere (oyuncu, Oduncu işçi) birer kaynak ver.
+            bool gave = false;
+            for (int i = 0; i < Visitors.Count && !IsDepleted; i++)
+            {
+                CarryStack visitor = Visitors[i];
+                if (!CanServe(visitor) || visitor.IsFull) continue;
+
+                ResourceItem item = Instantiate(itemPrefab, transform.position, Quaternion.identity);
+                item.Setup(nodeType.Resource);
+                visitor.TryAdd(item);
+                Stock--;
+                gave = true;
+            }
+
+            if (!gave) return;
             gatherTimer = nodeType.GatherInterval;
 
-            ResourceItem item = Instantiate(itemPrefab, transform.position, Quaternion.identity);
-            item.Setup(nodeType.Resource);
-            Visitor.TryAdd(item);
-
-            Stock--;
             if (IsDepleted)
             {
                 regrowTimer = nodeType.RegrowTime;

@@ -1,7 +1,7 @@
 // BuildingInput.cs
-// İşleme binasının giriş alanı. Karakter içerideyken sırtından SADECE binanın kabul ettiği
-// kaynağı tek tek alır ve giriş yığınına koyar; diğer kaynaklar sırtta kalır.
-// Giriş yığını doluysa almayı bırakır.
+// İşleme binasının giriş alanı. İçerideki karakterlerin (oyuncu, Oduncu işçi) sırtından SADECE binanın
+// kabul ettiği kaynağı tek tek alır ve giriş yığınına koyar; diğer kaynaklar sırtta kalır.
+// Giriş yığını doluysa almayı bırakır (getiren bekler).
 
 using UnityEngine;
 
@@ -13,24 +13,33 @@ namespace KayipAda
 
         private float timer;
 
-        protected override void OnVisitorEnter()
-        {
-            timer = 0f;
-        }
+        public ProcessingBuilding Building => building;
 
         private void Update()
         {
-            if (Visitor == null || building.InputPile.IsFull) return;
+            if (timer > 0f)
+            {
+                timer -= Time.deltaTime;
+                return;
+            }
 
-            timer -= Time.deltaTime;
-            if (timer > 0f) return;
-            timer = config.BuildingTransferInterval;
+            bool moved = false;
+            for (int i = 0; i < Visitors.Count; i++)
+            {
+                if (building.InputPile.IsFull) break;
 
-            // Yığının içinden bu binanın kabul ettiği türden en üsttekini al (yoksa null).
-            ResourceItem item = Visitor.RemoveTop(building.Type.Input);
-            if (item == null) return;
+                CarryStack visitor = Visitors[i];
+                if (!CanServe(visitor)) continue;
 
-            building.InputPile.TryAdd(item);
+                // Yığının içinden bu binanın kabul ettiği türden en üsttekini al (yoksa null).
+                ResourceItem item = visitor.RemoveTop(building.Type.Input);
+                if (item == null) continue;
+
+                building.InputPile.TryAdd(item);
+                moved = true;
+            }
+
+            if (moved) timer = config.BuildingTransferInterval;
         }
     }
 }

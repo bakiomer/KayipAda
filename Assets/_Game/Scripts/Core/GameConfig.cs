@@ -31,6 +31,11 @@ namespace KayipAda
         [field: SerializeField, Min(0.01f)] public float BuildingTransferInterval { get; private set; } = 0.12f;
         // Not: Tarif, işleme süresi ve kapasiteler her binaya özeldir → Data/Buildings
 
+        [field: Header("İşçiler")]
+        [field: Tooltip("Aynı görevde birden fazla işçi varsa kamptan kaç saniye arayla çıktıkları.")]
+        [field: SerializeField, Min(0f)] public float WorkerSpawnInterval { get; private set; } = 0.6f;
+        // Not: İşçi hızı, kapasitesi ve sayısı her göreve özeldir → Data/Workers; tutma fiyatı → Data/Areas (Hire...)
+
         // Not: Adanın boyutu ve oyuncunun yürüyebileceği alan harita yerleşimidir → sahne kurma komutunda.
 
         [field: Header("Bölge Açma (UnlockPad)")]

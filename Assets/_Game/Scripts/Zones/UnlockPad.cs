@@ -56,24 +56,35 @@ namespace KayipAda
             UpdateLabel();
         }
 
-        protected override void OnVisitorEnter()
+        protected override void OnVisitorEnter(CarryStack visitor)
         {
-            timer = config.UnlockStartDelay; // basar basmaz değil, kısa bir beklemeden sonra ödemeye başla
+            // Basar basmaz değil, kısa bir beklemeden sonra ödemeye başla. İşçiler para ödemez.
+            if (visitor.IsPlayer) timer = config.UnlockStartDelay;
         }
 
         private void Update()
         {
-            if (Visitor == null || !VisitorIsPlayer) return;
+            CarryStack player = FindPlayer();
+            if (player == null) return;
 
             timer -= Time.deltaTime;
             if (timer > 0f) return;
             timer = config.UnlockPayInterval;
 
-            PayOnce();
+            PayOnce(player);
+        }
+
+        private CarryStack FindPlayer()
+        {
+            for (int i = 0; i < Visitors.Count; i++)
+            {
+                if (Visitors[i] != null && Visitors[i].IsPlayer) return Visitors[i];
+            }
+            return null;
         }
 
         // Bir parça para öder. Parça boyutu, fiyatın tamamı UnlockPayDuration saniyede ödenecek şekilde hesaplanır.
-        private void PayOnce()
+        private void PayOnce(CarryStack player)
         {
             int ticks = Mathf.Max(1, Mathf.RoundToInt(config.UnlockPayDuration / config.UnlockPayInterval));
             int chunk = Mathf.Max(1, Mathf.CeilToInt((float)area.Price / ticks));
@@ -85,7 +96,7 @@ namespace KayipAda
             CurrencyManager.Instance.TrySpend(amount);
 
             FlyingVisual coin = Instantiate(coinPrefab);
-            coin.Launch(Visitor.transform.position, transform.position, config.CoinFlyDuration);
+            coin.Launch(player.transform.position, transform.position, config.CoinFlyDuration);
 
             // Bu çağrı fiyatı tamamlarsa bölge açılır ve bu kare kendini gizler.
             AreaManager.Instance.AddPayment(area, amount);
