@@ -41,7 +41,7 @@ Ekran görüntülerinde gördüğüm ve düzelttiğim sorunlar:
 - Kamera çerçevesi: oyuncu ekranın alt-ortasında, önündeki alan daha geniş görünüyor (uzaklık 34, ileri bakış 3,5 m).
 - Taşıyıcı işçi ürünleri gemiye götürdüğü için hiç para kazandırmıyordu. Artık oyuncu gemiye ilk malzemeyi getirene
   kadar Pazar'da satıyor, sonra gemiye yardım ediyor.
-- Ekran görüntüleri: `C2_1_baslangic`, `C2_2_odun_tasiyor`, `C2_7_yukaridan`, `C2_8_egik`
+- Ekran görüntüleri: `F_1_baslangic`, `F_2_odun_tasiyor`, `F_7_yukaridan`, `F_8_egik`
 
 ### Bölüm B — Tüm ada aynı kalitede
 - **Geliştirme tezgahı** kampta. Üstüne gelince alttan modern bir panel açılıyor; açıkken joystick yürütmüyor
@@ -57,7 +57,7 @@ Ekran görüntülerinde gördüğüm ve düzelttiğim sorunlar:
   - Taş Atölyesi bayraklı bir ev modeli oldu.
 - **Denge:** `Docs/Denge.md`. İlk kaçış tahmini ~33-36 dakika (hedef 30-45); 3 dakikadan uzun boş bekleme yok.
   Fiyatlar artırıldı: Kayalık 150, Bıçkıhane 250, Oduncu 400, Taşıyıcı 600, Atölye 800, Bahçe 600.
-- Ekran görüntüleri: `C2_B_gelistirme_paneli`, `C2_4_kayalik`, `C2_5_bahce`, `C2_3_hepsi_acik_orta`
+- Ekran görüntüleri: `F_B_gelistirme_paneli`, `F_4_kayalik`, `F_5_bahce`, `F_3_hepsi_acik_orta`
 
 ### Bölüm C — Gemi, son savunma, kaçış
 - **Gemi (Quaternius Ship_Large), 4 aşama** (`Data/Ship.asset`):
@@ -85,7 +85,7 @@ Ekran görüntülerinde gördüğüm ve düzelttiğim sorunlar:
   "KAÇTIN!" ekranı çıkıyor: süre, +100 kaptanlık XP'si ve seviye, "Yeni adalar yakında!", "TEKRAR OYNA".
 - **Hızlı Test Modu:** Tools > Kayıp Ada > Hızlı Test Modu (tikli/tiksiz). Fiyatlar %8'e, gemi malzemesi ve düşman sayısı
   %20'ye iner; kapatınca asıl değerlere dönülür (asıl sayılar hiç değişmez).
-- Ekran görüntüleri: `C2_C_gemi_omurga`, `C2_C_gemi_govde`, `C2_C_son_gece`, `C2_C_son_gece_genel`, `C2_C_tekrar_dene`, `C2_C_kacis_ekrani`
+- Ekran görüntüleri: `F_C_gemi_omurga`, `F_C_gemi_govde`, `F_C_son_gece`, `F_C_son_gece_genel`, `F_C_tekrar_dene`, `F_C_kacis_ekrani`
 
 ### Bölüm D — Kayıt sistemi
 - Kaydedilenler: para, açılan alanlar, yarım ödemeler, geliştirmeler, gemi aşaması ve teslimler, top gülleleri, oyun süresi.
@@ -97,7 +97,7 @@ Ekran görüntülerinde gördüğüm ve düzelttiğim sorunlar:
 - **Tools > Kayıp Ada > Kaydı Sil** menüsü eklendi.
 
 ## 3. Test sonuçları
-Son tur (`C2`): **14 testin 14'ü geçti.**
+Son tur (`F`): **14 testin 14'ü geçti.**
 
 | Test | Sonuç |
 |---|---|
@@ -126,6 +126,10 @@ Son tur (`C2`): **14 testin 14'ü geçti.**
 - **Taşıyıcının gemiye gidişi uzun yol:** İskele adanın kuzey ucunda; Taşıyıcı kalasları oraya taşırken Pazar'a satış durur.
   Bu bilinçli bir seçim (gemi inşasında para yerine malzeme).
 - **Ses dengesi:** Kenney seslerinin seviyeleri `Data/SoundLibrary.asset`'te; kulakla ince ayar yapılmadı.
+- **`_BatchCopy` klasörü:** Testler için projenin kopyası (Git'e girmez) ve diskte birkaç GB yer kaplar. Testleri
+  tekrar çalıştırmayacaksan silebilirsin; Claude bir dahaki gece çalışmasında yeniden oluşturur.
+- **Unity açıkken dosyalar değişti:** Gece boyunca açık editörün altındaki dosyalar (kod, sahne, prefab) güncellendi.
+  Unity'ye tıklayınca hepsini yeniden yükler. "Sahne diskte değişti, yeniden yükle?" diye sorarsa **Reload** de.
 - **İndirilen içerik:** Bu gece internetten hiçbir şey indirmedim. (Önceki oturumda Quaternius'un resmi Google Drive
   paylaşımından `Atlas_Pirate.png` (CC0) indirilmişti; `Docs/Modeller.md`'de yazıyor.)
 
