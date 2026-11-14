@@ -12,19 +12,42 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 44061e1ccc25caf48aac8d0492f739d2, type: 3}
   m_Name: GameConfig
   m_EditorClassIdentifier: Assembly-CSharp::KayipAda.GameConfig
-  <PlayerSpeed>k__BackingField: 5
+  <PlayerSpeed>k__BackingField: 6
+  <TurnSpeed>k__BackingField: 14
   <CarryCapacity>k__BackingField: 10
-  <GatherInterval>k__BackingField: 0.35
+  <AnimRunSpeed>k__BackingField: 6
   <SellInterval>k__BackingField: 0.1
   <StartingCoins>k__BackingField: 0
-  <MoveBounds>k__BackingField: {x: 7, y: 11}
-  <CameraSize>k__BackingField: 8
+  <BuildingTransferInterval>k__BackingField: 0.12
+  <WorkerSpawnInterval>k__BackingField: 0.6
+  <UnlockStartDelay>k__BackingField: 0.3
+  <UnlockPayInterval>k__BackingField: 0.05
+  <UnlockPayDuration>k__BackingField: 2
+  <CoinFlyDuration>k__BackingField: 0.3
+  <CameraPitch>k__BackingField: 50
+  <CameraYaw>k__BackingField: 0
+  <CameraFov>k__BackingField: 32
+  <CameraDistance>k__BackingField: 34
+  <CameraFocusOffset>k__BackingField: 3.5
   <CameraFollowSpeed>k__BackingField: 6
-  <CameraOffsetY>k__BackingField: 2
   <JoystickRange>k__BackingField: 110
   <JoystickDeadZone>k__BackingField: 0.1
-  <StackSpacing>k__BackingField: 0.22
-  <ItemFlySpeed>k__BackingField: 15
-  <SellFlyDuration>k__BackingField: 0.25
-  <NodeBounceScale>k__BackingField: 1.15
-  <NodeBounceRecover>k__BackingField: 10
+  <StackSpacing>k__BackingField: 0.28
+  <StackFollowSharpness>k__BackingField: 25
+  <StackLagPerLevel>k__BackingField: 0.12
+  <ItemFlyDuration>k__BackingField: 0.3
+  <ItemFlyHeight>k__BackingField: 1.2
+  <NodeSquash>k__BackingField: 0.15
+  <NodeShakeAngle>k__BackingField: 6
+  <NodeHitDuration>k__BackingField: 0.25
+  <NodeDepletedScale>k__BackingField: 0.35
+  <PopInDuration>k__BackingField: 0.45
+  <PopInStagger>k__BackingField: 0.04
+  <CoinPunch>k__BackingField: 0.2
+  <FloatingTextDuration>k__BackingField: 0.9
+  <SfxVolume>k__BackingField: 0.8
+  <AmbientVolume>k__BackingField: 0.25
+  <FootstepDistance>k__BackingField: 1.6
+  <PitchComboWindow>k__BackingField: 0.35
+  <PitchComboStep>k__BackingField: 0.04
+  <PitchComboMax>k__BackingField: 0.35

@@ -1,0 +1,63 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c8ff5c293ba495d418d153683a0d5e83, type: 3}
+  m_Name: SoundLibrary
+  m_EditorClassIdentifier: Assembly-CSharp::KayipAda.SoundLibrary
+  entries:
+  - Id: 0
+    Clips:
+    - {fileID: 8300000, guid: cd78dd88f02e4864eb3b50b9351d1470, type: 3}
+    - {fileID: 8300000, guid: 4c0d25c419ee7b442ad9a722c6119e91, type: 3}
+    Volume: 0.6
+  - Id: 1
+    Clips:
+    - {fileID: 8300000, guid: 0a97d3d7d71212648ba9e8285b516bf7, type: 3}
+    Volume: 0.5
+  - Id: 2
+    Clips:
+    - {fileID: 8300000, guid: 440f5d695f968b244bd30c95ee4d2294, type: 3}
+    - {fileID: 8300000, guid: b91cf422d6f226c48bb7399523b9298f, type: 3}
+    Volume: 0.7
+  - Id: 3
+    Clips:
+    - {fileID: 8300000, guid: 3193be3656514684bbcf563eb5d901cd, type: 3}
+    - {fileID: 8300000, guid: 88369222071ff9340b721f68e045106d, type: 3}
+    - {fileID: 8300000, guid: f1e82e57028d0a143b3d3c78068b48a0, type: 3}
+    Volume: 0.5
+  - Id: 4
+    Clips:
+    - {fileID: 8300000, guid: f12b5ae2c8f7a684ea7cfd2c8849fc44, type: 3}
+    Volume: 0.9
+  - Id: 5
+    Clips:
+    - {fileID: 8300000, guid: 5efa5ac123a850947aaeb69a11e18309, type: 3}
+    Volume: 0.7
+  - Id: 6
+    Clips:
+    - {fileID: 8300000, guid: 316f3cfc0d823584bbd19ae339e62df4, type: 3}
+    - {fileID: 8300000, guid: 481ee004c5f71cd4caf5ac5508ae35b8, type: 3}
+    - {fileID: 8300000, guid: c530a6a33826c444c9381d96cc989633, type: 3}
+    - {fileID: 8300000, guid: 17a2d907a23003b4da2096766e20cf1a, type: 3}
+    - {fileID: 8300000, guid: 38595c1bc3162a543aa9c864997b99be, type: 3}
+    Volume: 0.5
+  - Id: 7
+    Clips:
+    - {fileID: 8300000, guid: f0cbe0ae79d20954984e74c4e030b648, type: 3}
+    - {fileID: 8300000, guid: f6dbab89189a01e43b8d6b51518264d8, type: 3}
+    - {fileID: 8300000, guid: ea3a1cedb77557b43870406334bbb88e, type: 3}
+    Volume: 0.4
+  - Id: 8
+    Clips:
+    - {fileID: 8300000, guid: 22b5527f9c84cd049844f84358f5addd, type: 3}
+    - {fileID: 8300000, guid: 2c86879599cff0a49b247f0e4f46dcdc, type: 3}
+    Volume: 0.5
+  ambient: {fileID: 0}

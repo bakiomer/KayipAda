@@ -53,6 +53,7 @@ namespace KayipAda
             worker.name = workerType.DisplayName + " " + (workers.Count + 1);
             worker.gameObject.SetActive(true);
             workers.Add(worker);
+            Tween.PopIn(worker.transform, Vector3.one, config.PopInDuration); // kamptan zıplayarak çıkar
         }
     }
 }

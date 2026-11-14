@@ -1,28 +1,34 @@
 // PlayerController.cs
-// Oyuncuyu sanal joystick'e göre hareket ettirir ve oyuncu ayarlarını (hız, taşıma kapasitesi)
-// GameConfig'ten uygular. Editörde test kolaylığı için joystick boştaysa WASD / ok tuşları da çalışır.
-// Oyuncu yürünebilir alanın (moveArea, sahne kurma komutu adaya göre ayarlar) dışına çıkamaz.
+// Oyuncuyu sanal joystick'e göre yerde (XZ düzleminde) hareket ettirir ve oyuncu ayarlarını
+// (hız, taşıma kapasitesi) GameConfig'ten uygular. Editörde joystick boştaysa WASD / ok tuşları da çalışır.
+// Oyuncu binaların içinden geçemez (NavObstacle) ve adadan denize çıkamaz (IslandShape).
+// Görünüş (animasyon, dönme, toz, adım sesi) CharacterVisual'dadır.
 
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace KayipAda
 {
-    [RequireComponent(typeof(Rigidbody2D), typeof(CarryStack))]
+    [RequireComponent(typeof(Rigidbody), typeof(CarryStack))]
     public class PlayerController : MonoBehaviour
     {
         [SerializeField] private GameConfig config;
         [SerializeField] private VirtualJoystick joystick;
-        [Tooltip("Oyuncunun yürüyebileceği dikdörtgen (dünya koordinatı). Harita yerleşimine aittir.")]
-        [SerializeField] private Rect moveArea = new Rect(-5f, -5f, 10f, 10f);
+        [Tooltip("Oyuncunun gövde yarıçapı (engellere bu kadar yaklaşır).")]
+        [SerializeField] private float radius = 0.4f;
+        [Tooltip("Kıyıdan ne kadar içeride kalır (metre). Harita yerleşimine aittir.")]
+        [SerializeField] private float coastMargin = 1.2f;
 
-        private Rigidbody2D body;
+        // Açık bir panel (geliştirmeler, kaçış ekranı) varken oyuncu yürümez.
+        public static bool InputBlocked { get; set; }
+
+        private Rigidbody body;
         private CarryStack stack;
-        private Vector2 input;
+        private Vector3 move;
 
         private void Awake()
         {
-            body = GetComponent<Rigidbody2D>();
+            body = GetComponent<Rigidbody>();
             stack = GetComponent<CarryStack>();
             stack.IsPlayer = true;
             ApplyStats();
@@ -33,24 +39,28 @@ namespace KayipAda
             // Her karede uygulanır ki Play sırasında GameConfig'te yapılan değişiklik hemen etkilesin.
             ApplyStats();
 
-            input = joystick != null ? joystick.Direction : Vector2.zero;
-            if (input == Vector2.zero)
-            {
-                input = ReadKeyboard();
-            }
+            Vector2 input = joystick != null ? joystick.Direction : Vector2.zero;
+            if (input == Vector2.zero) input = ReadKeyboard();
+            if (InputBlocked) input = Vector2.zero; // geliştirme paneli açıkken yürümez
+
+            // Joystick yukarısı = kameranın baktığı yön.
+            Quaternion yaw = Quaternion.Euler(0f, config.CameraYaw, 0f);
+            move = yaw * new Vector3(input.x, 0f, input.y);
         }
 
         private void FixedUpdate()
         {
-            Vector2 next = body.position + input * config.PlayerSpeed * Time.fixedDeltaTime;
-            next.x = Mathf.Clamp(next.x, moveArea.xMin, moveArea.xMax);
-            next.y = Mathf.Clamp(next.y, moveArea.yMin, moveArea.yMax);
-            body.MovePosition(next);
+            float speed = config.PlayerSpeed * UpgradeManager.Multiplier(UpgradeStat.PlayerSpeed);
+            Vector3 next = body.position + move * (speed * Time.fixedDeltaTime);
+            Vector2 flat = new Vector2(next.x, next.z);
+            flat = NavObstacle.PushOut(flat, radius);
+            if (IslandShape.Instance != null) flat = IslandShape.Instance.ClampInside(flat, coastMargin);
+            body.MovePosition(new Vector3(flat.x, 0f, flat.y));
         }
 
         private void ApplyStats()
         {
-            stack.Capacity = config.CarryCapacity;
+            stack.Capacity = config.CarryCapacity + UpgradeManager.Extra(UpgradeStat.PlayerCapacity, config.CarryCapacity);
         }
 
         private Vector2 ReadKeyboard()

@@ -1,5 +1,5 @@
 // CarrierWorker.cs
-// Taşıyıcı işçi: bina çıkışlarından ürün (kalas, tuğla) alır, Pazar'a götürüp satar, tekrarlar.
+// Taşıyıcı işçi: bina çıkışlarından ürün (kalas, tuğla) alır; gemi o ürünü bekliyorsa gemiye, yoksa Pazar'a götürür.
 // Durumlar: çıkış seç → çıkışa git → al → Pazar'a git → sat → (baştan).
 // Çıkış boşalınca: başka çıkışta ürün varsa oraya gider, bina hâlâ çalışıyorsa yeni ürünü bekler,
 // yoksa elindekini satmaya gider. Hiç ürün yoksa olduğu yerde bekler.
@@ -19,6 +19,7 @@ namespace KayipAda
 
         private State state = State.FindSource;
         private BuildingOutput source;
+        private InteractionZone dropZone; // Pazar ya da gemi teslim alanı
 
         protected override void Awake()
         {
@@ -76,16 +77,33 @@ namespace KayipAda
                     break;
 
                 case State.Sell:
-                    // Pazar sırttakileri kendisi satar.
+                    // Pazar ya da gemi teslim alanı sırttakileri kendisi alır.
                     if (Stack.IsEmpty) state = State.FindSource;
+                    else if (dropZone != market && !CarriesShipNeed()) StartSelling(); // gemi artık istemiyor: kalanı sat
                     break;
             }
         }
 
         private void StartSelling()
         {
-            GoTo(market);
+            ShipBuilder ship = ShipBuilder.Instance;
+            dropZone = ship != null && ship.Delivery != null && ship.Delivery.isActiveAndEnabled && CarriesShipNeed()
+                ? ship.Delivery
+                : (InteractionZone)market;
+            GoTo(dropZone);
             state = State.GoToMarket;
+        }
+
+        // Sırtındakilerden gemiye lazım olan var mı?
+        private bool CarriesShipNeed()
+        {
+            ShipBuilder ship = ShipBuilder.Instance;
+            if (ship == null || ship.IsComplete || !ship.IsStarted) return false;
+            foreach (BuildingOutput s in sources)
+            {
+                if (s != null && ship.Needs(s.Building.Type.Output) && Stack.CountOf(s.Building.Type.Output) > 0) return true;
+            }
+            return false;
         }
 
         // Ürünü olan, açık binaların çıkışlarından en doluyu seçer ("except" hariç). Yoksa null.

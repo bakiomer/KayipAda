@@ -37,6 +37,7 @@ namespace KayipAda
 
                 building.InputPile.TryAdd(item);
                 moved = true;
+                if (visitor.IsPlayer) AudioManager.Play(SoundId.Drop, 0.5f);
             }
 
             if (moved) timer = config.BuildingTransferInterval;

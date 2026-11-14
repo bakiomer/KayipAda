@@ -1,57 +1,81 @@
 // ResourceItem.cs
-// Dünyada duran veya taşınan tek bir kaynak parçası.
-// Tüm kaynak türleri aynı prefab'ı (ResourceItem.prefab) kullanır; Setup ile türü ve rengi atanır.
-// Satılınca hedefe uçup küçülerek kaybolur.
+// Dünyada duran, taşınan veya uçan tek bir kaynak parçası (3D model).
+// Her türün kendi prefab'ı vardır (Prefabs/Items); Setup ile türü atanır.
+// FlyTo ile hedefe kavis çizerek uçar; yeni bir uçuş eskisinin yerini alır (yarıda kesilen uçuş sorun çıkarmaz).
 
-using System.Collections;
+using System;
 using UnityEngine;
 
 namespace KayipAda
 {
-    [RequireComponent(typeof(SpriteRenderer))]
     public class ResourceItem : MonoBehaviour
     {
         public ResourceType Type { get; private set; }
+        public bool IsFlying { get; private set; }
 
-        private SpriteRenderer spriteRenderer;
+        private Vector3 flightStart;
+        private Func<Vector3> flightTarget;
+        private float flightHeight;
+        private float flightDuration;
+        private float flightTime;
+        private Action flightDone;
+        private bool shrinkWhileFlying;
+        private Vector3 baseScale;
 
         private void Awake()
         {
-            spriteRenderer = GetComponent<SpriteRenderer>();
+            baseScale = transform.localScale;
         }
 
-        // Yeni oluşturulan parçaya türünü verir (renk ve isim türden gelir).
         public void Setup(ResourceType type)
         {
             Type = type;
-            spriteRenderer.color = type.Color;
             name = type.DisplayName;
         }
 
-        public void SetSortingOrder(int order)
+        // Hedefe (hareket edebilir) kavis çizerek uçar; varınca onArrive çağrılır.
+        public void FlyTo(Func<Vector3> target, float height, float duration, Action onArrive = null)
         {
-            spriteRenderer.sortingOrder = order;
+            flightStart = transform.position;
+            flightTarget = target;
+            flightHeight = height;
+            flightDuration = Mathf.Max(0.01f, duration);
+            flightTime = 0f;
+            flightDone = onArrive;
+            shrinkWhileFlying = false;
+            IsFlying = true;
         }
 
-        // Verilen noktaya uçar, küçülür ve kendini yok eder.
-        public void FlyToAndDestroy(Vector3 target, float duration)
+        // Hedefe uçar, küçülür ve kendini yok eder (satış, binada işlenme).
+        public void FlyToAndDestroy(Vector3 target, float height, float duration, Action onArrive = null)
         {
-            StartCoroutine(FlyRoutine(target, duration));
-        }
-
-        private IEnumerator FlyRoutine(Vector3 target, float duration)
-        {
-            Vector3 start = transform.position;
-            Vector3 startScale = transform.localScale;
-
-            for (float t = 0f; t < 1f; t += Time.deltaTime / duration)
+            transform.SetParent(null, true);
+            FlyTo(() => target, height, duration, () =>
             {
-                transform.position = Vector3.Lerp(start, target, t);
-                transform.localScale = Vector3.Lerp(startScale, Vector3.zero, t);
-                yield return null;
-            }
+                onArrive?.Invoke();
+                Destroy(gameObject);
+            });
+            shrinkWhileFlying = true;
+        }
 
-            Destroy(gameObject);
+        private void Update()
+        {
+            if (!IsFlying) return;
+
+            flightTime += Time.deltaTime;
+            float t = Mathf.Clamp01(flightTime / flightDuration);
+            Vector3 end = flightTarget();
+            Vector3 pos = Vector3.LerpUnclamped(flightStart, end, Tween.EaseInOutQuad(t));
+            pos.y += Mathf.Sin(t * Mathf.PI) * flightHeight;
+            transform.position = pos;
+            transform.Rotate(0f, 540f * Time.deltaTime * (1f - t), 0f, Space.World); // uçarken hafif döner
+            if (shrinkWhileFlying) transform.localScale = baseScale * Mathf.Lerp(1f, 0.3f, t * t);
+
+            if (t < 1f) return;
+            IsFlying = false;
+            Action done = flightDone;
+            flightDone = null;
+            done?.Invoke();
         }
     }
 }

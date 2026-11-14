@@ -1,14 +1,23 @@
 // PrototypeSceneBuilder.cs
 // Editör menü komutu: Tools > Kayıp Ada > Prototip Sahnesini Kur
-// Sahneyi her seferinde sıfırdan kurar ve Assets/_Game/Scenes/Prototype.unity olarak kaydeder.
-// Ayar dosyalarını (Data/ altındakiler) SADECE yoksa oluşturur; senin değişikliklerin korunur.
-// Sahneye yeni nesne eklenecekse önce bu dosya güncellenir (her aşamada).
+// 3D sahneyi her seferinde sıfırdan kurar ve Assets/_Game/Scenes/Prototype.unity olarak kaydeder. Sırası:
+//   1) Proje ayarları (URP 3D, TextMeshPro)        → ProjectSetup3D
+//   2) Ayar dosyaları (Data/) — SADECE yoksa oluşturulur; senin değişikliklerin korunur
+//   3) Üretilen görseller (ada, su, arayüz dokuları) → ArtGenerator
+//   4) Prefab'lar (karakter, kaynak, bina, süs...)   → PrefabFactory (modeller ModelCatalog'da)
+//   5) Sahne: ışık, kamera, ada, su, oyun nesneleri, süsler, arayüz
+//   6) Docs/Modeller.md yeniden yazılır
+// Harita yerleşimi MapLayout'tadır.
 
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
+using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.UI;
 
@@ -16,123 +25,25 @@ namespace KayipAda.EditorTools
 {
     public static class PrototypeSceneBuilder
     {
-        // ---------------------------------------------------------------- Dosya yolları
-        private const string Root = "Assets/_Game";
-        private const string SpritePath = Root + "/Art/WhiteSquare.png";
-        private const string ItemPrefabPath = Root + "/Prefabs/ResourceItem.prefab";
-        private const string CoinPrefabPath = Root + "/Prefabs/Coin.prefab";
+        private const string Root = BuilderUtil.Root;
         private const string ConfigPath = Root + "/Data/GameConfig.asset";
         private const string ResourceTypesFolder = Root + "/Data/ResourceTypes";
         private const string NodeTypesFolder = Root + "/Data/NodeTypes";
         private const string AreasFolder = Root + "/Data/Areas";
         private const string BuildingTypesFolder = Root + "/Data/Buildings";
         private const string WorkerTypesFolder = Root + "/Data/Workers";
+        private const string SoundLibraryPath = Root + "/Data/SoundLibrary.asset";
+        private const string UpgradesFolder = Root + "/Data/Upgrades";
+        private const string ShipConfigPath = Root + "/Data/Ship.asset";
+        private const string PostProcessPath = ProjectSetup3D.SettingsFolder + "/PostProcess.asset";
         private const string ScenePath = Root + "/Scenes/Prototype.unity";
+        private const string AudioFolder = BuilderUtil.ThirdParty + "/Audio";
 
-        // ---------------------------------------------------------------- Harita yerleşimi
-        // Bunlar oynanış ayarı değil, haritanın yerleşimi ve görünümüdür.
-        //
-        //            ~~~~ deniz ~~~~
-        //               [iskele]              y 13..17 (denize uzanan tahta)
-        //   ┌──────── İSKELE ALANI ────────┐   y 10.8..12.8 (gemi için, ileride)
-        //   │ TAŞ ATÖLYESİ  │               │   y 7..10
-        //   │ KAYALIK       │ MEYVE BAHÇESİ │   y 4..10 (başta çitle kapalı)
-        //   │ kaya    kaya  │ çalı    çalı  │
-        //   └───────────────┴──────────────┘
-        //      [kare 1]          [kare 2]       y 2.9
-        //    ağaç      ağaç      ağaç           BAŞLANGIÇ SAHİLİ
-        // KAMP [oduncu] oyuncu [taşıyıcı]       y -3 (işçi kareleri sırayla görünür)
-        //     PAZAR          BIÇKIHANE          y -8..-5
-        //
-        // Kamera oyuncuyu takip eder; harita tek ekrana sığmak zorunda değil. Başlangıç ekranında
-        // (kamera y≈-1, görünür y≈-9..7) ağaçlar, Pazar, Bıçkıhane karesi ve 1. kare görünür.
-        // Dar (20:9) telefonlarda yarım ekran genişliği ~3.6 birim → başlangıç nesneleri x = -3.3..3.3 içinde.
-        private static readonly Rect IslandRect = new Rect(-6f, -10f, 12f, 23f);  // x -6..6, y -10..13
-        private const float WalkMargin = 0.5f;                                      // oyuncu adanın kenarına kadar değil
-        private static readonly Vector2 PlayerStart = new Vector2(0f, -3f);
-
-        // Başlangıç sahili (her zaman açık)
-        private static readonly Vector2[] TreePositions = { new Vector2(-2.6f, 0f), new Vector2(0f, 1.2f), new Vector2(2.6f, 0f) };
-        private static readonly Vector2 MarketPosition = new Vector2(-2.2f, -6.8f);   // x -3.5..-0.9
-        private static readonly Vector2 MarketSize = new Vector2(2.6f, 2.6f);
-        private static readonly Vector2 SawmillPosition = new Vector2(2.1f, -7.1f);    // x 0.6..3.6, y -8.2..-5.3
-
-        // İşleme binası düzeni (bina kökünün konumuna göre):
-        //        [=====ilerleme=====]
-        //        [   bina gövdesi   ]
-        //     [giriş]          [çıkış]       ← aralarında oyuncu ikisine birden değmesin diye boşluk var
-        private static readonly Vector2 BuildingBodyOffset = new Vector2(0f, 0.9f);
-        private static readonly Vector2 BuildingBodySize = new Vector2(2.2f, 1.2f);
-        private static readonly Vector2 BuildingBarOffset = new Vector2(0f, 1.75f);
-        private const float BuildingBarWidth = 1.8f;
-        private const float BuildingBarHeight = 0.18f;
-        private static readonly Vector2 BuildingInputOffset = new Vector2(-1f, -0.6f);
-        private static readonly Vector2 BuildingOutputOffset = new Vector2(1f, -0.6f);
-        private static readonly Vector2 BuildingSlotSize = new Vector2(1f, 1f);
-        private static readonly Vector2 BuildingFootprintOffset = new Vector2(0f, 0.35f); // kapalıyken görünen silik alan
-        private static readonly Vector2 BuildingFootprintSize = new Vector2(3f, 2.9f);
-        private static readonly Vector2 BuildingPadOffset = new Vector2(0f, -0.3f);       // açma karesi binanın yerinde durur
-        private const int PileColumns = 2;
-        private static readonly Vector2 PileSpacing = new Vector2(0.4f, 0.2f);
-
-        // İşçi kampı (sol kenarda; işçiler buradan çıkar) ve işçi tutma kareleri (oyuncunun iki yanında)
-        private static readonly Vector2 CampPosition = new Vector2(-4.7f, -3f);        // çadır x -5.4..-4.0
-        private static readonly Vector2 CampTentSize = new Vector2(1.4f, 1.1f);
-        private static readonly Vector2 CampSpawnOffset = new Vector2(0f, -1f);        // çadırın hemen altı
-        private static readonly Vector2 LumberjackPadPosition = new Vector2(-2.3f, -3.3f);
-        private static readonly Vector2 CarrierPadPosition = new Vector2(2.3f, -3.3f);
-        private const float WorkerSize = 0.75f;
-        private const float WorkerClearance = WorkerSize / 2f + 0.05f; // engellere bu kadar yaklaşır
-
-        // Açılabilir bölgeler
-        private static readonly Rect RockyRect = new Rect(-5.6f, 4f, 5.2f, 6f);    // x -5.6..-0.4
-        private static readonly Rect OrchardRect = new Rect(0.4f, 4f, 5.2f, 6f);   // x 0.4..5.6
-        private static readonly Vector2[] RockPositions = { new Vector2(-4.3f, 5.6f), new Vector2(-1.6f, 5.6f) };
-        private static readonly Vector2 StoneWorkshopPosition = new Vector2(-3f, 8.2f); // kayalığın üst kısmı
-        private static readonly Vector2[] BushPositions = { new Vector2(2f, 5.8f), new Vector2(4f, 8.2f) };
-        private static readonly Vector2 RockyPadPosition = new Vector2(-2.4f, 2.9f);
-        private static readonly Vector2 OrchardPadPosition = new Vector2(2.4f, 2.9f);
-        private static readonly Vector2 PadSize = new Vector2(1.8f, 1.8f);
-        private const float FenceThickness = 0.15f;
-
-        // İskele (ileride gemi burada inşa edilecek)
-        private static readonly Rect DockAreaRect = new Rect(-2.5f, 10.8f, 5f, 2f);
-        private static readonly Rect PierRect = new Rect(-1f, 13f, 2f, 4f);
-
-        private static readonly Vector2 NodeTriggerSize = new Vector2(2.2f, 2.2f); // komşu noktaların alanları çakışmaz
-        private const float PlayerSize = 0.9f;
-        private static readonly Vector3 ItemSize = new Vector3(0.7f, 0.2f, 1f);
-        private const float CoinSize = 0.3f;
-        private const float TopBarHeight = 150f; // UI birimi (1080x1920 referansında)
-
-        // Renkler
-        private static readonly Color SeaColor = new Color(0.20f, 0.55f, 0.80f);
-        private static readonly Color SandColor = new Color(0.93f, 0.84f, 0.60f);
-        private static readonly Color RockyGroundColor = new Color(0.78f, 0.74f, 0.66f);
-        private static readonly Color OrchardGroundColor = new Color(0.66f, 0.80f, 0.48f);
-        private static readonly Color DockColor = new Color(0.55f, 0.40f, 0.25f);
-        private static readonly Color FenceColor = new Color(0.40f, 0.26f, 0.12f);
-        private static readonly Color PlayerColor = new Color(0.85f, 0.20f, 0.35f); // meyveyle karışmasın diye kırmızımsı
-        private static readonly Color TrunkColor = new Color(0.45f, 0.30f, 0.15f);
-        private static readonly Color LeafColor = new Color(0.25f, 0.65f, 0.30f);
-        private static readonly Color RockDarkColor = new Color(0.45f, 0.45f, 0.48f);
-        private static readonly Color RockLightColor = new Color(0.65f, 0.65f, 0.68f);
-        private static readonly Color BushColor = new Color(0.18f, 0.50f, 0.25f);
-        private static readonly Color MarketColor = new Color(1.00f, 0.80f, 0.20f, 0.6f);
-        private static readonly Color PadColor = new Color(1.00f, 1.00f, 1.00f, 0.55f);
-        private static readonly Color CoinColor = new Color(1.00f, 0.82f, 0.20f);
-        private static readonly Color LabelColor = new Color(0.30f, 0.20f, 0.05f);
-        private static readonly Color TopBarColor = new Color(0.12f, 0.16f, 0.22f);
-        private static readonly Color SawmillColor = new Color(0.70f, 0.45f, 0.25f);
-        private static readonly Color WorkshopColor = new Color(0.45f, 0.50f, 0.60f);
-        private static readonly Color RoofColor = new Color(0.30f, 0.20f, 0.15f);
-        private static readonly Color SlotColor = new Color(1.00f, 1.00f, 1.00f, 0.35f);
-        private static readonly Color FootprintColor = new Color(0.30f, 0.20f, 0.10f, 0.15f);
-        private static readonly Color BarBackColor = new Color(0.10f, 0.10f, 0.10f, 0.7f);
-        private static readonly Color BarFillColor = new Color(0.35f, 0.90f, 0.35f);
-        private static readonly Color TentColor = new Color(0.85f, 0.50f, 0.25f);
-        private static readonly Color LumberjackColor = new Color(0.20f, 0.45f, 0.85f); // mavi (oyuncu kırmızımsı)
-        private static readonly Color CarrierColor = new Color(0.60f, 0.30f, 0.80f);    // mor
+        // Renkler (ışık, deniz, arayüz)
+        private static readonly Color SunColor = new Color(1f, 0.93f, 0.80f);
+        private static readonly Color SeaColor = new Color(0.10f, 0.42f, 0.64f);
+        private static readonly Color FogColor = new Color(0.36f, 0.66f, 0.82f);
+        private static readonly Color PanelColor = new Color(0.10f, 0.13f, 0.19f, 0.86f);
 
         // Kaynak türlerinin ilk değerleri (dosya zaten varsa dokunulmaz; sonradan Inspector'dan değiştir).
         private static readonly Color WoodColor = new Color(0.60f, 0.38f, 0.18f);
@@ -141,18 +52,76 @@ namespace KayipAda.EditorTools
         private static readonly Color PlankColor = new Color(0.90f, 0.72f, 0.45f);
         private static readonly Color BrickColor = new Color(0.75f, 0.28f, 0.20f);
 
-        private static Sprite square;
-
         [MenuItem("Tools/Kayıp Ada/Prototip Sahnesini Kur")]
         public static void Build()
         {
             // Açık sahnede kaydedilmemiş değişiklik varsa kullanıcıya sor.
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
 
-            // 1) Dosyalar: klasörler, sprite, ayar dosyaları, prefab'lar
-            CreateFolders();
-            CreateWhiteSquareSprite();
-            CreateConfigIfMissing();
+            if (!ProjectSetup3D.Run())
+            {
+                // TextMeshPro kaynakları ekleniyor; bitince kurulum kendiliğinden devam eder.
+                AssetDatabase.importPackageCompleted += OnTmpImported;
+                return;
+            }
+            BuildNow();
+        }
+
+        private static void OnTmpImported(string packageName)
+        {
+            AssetDatabase.importPackageCompleted -= OnTmpImported;
+            EditorApplication.delayCall += BuildNow;
+        }
+
+        public static void BuildNow()
+        {
+            try
+            {
+                EditorUtility.DisplayProgressBar("Kayıp Ada", "Ayar dosyaları...", 0.05f);
+                CreateDataAssets();
+                EnsureModelsImported();
+
+                EditorUtility.DisplayProgressBar("Kayıp Ada", "Görseller üretiliyor...", 0.15f);
+                PrefabFactory.Reset();
+                ArtGenerator.GenerateSprites();
+
+                EditorUtility.DisplayProgressBar("Kayıp Ada", "Prefab'lar üretiliyor...", 0.3f);
+                Prefabs prefabs = BuildPrefabs();
+
+                EditorUtility.DisplayProgressBar("Kayıp Ada", "Sahne kuruluyor...", 0.6f);
+                BuildScene(prefabs);
+
+                DocsWriter.Write(PrefabFactory.MissingModels);
+                AssetDatabase.SaveAssets();
+
+                if (PrefabFactory.MissingModels.Count > 0)
+                {
+                    Debug.LogWarning("Kayıp Ada: Bulunamayan modeller (yerine pembe kutu kondu):\n" + string.Join("\n", PrefabFactory.MissingModels));
+                }
+                Debug.Log("Kayıp Ada: 3D prototip sahnesi kuruldu → " + ScenePath);
+            }
+            finally
+            {
+                EditorUtility.ClearProgressBar();
+            }
+        }
+
+        // ================================================================ Ayar dosyaları
+
+        private static void CreateDataAssets()
+        {
+            BuilderUtil.EnsureFolder(ResourceTypesFolder);
+            BuilderUtil.EnsureFolder(NodeTypesFolder);
+            BuilderUtil.EnsureFolder(AreasFolder);
+            BuilderUtil.EnsureFolder(BuildingTypesFolder);
+            BuilderUtil.EnsureFolder(WorkerTypesFolder);
+            BuilderUtil.EnsureFolder(UpgradesFolder);
+            BuilderUtil.EnsureFolder(Root + "/Scenes");
+
+            if (BuilderUtil.Load<GameConfig>(ConfigPath) == null)
+            {
+                AssetDatabase.CreateAsset(ScriptableObject.CreateInstance<GameConfig>(), ConfigPath);
+            }
             //                          dosya     kimlik   ad       renk        fiyat
             CreateResourceTypeIfMissing("Wood",  "wood",  "Odun",  WoodColor,  5);
             CreateResourceTypeIfMissing("Stone", "stone", "Taş",   StoneColor, 8);
@@ -161,689 +130,998 @@ namespace KayipAda.EditorTools
             CreateResourceTypeIfMissing("Brick", "brick", "Tuğla", BrickColor, 22); // 2 taş (16) → 1 tuğla (22)
             //                      dosya        kaynak   stok  toplama aralığı  yeniden dolma (sn)
             CreateNodeTypeIfMissing("Tree",      "Wood",  8,    0.35f,           10f);
-            CreateNodeTypeIfMissing("Rock",      "Stone", 6,    0.6f,            15f); // ağaçtan yavaş
+            CreateNodeTypeIfMissing("Rock",      "Stone", 6,    0.6f,            15f);
             CreateNodeTypeIfMissing("FruitBush", "Fruit", 5,    0.4f,            12f);
-            //                  dosya      kimlik     ad               fiyat
-            CreateAreaIfMissing("Rocky",   "rocky",   "Kayalık",       60);
-            CreateAreaIfMissing("Orchard", "orchard", "Meyve Bahçesi", 150);
-            CreateAreaIfMissing("Sawmill", "sawmill", "Bıçkıhane", 80);
-            CreateAreaIfMissing("StoneWorkshop", "stone_workshop", "Taş Atölyesi", 200);
-            CreateAreaIfMissing("HireLumberjack", "hire_lumberjack", "Oduncu", 120);  // işçi tutma fiyatları
-            CreateAreaIfMissing("HireCarrier",    "hire_carrier",    "Taşıyıcı", 180);
-            //                        dosya         ad          hız   kapasite  sayı
-            CreateWorkerTypeIfMissing("Lumberjack", "Oduncu",   3f,   6,        1);
-            CreateWorkerTypeIfMissing("Carrier",    "Taşıyıcı", 3.5f, 8,        1);
+            //                  dosya             kimlik             ad               fiyat
+            CreateAreaIfMissing("Rocky",          "rocky",           "Kayalık",       150);
+            CreateAreaIfMissing("Orchard",        "orchard",         "Meyve Bahçesi", 600);
+            CreateAreaIfMissing("Sawmill",        "sawmill",         "Bıçkıhane",     250);
+            CreateAreaIfMissing("StoneWorkshop",  "stone_workshop",  "Taş Atölyesi",  800);
+            CreateAreaIfMissing("HireLumberjack", "hire_lumberjack", "Oduncu",        400);
+            CreateAreaIfMissing("HireCarrier",    "hire_carrier",    "Taşıyıcı",      600);
             //                          dosya            ad              girdi    adet  çıktı    adet  süre  giriş kap. çıkış kap.
             CreateBuildingTypeIfMissing("Sawmill",       "Bıçkıhane",    "Wood",  2,    "Plank", 1,    2f,   10,        10);
             CreateBuildingTypeIfMissing("StoneWorkshop", "Taş Atölyesi", "Stone", 2,    "Brick", 1,    3f,   10,        10);
-            CreateItemPrefab();
-            CreateCoinPrefab();
-
-            // 2) Temiz bir sahne aç
-            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-
-            // Önemli: Yeni sahne açılınca Unity bellekteki varlık referanslarını boşaltabilir.
-            // Bu yüzden tüm dosyaları yeni sahneden SONRA diskten yüklüyoruz.
-            square = AssetDatabase.LoadAssetAtPath<Sprite>(SpritePath);
-            GameConfig config = AssetDatabase.LoadAssetAtPath<GameConfig>(ConfigPath);
-            ResourceNodeType treeType = Load<ResourceNodeType>(NodeTypesFolder, "Tree");
-            ResourceNodeType rockType = Load<ResourceNodeType>(NodeTypesFolder, "Rock");
-            ResourceNodeType bushType = Load<ResourceNodeType>(NodeTypesFolder, "FruitBush");
-            AreaDefinition rocky = Load<AreaDefinition>(AreasFolder, "Rocky");
-            AreaDefinition orchard = Load<AreaDefinition>(AreasFolder, "Orchard");
-            AreaDefinition sawmillArea = Load<AreaDefinition>(AreasFolder, "Sawmill");
-            AreaDefinition workshopArea = Load<AreaDefinition>(AreasFolder, "StoneWorkshop");
-            BuildingType sawmillType = Load<BuildingType>(BuildingTypesFolder, "Sawmill");
-            BuildingType workshopType = Load<BuildingType>(BuildingTypesFolder, "StoneWorkshop");
-            AreaDefinition hireLumberjack = Load<AreaDefinition>(AreasFolder, "HireLumberjack");
-            AreaDefinition hireCarrier = Load<AreaDefinition>(AreasFolder, "HireCarrier");
-            WorkerType lumberjackType = Load<WorkerType>(WorkerTypesFolder, "Lumberjack");
-            WorkerType carrierType = Load<WorkerType>(WorkerTypesFolder, "Carrier");
-            ResourceItem itemPrefab = AssetDatabase.LoadAssetAtPath<ResourceItem>(ItemPrefabPath);
-            FlyingVisual coinPrefab = AssetDatabase.LoadAssetAtPath<FlyingVisual>(CoinPrefabPath);
-            if (square == null || config == null || treeType == null || rockType == null || bushType == null
-                || rocky == null || orchard == null || sawmillArea == null || workshopArea == null
-                || sawmillType == null || workshopType == null || itemPrefab == null || coinPrefab == null
-                || hireLumberjack == null || hireCarrier == null || lumberjackType == null || carrierType == null)
-            {
-                Debug.LogError("Kayıp Ada: Gerekli dosyalardan biri yüklenemedi. Komutu tekrar çalıştırın.");
-                return;
-            }
-
-            // 3) Yöneticiler ve ışık
-            CreateLight();
-            GameObject managers = new GameObject("Managers");
-            SetField(managers.AddComponent<CurrencyManager>(), "config", config);
-            managers.AddComponent<AreaManager>();
-
-            // 4) Arayüz (oyuncu joystick'e, kamera üst çubuğa ihtiyaç duyduğu için önce kurulur)
-            VirtualJoystick joystick = CreateUI(config, out RectTransform topBar);
-
-            // 5) Ada zemini
-            CreateBox("Island", null, IslandRect.center, IslandRect.size, SandColor, SortOrder.Ground);
-
-            // 6) Başlangıç sahili: ağaçlar ve Pazar
-            Transform beach = new GameObject("Beach").transform;
-            ResourceNode[] trees = new ResourceNode[TreePositions.Length];
-            for (int i = 0; i < TreePositions.Length; i++)
-            {
-                trees[i] = CreateNode("Tree " + (i + 1), beach, TreePositions[i], treeType, config, itemPrefab, BuildTreeVisual);
-            }
-            Market market = CreateMarket(beach, config);
-            CreateBuilding("Sawmill", beach, SawmillPosition, sawmillType, sawmillArea, SawmillColor, config, itemPrefab,
-                           out BuildingInput sawmillInput, out BuildingOutput sawmillOutput);
-
-            // 7) Açılabilir bölgeler ve açma kareleri
-            Transform rockyContent = CreateArea("Area Rocky", rocky, RockyRect, RockyGroundColor);
-            for (int i = 0; i < RockPositions.Length; i++)
-            {
-                CreateNode("Rock " + (i + 1), rockyContent, RockPositions[i], rockType, config, itemPrefab, BuildRockVisual);
-            }
-            // Taş atölyesi kayalığın içinde: kayalık açılınca (kapalı haliyle) görünür, kendi karesiyle açılır.
-            CreateBuilding("StoneWorkshop", rockyContent, StoneWorkshopPosition, workshopType, workshopArea, WorkshopColor, config, itemPrefab,
-                           out BuildingInput _, out BuildingOutput workshopOutput);
-
-            Transform orchardContent = CreateArea("Area Orchard", orchard, OrchardRect, OrchardGroundColor);
-            for (int i = 0; i < BushPositions.Length; i++)
-            {
-                CreateNode("FruitBush " + (i + 1), orchardContent, BushPositions[i], bushType, config, itemPrefab, BuildBushVisual);
-            }
-
-            // 1. kare kayalığı açar; 2. kare kayalık açılınca görünür ve meyve bahçesini açar.
-            CreateUnlockPad("Pad Rocky", RockyPadPosition, rocky, null, config, coinPrefab);
-            CreateUnlockPad("Pad Orchard", OrchardPadPosition, orchard, rocky, config, coinPrefab);
-
-            // Bina kareleri binanın yerinde durur. Bıçkıhane baştan açılabilir; Taş Atölyesi kayalık açılınca görünür.
-            CreateUnlockPad("Pad Sawmill", SawmillPosition + BuildingPadOffset, sawmillArea, null, config, coinPrefab);
-            CreateUnlockPad("Pad StoneWorkshop", StoneWorkshopPosition + BuildingPadOffset, workshopArea, rocky, config, coinPrefab);
-
-            // İşçi kareleri: Oduncu, Bıçkıhane açılınca; Taşıyıcı, Oduncu tutulunca görünür.
-            CreateUnlockPad("Pad Lumberjack", LumberjackPadPosition, hireLumberjack, sawmillArea, config, coinPrefab);
-            CreateUnlockPad("Pad Carrier", CarrierPadPosition, hireCarrier, hireLumberjack, config, coinPrefab);
-
-            // 8) İskele alanı (şimdilik boş)
-            CreateDock();
-
-            // 9) İşçi kampı (işçiler oyuncuyla aynı alanda yürür)
-            Rect walkArea = new Rect(IslandRect.xMin + WalkMargin, IslandRect.yMin + WalkMargin,
-                                     IslandRect.width - WalkMargin * 2f, IslandRect.height - WalkMargin * 2f);
-            Transform camp = CreateCamp(out Transform spawnPoint);
-
-            LumberjackWorker lumberjack = CreateWorkerTemplate<LumberjackWorker>("Lumberjack", lumberjackType, LumberjackColor,
-                                                                                  spawnPoint.position, config, walkArea);
-            SetArray(lumberjack, "trees", trees);
-            SetField(lumberjack, "buildingInput", sawmillInput);
-            CreateSpawner("Lumberjacks", camp, hireLumberjack, lumberjackType, lumberjack, spawnPoint, config);
-
-            CarrierWorker carrier = CreateWorkerTemplate<CarrierWorker>("Carrier", carrierType, CarrierColor,
-                                                                         spawnPoint.position, config, walkArea);
-            SetArray(carrier, "sources", new Object[] { sawmillOutput, workshopOutput });
-            SetField(carrier, "market", market);
-            CreateSpawner("Carriers", camp, hireCarrier, carrierType, carrier, spawnPoint, config);
-
-            // 10) Oyuncu ve kamera
-            GameObject player = CreatePlayer(config, joystick, walkArea);
-            CreateCamera(config, player.transform, topBar);
-
-            // 11) Kaydet ve proje ayarları
-            EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene(), ScenePath);
-            EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
-            PlayerSettings.defaultInterfaceOrientation = UIOrientation.Portrait;
-
-            Debug.Log("Kayıp Ada: Prototip sahnesi kuruldu → " + ScenePath);
-        }
-
-        // ================================================================ Dosyalar
-
-        private static void CreateFolders()
-        {
-            string[] folders = { "Art", "Prefabs", "Data", "Data/ResourceTypes", "Data/NodeTypes", "Data/Areas", "Data/Buildings", "Data/Workers", "Scenes" };
-            foreach (string folder in folders)
-            {
-                string path = Root + "/" + folder;
-                if (AssetDatabase.IsValidFolder(path)) continue;
-
-                int slash = path.LastIndexOf('/');
-                AssetDatabase.CreateFolder(path.Substring(0, slash), path.Substring(slash + 1));
-            }
-        }
-
-        // 1x1 birimlik beyaz kare sprite üretir; tüm kutular bunu renklendirerek kullanır.
-        private static void CreateWhiteSquareSprite()
-        {
-            const int size = 32;
-
-            if (!System.IO.File.Exists(SpritePath))
-            {
-                Texture2D tex = new Texture2D(size, size);
-                Color[] pixels = new Color[size * size];
-                for (int i = 0; i < pixels.Length; i++) pixels[i] = Color.white;
-                tex.SetPixels(pixels);
-                System.IO.File.WriteAllBytes(SpritePath, tex.EncodeToPNG());
-                Object.DestroyImmediate(tex);
-                AssetDatabase.ImportAsset(SpritePath);
-            }
-
-            TextureImporter importer = (TextureImporter)AssetImporter.GetAtPath(SpritePath);
-            importer.textureType = TextureImporterType.Sprite;
-            importer.spriteImportMode = SpriteImportMode.Single;
-            importer.spritePixelsPerUnit = size; // 32 piksel = 1 birim
-            importer.filterMode = FilterMode.Point;
-            importer.SaveAndReimport();
-        }
-
-        private static void CreateConfigIfMissing()
-        {
-            if (AssetDatabase.LoadAssetAtPath<GameConfig>(ConfigPath) != null) return;
-
-            AssetDatabase.CreateAsset(ScriptableObject.CreateInstance<GameConfig>(), ConfigPath);
+            //                        dosya         ad          hız   kapasite  sayı
+            CreateWorkerTypeIfMissing("Lumberjack", "Oduncu",   3.2f, 6,        1);
+            CreateWorkerTypeIfMissing("Carrier",    "Taşıyıcı", 3.6f, 8,        1);
+            //                  dosya          kimlik        ad          fiyat
+            CreateAreaIfMissing("ShipKeel",    "ship_keel",  "Omurga",   1);   // gemi omurgası bitince açılır (toplar bekler)
+            CreateAreaIfMissing("Cannon1",     "cannon_1",   "Top",      400);
+            CreateAreaIfMissing("Cannon2",     "cannon_2",   "Top",      550);
+            CreateAreaIfMissing("Cannon3",     "cannon_3",   "Top",      700);
+            //                     dosya             kimlik             ad                    etkilediği                      fiyatlar (5 seviye)                  toplam etki (5 seviye)
+            CreateUpgradeIfMissing("PlayerCapacity", "player_capacity", "Taşıma Kapasitesi", UpgradeStat.PlayerCapacity, new[] { 120, 280, 520, 840, 1300 },  new[] { 2f, 4f, 6f, 9f, 12f });
+            CreateUpgradeIfMissing("PlayerSpeed",    "player_speed",    "Koşu Hızı",         UpgradeStat.PlayerSpeed,    new[] { 140, 320, 600, 960, 1440 },  new[] { 0.08f, 0.16f, 0.24f, 0.32f, 0.4f });
+            CreateUpgradeIfMissing("WorkerSpeed",    "worker_speed",    "İşçi Hızı",         UpgradeStat.WorkerSpeed,    new[] { 180, 400, 720, 1120, 1640 },  new[] { 0.12f, 0.24f, 0.36f, 0.5f, 0.65f });
+            CreateUpgradeIfMissing("WorkerCapacity", "worker_capacity", "İşçi Kapasitesi",   UpgradeStat.WorkerCapacity, new[] { 180, 400, 720, 1120, 1640 },  new[] { 1f, 2f, 3f, 5f, 7f });
+            CreateUpgradeIfMissing("BuildingSpeed",  "building_speed",  "Bina Hızı",         UpgradeStat.BuildingSpeed,  new[] { 220, 480, 840, 1300, 1900 }, new[] { 0.15f, 0.3f, 0.5f, 0.7f, 1f });
+            CreateShipConfigIfMissing();
+            CreateSoundLibraryIfMissing();
             AssetDatabase.SaveAssets();
         }
 
-        private static void CreateResourceTypeIfMissing(string fileName, string id, string displayName, Color color, int sellPrice)
+        private static void CreateUpgradeIfMissing(string file, string id, string displayName, UpgradeStat stat, int[] prices, float[] bonuses)
         {
-            string path = ResourceTypesFolder + "/" + fileName + ".asset";
-            if (AssetDatabase.LoadAssetAtPath<ResourceType>(path) != null) return;
-
-            ResourceType type = ScriptableObject.CreateInstance<ResourceType>();
-            type.EditorSetup(id, displayName, color, sellPrice);
+            string path = UpgradesFolder + "/" + file + ".asset";
+            if (BuilderUtil.Load<UpgradeType>(path) != null) return;
+            UpgradeType type = ScriptableObject.CreateInstance<UpgradeType>();
+            type.EditorSetup(id, displayName, stat, prices, bonuses);
             AssetDatabase.CreateAsset(type, path);
-            AssetDatabase.SaveAssets();
         }
 
-        private static void CreateNodeTypeIfMissing(string fileName, string resourceFile, int stock, float gatherInterval, float regrowTime)
-        {
-            string path = NodeTypesFolder + "/" + fileName + ".asset";
-            if (AssetDatabase.LoadAssetAtPath<ResourceNodeType>(path) != null) return;
+        private static readonly string[] UpgradeFiles = { "PlayerCapacity", "PlayerSpeed", "WorkerSpeed", "WorkerCapacity", "BuildingSpeed" };
 
-            ResourceNodeType nodeType = ScriptableObject.CreateInstance<ResourceNodeType>();
-            nodeType.EditorSetup(Load<ResourceType>(ResourceTypesFolder, resourceFile), stock, gatherInterval, regrowTime);
-            AssetDatabase.CreateAsset(nodeType, path);
-            AssetDatabase.SaveAssets();
+        // Gemi aşamaları: Omurga (kalas), Gövde (kalas + tuğla), Direk ve Yelken (kalas + odun), Erzak (meyve).
+        private static void CreateShipConfigIfMissing()
+        {
+            if (BuilderUtil.Load<ShipConfig>(ShipConfigPath) != null) return;
+            ResourceType plank = Data<ResourceType>(ResourceTypesFolder, "Plank");
+            ResourceType brick = Data<ResourceType>(ResourceTypesFolder, "Brick");
+            ResourceType wood = Data<ResourceType>(ResourceTypesFolder, "Wood");
+            ResourceType fruit = Data<ResourceType>(ResourceTypesFolder, "Fruit");
+            ShipConfig ship = ScriptableObject.CreateInstance<ShipConfig>();
+            ship.Stages = new[]
+            {
+                Stage("Omurga", 0.3f, Req(plank, 40)),
+                Stage("Gövde", 0.7f, Req(plank, 50), Req(brick, 40)),
+                Stage("Direk ve Yelken", 1f, Req(plank, 40), Req(wood, 60)),
+                Stage("Erzak", 1f, Req(fruit, 45))
+            };
+            ship.KeelDoneArea = Data<AreaDefinition>(AreasFolder, "ShipKeel");
+            ship.AmmoResource = Data<ResourceType>(ResourceTypesFolder, "Stone");
+            AssetDatabase.CreateAsset(ship, ShipConfigPath);
         }
 
-        private static void CreateAreaIfMissing(string fileName, string id, string displayName, int price)
+        private static ShipConfig.Stage Stage(string name, float reveal, params ShipConfig.Requirement[] reqs)
         {
-            string path = AreasFolder + "/" + fileName + ".asset";
-            if (AssetDatabase.LoadAssetAtPath<AreaDefinition>(path) != null) return;
+            return new ShipConfig.Stage { Name = name, RevealAtEnd = reveal, Requirements = reqs };
+        }
 
+        private static ShipConfig.Requirement Req(ResourceType type, int amount)
+        {
+            return new ShipConfig.Requirement { Resource = type, Amount = amount };
+        }
+
+        private static T Data<T>(string folder, string file) where T : Object => BuilderUtil.Load<T>(folder + "/" + file + ".asset");
+
+        private static void CreateResourceTypeIfMissing(string file, string id, string displayName, Color color, int price)
+        {
+            string path = ResourceTypesFolder + "/" + file + ".asset";
+            if (BuilderUtil.Load<ResourceType>(path) != null) return;
+            ResourceType type = ScriptableObject.CreateInstance<ResourceType>();
+            type.EditorSetup(id, displayName, color, price);
+            AssetDatabase.CreateAsset(type, path);
+        }
+
+        private static void CreateNodeTypeIfMissing(string file, string resource, int stock, float interval, float regrow)
+        {
+            string path = NodeTypesFolder + "/" + file + ".asset";
+            if (BuilderUtil.Load<ResourceNodeType>(path) != null) return;
+            ResourceNodeType type = ScriptableObject.CreateInstance<ResourceNodeType>();
+            type.EditorSetup(Data<ResourceType>(ResourceTypesFolder, resource), stock, interval, regrow);
+            AssetDatabase.CreateAsset(type, path);
+        }
+
+        private static void CreateAreaIfMissing(string file, string id, string displayName, int price)
+        {
+            string path = AreasFolder + "/" + file + ".asset";
+            if (BuilderUtil.Load<AreaDefinition>(path) != null) return;
             AreaDefinition area = ScriptableObject.CreateInstance<AreaDefinition>();
             area.EditorSetup(id, displayName, price);
             AssetDatabase.CreateAsset(area, path);
-            AssetDatabase.SaveAssets();
         }
 
-        private static void CreateBuildingTypeIfMissing(string fileName, string displayName, string inputFile, int inputAmount,
-                                                        string outputFile, int outputAmount, float processTime,
-                                                        int inputCapacity, int outputCapacity)
+        private static void CreateBuildingTypeIfMissing(string file, string displayName, string input, int inputAmount,
+                                                        string output, int outputAmount, float time, int inCap, int outCap)
         {
-            string path = BuildingTypesFolder + "/" + fileName + ".asset";
-            if (AssetDatabase.LoadAssetAtPath<BuildingType>(path) != null) return;
-
+            string path = BuildingTypesFolder + "/" + file + ".asset";
+            if (BuilderUtil.Load<BuildingType>(path) != null) return;
             BuildingType type = ScriptableObject.CreateInstance<BuildingType>();
-            type.EditorSetup(displayName,
-                             Load<ResourceType>(ResourceTypesFolder, inputFile), inputAmount,
-                             Load<ResourceType>(ResourceTypesFolder, outputFile), outputAmount,
-                             processTime, inputCapacity, outputCapacity);
+            type.EditorSetup(displayName, Data<ResourceType>(ResourceTypesFolder, input), inputAmount,
+                             Data<ResourceType>(ResourceTypesFolder, output), outputAmount, time, inCap, outCap);
             AssetDatabase.CreateAsset(type, path);
-            AssetDatabase.SaveAssets();
         }
 
-        private static void CreateWorkerTypeIfMissing(string fileName, string displayName, float moveSpeed, int carryCapacity, int count)
+        private static void CreateWorkerTypeIfMissing(string file, string displayName, float speed, int capacity, int count)
         {
-            string path = WorkerTypesFolder + "/" + fileName + ".asset";
-            if (AssetDatabase.LoadAssetAtPath<WorkerType>(path) != null) return;
-
+            string path = WorkerTypesFolder + "/" + file + ".asset";
+            if (BuilderUtil.Load<WorkerType>(path) != null) return;
             WorkerType type = ScriptableObject.CreateInstance<WorkerType>();
-            type.EditorSetup(displayName, moveSpeed, carryCapacity, count);
+            type.EditorSetup(displayName, speed, capacity, count);
             AssetDatabase.CreateAsset(type, path);
-            AssetDatabase.SaveAssets();
         }
 
-        private static T Load<T>(string folder, string fileName) where T : Object
+        // Ses seçimi (Docs/Modeller.md'de de listelenir). Dosya varsa sadece eksik ses türleri eklenir.
+        private static void CreateSoundLibraryIfMissing()
         {
-            return AssetDatabase.LoadAssetAtPath<T>(folder + "/" + fileName + ".asset");
+            SoundLibrary.Entry[] defaults =
+            {
+                Sound(SoundId.Collect, 0.6f, "Interface/pluck_001", "Interface/pluck_002"),
+                Sound(SoundId.Chop, 0.5f, "RPG/chop"),
+                Sound(SoundId.Sell, 0.7f, "RPG/handleCoins", "RPG/handleCoins2"),
+                Sound(SoundId.Coin, 0.5f, "Interface/tick_001", "Interface/tick_002", "Interface/tick_004"),
+                Sound(SoundId.Unlock, 0.9f, "Interface/confirmation_002"),
+                Sound(SoundId.Button, 0.7f, "Interface/click_001"),
+                Sound(SoundId.Footstep, 0.5f, "Impact/footstep_grass_000", "Impact/footstep_grass_001", "Impact/footstep_grass_002",
+                      "Impact/footstep_grass_003", "Impact/footstep_grass_004"),
+                Sound(SoundId.Drop, 0.4f, "Impact/impactWood_light_000", "Impact/impactWood_light_001", "Impact/impactWood_light_002"),
+                Sound(SoundId.Produce, 0.5f, "Impact/impactPlank_medium_000", "Impact/impactPlank_medium_001"),
+                Sound(SoundId.Upgrade, 0.9f, "Interface/maximize_006"),
+                Sound(SoundId.Build, 0.6f, "Impact/impactWood_medium_000", "Impact/impactWood_medium_001", "Impact/impactWood_medium_002"),
+                Sound(SoundId.CannonFire, 0.9f, "Impact/impactMetal_heavy_000", "Impact/impactMetal_heavy_001"),
+                Sound(SoundId.Explosion, 0.9f, "Impact/impactPunch_heavy_000", "Impact/impactPunch_heavy_001", "Impact/impactPunch_heavy_002"),
+                Sound(SoundId.EnemyDie, 0.7f, "Impact/impactSoft_heavy_000", "Impact/impactSoft_heavy_001"),
+                Sound(SoundId.ShipHit, 0.6f, "Impact/impactWood_heavy_000", "Impact/impactWood_heavy_001", "Impact/impactWood_heavy_002"),
+                Sound(SoundId.NightStart, 0.9f, "Interface/bong_001"),
+                Sound(SoundId.Victory, 1f, "Interface/confirmation_004")
+            };
+
+            SoundLibrary existing = BuilderUtil.Load<SoundLibrary>(SoundLibraryPath);
+            if (existing != null)
+            {
+                existing.EditorAddMissing(defaults);
+                EditorUtility.SetDirty(existing);
+                return;
+            }
+            SoundLibrary library = ScriptableObject.CreateInstance<SoundLibrary>();
+            library.EditorSetup(defaults, null);
+            AssetDatabase.CreateAsset(library, SoundLibraryPath);
         }
 
-        // Tüm kaynak türlerinin kullandığı tek prefab. Rengi oyunda ResourceType'tan gelir.
-        private static void CreateItemPrefab()
+        private static SoundLibrary.Entry Sound(SoundId id, float volume, params string[] files)
         {
-            GameObject item = new GameObject("ResourceItem");
-            item.transform.localScale = ItemSize;
-            SpriteRenderer sr = item.AddComponent<SpriteRenderer>();
-            sr.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(SpritePath);
-            item.AddComponent<ResourceItem>();
-
-            PrefabUtility.SaveAsPrefabAsset(item, ItemPrefabPath);
-            Object.DestroyImmediate(item);
+            List<AudioClip> clips = new List<AudioClip>();
+            foreach (string file in files)
+            {
+                AudioClip clip = BuilderUtil.Load<AudioClip>(AudioFolder + "/" + file + ".ogg");
+                if (clip != null) clips.Add(clip);
+                else Debug.LogWarning("Kayıp Ada: Ses bulunamadı (atlandı): " + file);
+            }
+            return new SoundLibrary.Entry { Id = id, Clips = clips.ToArray(), Volume = volume };
         }
 
-        // Açma karesine akan küçük para parçası.
-        private static void CreateCoinPrefab()
+        // Model içe aktarma ayarları uygulanmamışsa (ör. ilk açılış) ThirdParty klasörünü yeniden içe aktarır.
+        private static void EnsureModelsImported()
         {
-            GameObject coin = new GameObject("Coin");
-            coin.transform.localScale = Vector3.one * CoinSize;
-            SpriteRenderer sr = coin.AddComponent<SpriteRenderer>();
-            sr.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(SpritePath);
-            sr.color = CoinColor;
-            sr.sortingOrder = SortOrder.Effect;
-            coin.AddComponent<FlyingVisual>();
+            ModelImporter importer = AssetImporter.GetAtPath(ModelCatalog.Player.Path) as ModelImporter;
+            if (importer == null) return;
+            if (importer.animationType == ModelImporterAnimationType.Generic && !importer.importCameras && !importer.importLights) return;
 
-            PrefabUtility.SaveAsPrefabAsset(coin, CoinPrefabPath);
-            Object.DestroyImmediate(coin);
+            EditorUtility.DisplayProgressBar("Kayıp Ada", "Modeller yeniden içe aktarılıyor (bir kez)...", 0.1f);
+            AssetDatabase.ImportAsset(BuilderUtil.ThirdParty, ImportAssetOptions.ImportRecursive | ImportAssetOptions.ForceUpdate);
         }
 
-        // ================================================================ Dünya nesneleri
+        // ================================================================ Prefab'lar
 
-        private static void CreateLight()
+        private class Prefabs
         {
-            // URP 2D'de sprite'ların görünmesi için genel (global) ışık.
-            GameObject go = new GameObject("Global Light 2D");
-            Light2D light = go.AddComponent<Light2D>();
-            light.lightType = Light2D.LightType.Global;
+            public GameObject Player, Lumberjack, Carrier, Market, UnlockPad, Camp, Confetti, Coin, FloatingText;
+            public GameObject[] Palms, Rocks;
+            public GameObject FruitTree, Sawmill, Workshop;
+            public GameObject Sparkle, Explosion, Skeleton, UpgradeStation, Cannon;
+            public readonly Dictionary<string, GameObject> Decor = new Dictionary<string, GameObject>();
         }
 
-        private static void CreateCamera(GameConfig config, Transform target, RectTransform topBar)
+        private static Prefabs BuildPrefabs()
+        {
+            GameConfig config = BuilderUtil.Load<GameConfig>(ConfigPath);
+            Prefabs p = new Prefabs();
+
+            // Kaynak modelleri: her kaynak türü kendi prefab'ını bilir.
+            LinkItem("Wood", PrefabFactory.BuildItem(ModelCatalog.Wood));
+            LinkItem("Stone", PrefabFactory.BuildItem(ModelCatalog.Stone));
+            LinkItem("Fruit", PrefabFactory.BuildItem(ModelCatalog.Fruit));
+            LinkItem("Plank", PrefabFactory.BuildItem(ModelCatalog.Plank));
+            LinkItem("Brick", PrefabFactory.BuildItem(ModelCatalog.Brick));
+            p.Coin = PrefabFactory.BuildCoin();
+
+            // Efektler
+            GameObject dust = PrefabFactory.BuildDust();
+            p.Confetti = PrefabFactory.BuildConfetti();
+            GameObject smoke = PrefabFactory.BuildWorkEffect("Smoke", false);
+            GameObject sawdust = PrefabFactory.BuildWorkEffect("Sawdust", true);
+            p.FloatingText = PrefabFactory.BuildFloatingText();
+            p.Sparkle = PrefabFactory.BuildSparkle();
+            p.Explosion = PrefabFactory.BuildExplosion();
+
+            // Karakterler (ortak denetleyici oyuncu modelinin klipleriyle kurulur)
+            UnityEditor.Animations.AnimatorController baseController = CharacterAnimation.GetBaseController(ModelCatalog.Player.Path);
+            p.Player = PrefabFactory.BuildCharacter(ModelCatalog.Player,
+                CharacterAnimation.GetOverride(baseController, ModelCatalog.Player.Path, ModelCatalog.Player.Key), config, dust, true);
+            p.Lumberjack = PrefabFactory.BuildCharacter(ModelCatalog.Lumberjack,
+                CharacterAnimation.GetOverride(baseController, ModelCatalog.Lumberjack.Path, ModelCatalog.Lumberjack.Key), config, dust, false);
+            p.Carrier = PrefabFactory.BuildCharacter(ModelCatalog.Carrier,
+                CharacterAnimation.GetOverride(baseController, ModelCatalog.Carrier.Path, ModelCatalog.Carrier.Key), config, dust, false);
+
+            foreach (ModelSpec enemy in ModelCatalog.Enemies)
+            {
+                RuntimeAnimatorController controller;
+                if (enemy.File == "Characters_Skeleton")
+                {
+                    p.Skeleton = PrefabFactory.BuildSkeletonEnemy(enemy, CharacterAnimation.GetEnemyController(enemy.Path, "Enemy_Skeleton"));
+                    continue;
+                }
+                if (enemy.File == "Characters_Shark") controller = CharacterAnimation.GetSingleClip(enemy.Path, "Swim", enemy.Key);
+                else if (enemy.File == "Characters_Tentacle") controller = CharacterAnimation.GetSingleClip(enemy.Path, "Tentacle_Idle", enemy.Key);
+                else controller = CharacterAnimation.GetOverride(baseController, enemy.Path, enemy.Key);
+                PrefabFactory.BuildEnemy(enemy, controller);
+            }
+
+            // Kaynak noktaları
+            ResourceNodeType tree = Data<ResourceNodeType>(NodeTypesFolder, "Tree");
+            ResourceNodeType rock = Data<ResourceNodeType>(NodeTypesFolder, "Rock");
+            ResourceNodeType bush = Data<ResourceNodeType>(NodeTypesFolder, "FruitBush");
+            p.Palms = new GameObject[ModelCatalog.Palms.Length];
+            for (int i = 0; i < p.Palms.Length; i++)
+                p.Palms[i] = PrefabFactory.BuildNode(ModelCatalog.Palms[i], tree, config, 1.6f, new Vector2(0.6f, 0.6f), 1.1f);
+            p.Rocks = new GameObject[ModelCatalog.Rocks.Length];
+            for (int i = 0; i < p.Rocks.Length; i++)
+                p.Rocks[i] = PrefabFactory.BuildNode(ModelCatalog.Rocks[i], rock, config, 1.9f, new Vector2(1.3f, 1.3f), 1.5f);
+            p.FruitTree = PrefabFactory.BuildNode(ModelCatalog.FruitTree, bush, config, 1.7f, new Vector2(0.8f, 0.8f), 1.2f);
+
+            // Binalar ve alanlar
+            p.Sawmill = PrefabFactory.BuildBuilding(ModelCatalog.Sawmill, Data<BuildingType>(BuildingTypesFolder, "Sawmill"), config,
+                                                    sawdust, FindDecor("LogPile"), new Vector3(-2.7f, 0f, 1.2f));
+            p.Workshop = PrefabFactory.BuildBuilding(ModelCatalog.Workshop, Data<BuildingType>(BuildingTypesFolder, "StoneWorkshop"), config,
+                                                     smoke, FindDecor("Workbench"), new Vector3(-2.6f, 0f, 0.8f));
+            p.Market = PrefabFactory.BuildMarket(config);
+            p.UnlockPad = PrefabFactory.BuildUnlockPad(config);
+            p.Camp = PrefabFactory.BuildCamp();
+
+            foreach (ModelSpec spec in ModelCatalog.Decor) p.Decor[spec.Key] = PrefabFactory.BuildDecor(spec);
+            foreach (ModelSpec spec in new[] { ModelCatalog.Fence, ModelCatalog.Dock, ModelCatalog.DockPole, ModelCatalog.ShipWreck })
+                p.Decor[spec.Key] = PrefabFactory.BuildDecor(spec);
+
+            p.UpgradeStation = PrefabFactory.BuildUpgradeStation(config);
+            p.Cannon = PrefabFactory.BuildCannon(BuilderUtil.Load<ShipConfig>(ShipConfigPath), config, p.Decor["CannonBall"]);
+            return p;
+        }
+
+        private static ModelSpec FindDecor(string key)
+        {
+            foreach (ModelSpec spec in ModelCatalog.Decor) if (spec.Key == key) return spec;
+            return null;
+        }
+
+        private static void LinkItem(string resourceFile, ResourceItem prefab)
+        {
+            ResourceType type = Data<ResourceType>(ResourceTypesFolder, resourceFile);
+            if (type == null) return;
+            type.EditorSetPrefab(prefab);
+            EditorUtility.SetDirty(type);
+        }
+
+        // ================================================================ Sahne
+
+        private static void BuildScene(Prefabs p)
+        {
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            // Önemli: Yeni sahne açılınca Unity bellekteki varlık referanslarını boşaltabilir (özellikle bu çalıştırmada
+            // yeni oluşturulan dosyalar). Bu yüzden ayar dosyası yeni sahneden SONRA diskten yüklenir.
+            GameConfig config = BuilderUtil.Load<GameConfig>(ConfigPath);
+
+            // Ada şekli (zemin, su ve yerleşim bunu kullanır)
+            GameObject islandGo = new GameObject("Island");
+            IslandShape island = islandGo.AddComponent<IslandShape>();
+            island.EditorSetup(MapLayout.IslandCenter, MapLayout.IslandRadius);
+
+            CreateLighting();
+            CreateGroundAndWater(islandGo, island);
+
+            // Yöneticiler
+            GameObject managers = new GameObject("Managers");
+            managers.AddComponent<AppSettings>();
+            BuilderUtil.SetField(managers.AddComponent<CurrencyManager>(), "config", config);
+            BuilderUtil.SetField(managers.AddComponent<AreaManager>(), "config", config);
+            UpgradeManager upgrades = managers.AddComponent<UpgradeManager>();
+            BuilderUtil.SetField(upgrades, "config", config);
+            List<Object> upgradeTypes = new List<Object>();
+            foreach (string file in UpgradeFiles) upgradeTypes.Add(Data<UpgradeType>(UpgradesFolder, file));
+            BuilderUtil.SetArray(upgrades, "upgrades", upgradeTypes.ToArray());
+            BuilderUtil.SetField(managers.AddComponent<SaveManager>(), "config", config);
+            Effects effects = managers.AddComponent<Effects>();
+            BuilderUtil.SetField(effects, "sparklePrefab", p.Sparkle.GetComponent<ParticleSystem>());
+            BuilderUtil.SetField(effects, "explosionPrefab", p.Explosion.GetComponent<ParticleSystem>());
+            BuilderUtil.SetField(effects, "config", config);
+            BuilderUtil.SetField(effects, "confettiPrefab", p.Confetti.GetComponent<ParticleSystem>());
+            BuilderUtil.SetField(effects, "coinPrefab", p.Coin);
+            BuilderUtil.SetField(effects, "floatingTextPrefab", p.FloatingText.GetComponent<FloatingText>());
+            AudioManager audio = managers.AddComponent<AudioManager>();
+            BuilderUtil.SetField(audio, "config", config);
+            BuilderUtil.SetField(audio, "library", BuilderUtil.Load<SoundLibrary>(SoundLibraryPath));
+
+            VirtualJoystick joystick = CreateUI(config);
+            List<Vector3> reserved = new List<Vector3>(); // süs konmayacak yerler: (x, z, yarıçap)
+
+            // Veriler
+            AreaDefinition rocky = Data<AreaDefinition>(AreasFolder, "Rocky");
+            AreaDefinition orchard = Data<AreaDefinition>(AreasFolder, "Orchard");
+            AreaDefinition sawmillArea = Data<AreaDefinition>(AreasFolder, "Sawmill");
+            AreaDefinition workshopArea = Data<AreaDefinition>(AreasFolder, "StoneWorkshop");
+            AreaDefinition hireLumberjack = Data<AreaDefinition>(AreasFolder, "HireLumberjack");
+            AreaDefinition hireCarrier = Data<AreaDefinition>(AreasFolder, "HireCarrier");
+
+            // Başlangıç sahili: palmiyeler, Pazar, Bıçkıhane
+            Transform beach = new GameObject("Beach").transform;
+            ResourceNode[] palms = new ResourceNode[MapLayout.Palms.Length];
+            for (int i = 0; i < palms.Length; i++)
+            {
+                GameObject palm = Place(p.Palms[i % p.Palms.Length], beach, MapLayout.Palms[i], 0f);
+                // Eğik palmiye tepesi kameraya doğru yatıp oyuncuyu kapatmasın: yana (yoldan dışarı) yatır.
+                AlignLean(palm, MapLayout.Palms[i].x < 0f ? Vector3.left : Vector3.right);
+                palms[i] = palm.GetComponent<ResourceNode>();
+                Reserve(reserved, MapLayout.Palms[i], 2.2f);
+            }
+            Market market = Place(p.Market, beach, MapLayout.Market, 0f).GetComponent<Market>();
+            Reserve(reserved, MapLayout.Market + new Vector3(0f, 0f, 1f), 3.6f);
+
+            GameObject sawmill = PlaceBuilding("Sawmill", beach, MapLayout.Sawmill, p.Sawmill, sawmillArea, config);
+            Reserve(reserved, MapLayout.Sawmill, 3.8f);
+
+            // Kayalık: kayalar + Taş Atölyesi (kendi karesiyle açılır)
+            Transform rockyContent = CreateArea("Area Rocky", rocky, MapLayout.RockyRect, p.Decor[ModelCatalog.Fence.Key], config);
+            for (int i = 0; i < MapLayout.Rocks.Length; i++)
+            {
+                Place(p.Rocks[i % p.Rocks.Length], rockyContent, MapLayout.Rocks[i], i * 110f);
+            }
+            GameObject workshop = PlaceBuilding("StoneWorkshop", rockyContent, MapLayout.Workshop, p.Workshop, workshopArea, config);
+
+            // Meyve bahçesi
+            Transform orchardContent = CreateArea("Area Orchard", orchard, MapLayout.OrchardRect, p.Decor[ModelCatalog.Fence.Key], config);
+            foreach (Vector3 pos in MapLayout.FruitTrees) Place(p.FruitTree, orchardContent, pos, pos.x * 40f);
+
+            // Açma kareleri: bölge girişlerinde ve binaların yerinde.
+            Transform pads = new GameObject("UnlockPads").transform;
+            CreatePad(p.UnlockPad, pads, "Pad Rocky", MapLayout.RockyPad, rocky, null, reserved);
+            CreatePad(p.UnlockPad, pads, "Pad Orchard", MapLayout.OrchardPad, orchard, rocky, reserved);
+            CreatePad(p.UnlockPad, pads, "Pad Sawmill", MapLayout.Sawmill + MapLayout.BuildingPadOffset, sawmillArea, null, reserved);
+            CreatePad(p.UnlockPad, pads, "Pad StoneWorkshop", MapLayout.Workshop + MapLayout.BuildingPadOffset, workshopArea, rocky, reserved);
+            CreatePad(p.UnlockPad, pads, "Pad Lumberjack", MapLayout.LumberjackPad, hireLumberjack, sawmillArea, reserved);
+            CreatePad(p.UnlockPad, pads, "Pad Carrier", MapLayout.CarrierPad, hireCarrier, hireLumberjack, reserved);
+
+            // Kamp, geliştirme tezgahı ve işçiler
+            Place(p.Camp, null, MapLayout.Camp, 0f);
+            Reserve(reserved, MapLayout.Camp, 3.8f);
+            UpgradePanel upgradePanel = UiBuilder.CreateUpgradePanel(config, upgradeTypes);
+            GameObject station = Place(p.UpgradeStation, null, MapLayout.UpgradeStation, 0f);
+            BuilderUtil.SetField(station.GetComponent<UpgradeStation>(), "panel", upgradePanel);
+            Reserve(reserved, MapLayout.UpgradeStation, 2.6f);
+            Transform workers = new GameObject("Workers").transform;
+
+            LumberjackWorker lumberjack = CreateWorkerTemplate<LumberjackWorker>(p.Lumberjack, Data<WorkerType>(WorkerTypesFolder, "Lumberjack"));
+            BuilderUtil.SetArray(lumberjack, "trees", palms);
+            BuilderUtil.SetField(lumberjack, "buildingInput", sawmill.GetComponentInChildren<BuildingInput>(true));
+            CreateSpawner("Lumberjacks", workers, hireLumberjack, Data<WorkerType>(WorkerTypesFolder, "Lumberjack"), lumberjack, config);
+
+            CarrierWorker carrier = CreateWorkerTemplate<CarrierWorker>(p.Carrier, Data<WorkerType>(WorkerTypesFolder, "Carrier"));
+            BuilderUtil.SetArray(carrier, "sources", new Object[]
+            {
+                sawmill.GetComponentInChildren<BuildingOutput>(true), workshop.GetComponentInChildren<BuildingOutput>(true)
+            });
+            BuilderUtil.SetField(carrier, "market", market);
+            CreateSpawner("Carriers", workers, hireCarrier, Data<WorkerType>(WorkerTypesFolder, "Carrier"), carrier, config);
+
+            // Oyuncu ve kamera
+            GameObject player = Place(p.Player, null, MapLayout.PlayerStart, 0f);
+            player.name = "Player";
+            BuilderUtil.SetField(player.GetComponent<PlayerController>(), "joystick", joystick);
+            Reserve(reserved, MapLayout.PlayerStart, 1.5f);
+            CameraFollow follow = CreateCamera(config, player.transform);
+
+            // İskele: gemi inşası, toplar, son gece ve kaçış
+            CreateShipyard(p, island, config, pads, follow, reserved);
+            CreateGuide(config, follow.GetComponent<Camera>());
+
+            // Süsler (yolları ve oyun alanlarını kapatmadan)
+            Reserve(reserved, new Vector3(MapLayout.RockyRect.center.x, 0f, MapLayout.RockyRect.center.y), 6.6f);
+            Reserve(reserved, new Vector3(MapLayout.OrchardRect.center.x, 0f, MapLayout.OrchardRect.center.y), 6.6f);
+            ScatterDecor(p, island, reserved);
+
+            // Kaydet ve proje ayarları
+            EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene(), ScenePath);
+            EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
+        }
+
+        // Modelin tepesinin (sınır kutusu ortasının) kökten hangi yöne kaydığını bulur ve nesneyi o yön
+        // istenen yöne bakacak şekilde döndürür (eğik palmiyeler için).
+        private static void AlignLean(GameObject go, Vector3 desired)
+        {
+            Bounds b = PrefabFactory.WorldBounds(go);
+            Vector3 lean = b.center - go.transform.position;
+            lean.y = 0f;
+            if (lean.sqrMagnitude < 0.01f) return;
+            float current = Mathf.Atan2(lean.x, lean.z) * Mathf.Rad2Deg;
+            float target = Mathf.Atan2(desired.x, desired.z) * Mathf.Rad2Deg;
+            go.transform.rotation = Quaternion.Euler(0f, target - current, 0f) * go.transform.rotation;
+        }
+
+        private static void Reserve(List<Vector3> reserved, Vector3 pos, float radius)
+        {
+            reserved.Add(new Vector3(pos.x, pos.z, radius));
+        }
+
+        private static GameObject Place(GameObject prefab, Transform parent, Vector3 position, float yaw)
+        {
+            GameObject go = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+            if (parent != null) go.transform.SetParent(parent, false);
+            go.transform.position = position;
+            go.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
+            return go;
+        }
+
+        // ---------------------------------------------------------------- Işık ve ortam
+
+        private static void CreateLighting()
+        {
+            GameObject sun = new GameObject("Sun");
+            sun.transform.rotation = Quaternion.Euler(52f, -30f, 0f);
+            Light light = sun.AddComponent<Light>();
+            light.type = LightType.Directional;
+            light.color = SunColor;
+            light.intensity = 1.25f;
+            light.shadows = LightShadows.Soft;
+            light.shadowStrength = 0.6f;
+            RenderSettings.sun = light;
+
+            // Hafif renkli ortam ışığı: gökten mavimsi, yandan sıcak, yerden kumlu.
+            RenderSettings.skybox = null;
+            RenderSettings.ambientMode = AmbientMode.Trilight;
+            RenderSettings.ambientSkyColor = new Color(0.78f, 0.86f, 1f);
+            RenderSettings.ambientEquatorColor = new Color(0.86f, 0.80f, 0.70f);
+            RenderSettings.ambientGroundColor = new Color(0.52f, 0.47f, 0.40f);
+
+            // Uzak denize hafif sis: ufuk yumuşasın.
+            RenderSettings.fog = true;
+            RenderSettings.fogMode = FogMode.Linear;
+            RenderSettings.fogColor = FogColor;
+            RenderSettings.fogStartDistance = 50f;
+            RenderSettings.fogEndDistance = 120f;
+
+            // Mobil uyumlu post-processing: hafif bloom, renk düzenleme, hafif vignette.
+            GameObject volumeGo = new GameObject("PostProcess");
+            Volume volume = volumeGo.AddComponent<Volume>();
+            volume.isGlobal = true;
+            volume.sharedProfile = GetPostProcessProfile();
+        }
+
+        private static VolumeProfile GetPostProcessProfile()
+        {
+            VolumeProfile existing = BuilderUtil.Load<VolumeProfile>(PostProcessPath);
+            if (existing != null) return existing; // senin ayarların korunur
+
+            VolumeProfile profile = ScriptableObject.CreateInstance<VolumeProfile>();
+            AssetDatabase.CreateAsset(profile, PostProcessPath);
+
+            Bloom bloom = profile.Add<Bloom>(true);
+            bloom.threshold.Override(0.9f);
+            bloom.intensity.Override(0.35f);
+            bloom.scatter.Override(0.65f);
+
+            ColorAdjustments color = profile.Add<ColorAdjustments>(true);
+            color.postExposure.Override(0.05f);
+            color.contrast.Override(10f);
+            color.saturation.Override(15f);
+
+            WhiteBalance white = profile.Add<WhiteBalance>(true);
+            white.temperature.Override(8f);
+
+            Vignette vignette = profile.Add<Vignette>(true);
+            vignette.intensity.Override(0.22f);
+            vignette.smoothness.Override(0.45f);
+
+            foreach (VolumeComponent component in profile.components) AssetDatabase.AddObjectToAsset(component, profile);
+            EditorUtility.SetDirty(profile);
+            return profile;
+        }
+
+        private static void CreateGroundAndWater(GameObject islandGo, IslandShape island)
+        {
+            Mesh islandMesh = ArtGenerator.BuildIslandMesh(island);
+            Texture2D groundTexture = ArtGenerator.BuildIslandTexture(island);
+            islandGo.AddComponent<MeshFilter>().sharedMesh = islandMesh;
+            MeshRenderer ground = islandGo.AddComponent<MeshRenderer>();
+            ground.sharedMaterial = ArtGenerator.GetLit("M_Island", groundTexture, Color.white);
+            ground.shadowCastingMode = ShadowCastingMode.Off;
+            ground.receiveShadows = true;
+            BuilderUtil.MarkStatic(islandGo);
+
+            GameObject water = new GameObject("Water");
+            water.transform.position = new Vector3(0f, ArtGenerator.WaterLevel, 0f);
+            water.AddComponent<MeshFilter>().sharedMesh = ArtGenerator.BuildWaterMesh(island);
+            MeshRenderer renderer = water.AddComponent<MeshRenderer>();
+            renderer.sharedMaterial = ArtGenerator.GetWater(island, ArtGenerator.BuildShoreTexture(island));
+            renderer.shadowCastingMode = ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+        }
+
+        private static CameraFollow CreateCamera(GameConfig config, Transform target)
         {
             GameObject go = new GameObject("Main Camera");
             go.tag = "MainCamera";
-            go.transform.position = new Vector3(target.position.x, target.position.y + config.CameraOffsetY, -10f);
+            Quaternion rotation = Quaternion.Euler(config.CameraPitch, config.CameraYaw, 0f);
+            Vector3 focus = target.position + Quaternion.Euler(0f, config.CameraYaw, 0f) * Vector3.forward * config.CameraFocusOffset;
+            go.transform.SetPositionAndRotation(focus - rotation * Vector3.forward * config.CameraDistance, rotation);
 
             Camera cam = go.AddComponent<Camera>();
-            cam.orthographic = true;
-            cam.orthographicSize = config.CameraSize;
+            cam.orthographic = false;
+            cam.fieldOfView = config.CameraFov;
+            cam.nearClipPlane = 1f;
+            cam.farClipPlane = 150f;
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = SeaColor;
+            go.AddComponent<AudioListener>();
+
+            UniversalAdditionalCameraData data = cam.GetUniversalAdditionalCameraData();
+            data.renderPostProcessing = true;
+            data.antialiasing = AntialiasingMode.None; // MSAA 2x URP ayarında
 
             CameraFollow follow = go.AddComponent<CameraFollow>();
-            SetField(follow, "config", config);
-            SetField(follow, "target", target);
-            SetField(follow, "topBar", topBar);
+            BuilderUtil.SetField(follow, "config", config);
+            BuilderUtil.SetField(follow, "target", target);
+            return follow;
         }
 
-        private static GameObject CreatePlayer(GameConfig config, VirtualJoystick joystick, Rect walkArea)
-        {
-            GameObject player = new GameObject("Player");
-            player.transform.position = PlayerStart;
+        // ---------------------------------------------------------------- Bölgeler ve binalar
 
-            CreateBox("Body", player.transform, Vector2.zero, Vector2.one * PlayerSize, PlayerColor, SortOrder.Character);
-
-            // Fizik: hareket için Kinematic gövde, trigger alanlarını algılamak için collider.
-            Rigidbody2D body = player.AddComponent<Rigidbody2D>();
-            body.bodyType = RigidbodyType2D.Kinematic;
-            body.gravityScale = 0f;
-            body.interpolation = RigidbodyInterpolation2D.Interpolate;
-            body.sleepMode = RigidbodySleepMode2D.NeverSleep;
-            player.AddComponent<CircleCollider2D>().radius = PlayerSize / 2f;
-
-            // Sırttaki yığının başlangıç noktası (gövdenin hemen üstü).
-            Transform stackRoot = new GameObject("StackRoot").transform;
-            stackRoot.SetParent(player.transform, false);
-            stackRoot.localPosition = new Vector3(0f, PlayerSize * 0.66f, 0f);
-
-            CarryStack stack = player.AddComponent<CarryStack>();
-            SetField(stack, "config", config);
-            SetField(stack, "stackRoot", stackRoot);
-
-            PlayerController controller = player.AddComponent<PlayerController>();
-            SetField(controller, "config", config);
-            SetField(controller, "joystick", joystick);
-            SetRect(controller, "moveArea", walkArea);
-
-            return player;
-        }
-
-        // Her türlü kaynak noktası (ağaç, kaya, çalı) bununla kurulur; sadece görünümü ve türü farklıdır.
-        //   Kök: trigger alanı + ResourceNode
-        //   └ Visual: kutulardan oluşan görünüm (küçülme/solma/zıplama buna uygulanır)
-        private static ResourceNode CreateNode(string name, Transform parent, Vector2 position, ResourceNodeType nodeType,
-                                       GameConfig config, ResourceItem itemPrefab, System.Action<Transform> buildVisual)
+        // Açılabilir bölge: kapalıyken çit + yerde ad; içerik (Content) açılınca zıplayarak belirir.
+        private static Transform CreateArea(string name, AreaDefinition area, Rect rect, GameObject fencePrefab, GameConfig config)
         {
             GameObject root = new GameObject(name);
-            root.transform.SetParent(parent, false);
-            root.transform.position = position;
-
-            Transform visual = new GameObject("Visual").transform;
-            visual.SetParent(root.transform, false);
-            buildVisual(visual);
-
-            // Karakter bu alana girince kaynak almaya başlar.
-            BoxCollider2D area = root.AddComponent<BoxCollider2D>();
-            area.isTrigger = true;
-            area.size = NodeTriggerSize;
-
-            ResourceNode node = root.AddComponent<ResourceNode>();
-            SetField(node, "config", config);
-            SetField(node, "nodeType", nodeType);
-            SetField(node, "itemPrefab", itemPrefab);
-            SetField(node, "visual", visual);
-            return node;
-        }
-
-        private static void BuildTreeVisual(Transform visual)
-        {
-            CreateBox("Trunk", visual, new Vector2(0f, -0.6f), new Vector2(0.4f, 0.8f), TrunkColor, SortOrder.NodeBase);
-            CreateBox("Crown", visual, new Vector2(0f, 0.2f), new Vector2(1.4f, 1.4f), LeafColor, SortOrder.NodeTop);
-        }
-
-        private static void BuildRockVisual(Transform visual)
-        {
-            CreateBox("Base", visual, new Vector2(0f, -0.1f), new Vector2(1.3f, 0.9f), RockDarkColor, SortOrder.NodeBase);
-            CreateBox("Top", visual, new Vector2(-0.15f, 0.15f), new Vector2(0.7f, 0.35f), RockLightColor, SortOrder.NodeTop);
-        }
-
-        private static void BuildBushVisual(Transform visual)
-        {
-            CreateBox("Leaves", visual, Vector2.zero, new Vector2(1.1f, 0.9f), BushColor, SortOrder.NodeBase);
-            Vector2 fruitSize = new Vector2(0.22f, 0.22f);
-            CreateBox("Fruit 1", visual, new Vector2(-0.25f, 0.15f), fruitSize, FruitColor, SortOrder.NodeTop);
-            CreateBox("Fruit 2", visual, new Vector2(0.25f, 0.2f), fruitSize, FruitColor, SortOrder.NodeTop);
-            CreateBox("Fruit 3", visual, new Vector2(0.05f, -0.2f), fruitSize, FruitColor, SortOrder.NodeTop);
-        }
-
-        private static Market CreateMarket(Transform parent, GameConfig config)
-        {
-            GameObject market = new GameObject("Market");
-            market.transform.SetParent(parent, false);
-            market.transform.position = MarketPosition;
-
-            CreateBox("Visual", market.transform, Vector2.zero, MarketSize, MarketColor, SortOrder.Zone);
-            CreateWorldLabel("PAZAR", market.transform, Vector2.zero, new Vector2(3f, 1.2f), 80);
-
-            BoxCollider2D area = market.AddComponent<BoxCollider2D>();
-            area.isTrigger = true;
-            area.size = MarketSize;
-
-            Market component = market.AddComponent<Market>();
-            SetField(component, "config", config);
-            return component;
-        }
-
-        // İşleme binası kurar. Bina bir açılabilir alandır: kapalıyken sadece silik bir zemin görünür
-        // (üstünde açma karesi durur), açılınca gövde, ilerleme çubuğu, giriş ve çıkış alanları ortaya çıkar.
-        //   Sawmill (UnlockableArea)
-        //   ├ Locked  : silik zemin
-        //   └ Content : ProcessingBuilding
-        //       ├ Body (NavObstacle: işçiler etrafından dolaşır), Roof, Label, ProgressBar
-        //       ├ Input  (trigger + BuildingInput, içinde giriş yığını)
-        //       └ Output (trigger + BuildingOutput, içinde çıkış yığını)
-        private static void CreateBuilding(string name, Transform parent, Vector2 position, BuildingType type, AreaDefinition area,
-                                           Color bodyColor, GameConfig config, ResourceItem itemPrefab,
-                                           out BuildingInput input, out BuildingOutput output)
-        {
-            GameObject root = new GameObject(name);
-            root.transform.SetParent(parent, false);
-            root.transform.position = position;
-
-            GameObject locked = CreateBox("Locked", root.transform, BuildingFootprintOffset, BuildingFootprintSize, FootprintColor, SortOrder.Footprint);
-
-            GameObject content = new GameObject("Content");
-            content.transform.SetParent(root.transform, false);
-            content.SetActive(false); // UnlockableArea açık olup olmadığına göre gösterir
-
-            // Gövde, çatı şeridi ve ad
-            GameObject body = CreateBox("Body", content.transform, BuildingBodyOffset, BuildingBodySize, bodyColor, SortOrder.Building);
-            SetVector2(body.AddComponent<NavObstacle>(), "size", BuildingBodySize);
-            Vector2 roofOffset = BuildingBodyOffset + new Vector2(0f, BuildingBodySize.y * 0.4f);
-            CreateBox("Roof", content.transform, roofOffset, new Vector2(BuildingBodySize.x, BuildingBodySize.y * 0.2f), RoofColor, SortOrder.BuildingTop);
-            Text title = CreateWorldLabel(type.DisplayName, content.transform, BuildingBodyOffset + new Vector2(0f, -0.1f),
-                                          new Vector2(BuildingBodySize.x, 0.6f), 30);
-            title.color = Color.white;
-
-            // İlerleme çubuğu
-            GameObject barRoot = new GameObject("ProgressBar");
-            barRoot.transform.SetParent(content.transform, false);
-            barRoot.transform.localPosition = BuildingBarOffset;
-            CreateBox("Back", barRoot.transform, Vector2.zero, new Vector2(BuildingBarWidth, BuildingBarHeight), BarBackColor, SortOrder.BarBack);
-            GameObject fill = CreateBox("Fill", barRoot.transform, Vector2.zero, new Vector2(BuildingBarWidth, BuildingBarHeight), BarFillColor, SortOrder.BarFill);
-            ProgressBar bar = barRoot.AddComponent<ProgressBar>();
-            SetField(bar, "fill", fill.transform);
-            SetFloat(bar, "width", BuildingBarWidth);
-
-            ProcessingBuilding building = content.AddComponent<ProcessingBuilding>();
-
-            // Giriş ve çıkış alanları
-            GameObject inputSlot = CreateBuildingSlot("Input", content.transform, BuildingInputOffset,
-                                                      "Giriş: " + type.Input.DisplayName, config, out ItemPile inputPile);
-            input = inputSlot.AddComponent<BuildingInput>();
-            SetField(input, "config", config);
-            SetField(input, "building", building);
-
-            GameObject outputSlot = CreateBuildingSlot("Output", content.transform, BuildingOutputOffset,
-                                                       "Çıkış: " + type.Output.DisplayName, config, out ItemPile outputPile);
-            output = outputSlot.AddComponent<BuildingOutput>();
-            SetField(output, "config", config);
-            SetField(output, "building", building);
-
-            SetField(building, "type", type);
-            SetField(building, "inputPile", inputPile);
-            SetField(building, "outputPile", outputPile);
-            SetField(building, "progressBar", bar);
-            SetField(building, "itemPrefab", itemPrefab);
-            SetField(building, "productSpawnPoint", body.transform);
-
-            UnlockableArea unlockable = root.AddComponent<UnlockableArea>();
-            SetField(unlockable, "area", area);
-            SetField(unlockable, "content", content);
-            SetField(unlockable, "lockedVisual", locked);
-        }
-
-        // Binanın giriş veya çıkış alanı: yarı saydam kare (trigger) + altta yazı + içinde yerde yığın.
-        private static GameObject CreateBuildingSlot(string name, Transform parent, Vector2 offset, string labelText,
-                                                     GameConfig config, out ItemPile pile)
-        {
-            GameObject slot = new GameObject(name);
-            slot.transform.SetParent(parent, false);
-            slot.transform.localPosition = offset;
-
-            CreateBox("Visual", slot.transform, Vector2.zero, BuildingSlotSize, SlotColor, SortOrder.Zone);
-            CreateWorldLabel(labelText, slot.transform, new Vector2(0f, -BuildingSlotSize.y * 0.5f - 0.2f),
-                             new Vector2(BuildingSlotSize.x * 1.6f, 0.4f), 22);
-
-            BoxCollider2D trigger = slot.AddComponent<BoxCollider2D>();
-            trigger.isTrigger = true;
-            trigger.size = BuildingSlotSize;
-
-            // Yığın karenin alt kısmından yukarı doğru dizilir.
-            GameObject pileGo = new GameObject("Pile");
-            pileGo.transform.SetParent(slot.transform, false);
-            pileGo.transform.localPosition = new Vector3(0f, -BuildingSlotSize.y * 0.35f, 0f);
-            pile = pileGo.AddComponent<ItemPile>();
-            SetField(pile, "config", config);
-            SetInt(pile, "columns", PileColumns);
-            SetVector2(pile, "spacing", PileSpacing);
-            return slot;
-        }
-
-        // Açılabilir bölge kurar ve içeriğin (kaynak noktaları) ekleneceği "Content" nesnesini döndürür.
-        //   Area X (UnlockableArea)
-        //   ├ Ground  : bölgenin zemini (her zaman görünür)
-        //   ├ Locked  : çit + bölge adı (kapalıyken görünür)
-        //   └ Content : bölge açılınca görünen nesneler (başta gizli)
-        private static Transform CreateArea(string name, AreaDefinition area, Rect rect, Color groundColor)
-        {
-            GameObject root = new GameObject(name);
-
-            CreateBox("Ground", root.transform, rect.center, rect.size, groundColor, SortOrder.GroundPatch);
+            root.transform.position = new Vector3(rect.center.x, 0f, rect.center.y);
 
             GameObject locked = new GameObject("Locked");
             locked.transform.SetParent(root.transform, false);
-            CreateFence(locked.transform, rect);
-            Text title = CreateWorldLabel(area.DisplayName, locked.transform, rect.center, new Vector2(rect.width, 1.2f), 60);
-            title.color = new Color(LabelColor.r, LabelColor.g, LabelColor.b, 0.5f);
+            CreateFence(locked.transform, rect, fencePrefab);
+            TMPro.TextMeshPro title = UiFactory.CreateWorldText("Name", locked.transform, new Vector3(0f, 0.06f, 0f),
+                                                                area.DisplayName, 9f, new Color(1f, 1f, 1f, 0.75f));
+            title.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
 
             GameObject content = new GameObject("Content");
             content.transform.SetParent(root.transform, false);
             content.SetActive(false); // UnlockableArea açık olup olmadığına göre gösterir
 
             UnlockableArea unlockable = root.AddComponent<UnlockableArea>();
-            SetField(unlockable, "area", area);
-            SetField(unlockable, "content", content);
-            SetField(unlockable, "lockedVisual", locked);
-
+            BuilderUtil.SetField(unlockable, "config", config);
+            BuilderUtil.SetField(unlockable, "area", area);
+            BuilderUtil.SetField(unlockable, "content", content);
+            BuilderUtil.SetField(unlockable, "lockedVisual", locked);
             return content.transform;
         }
 
-        // Dikdörtgenin dört kenarına ince çit kutuları koyar.
-        private static void CreateFence(Transform parent, Rect rect)
+        // Dikdörtgenin dört kenarına çit parçaları dizer (parent dikdörtgenin ortasında).
+        private static void CreateFence(Transform parent, Rect rect, GameObject fencePrefab)
         {
-            float t = FenceThickness;
-            CreateBox("Fence Bottom", parent, new Vector2(rect.center.x, rect.yMin), new Vector2(rect.width, t), FenceColor, SortOrder.Fence);
-            CreateBox("Fence Top", parent, new Vector2(rect.center.x, rect.yMax), new Vector2(rect.width, t), FenceColor, SortOrder.Fence);
-            CreateBox("Fence Left", parent, new Vector2(rect.xMin, rect.center.y), new Vector2(t, rect.height), FenceColor, SortOrder.Fence);
-            CreateBox("Fence Right", parent, new Vector2(rect.xMax, rect.center.y), new Vector2(t, rect.height), FenceColor, SortOrder.Fence);
+            float halfW = rect.width / 2f, halfD = rect.height / 2f;
+            FenceLine(parent, fencePrefab, new Vector3(-halfW, 0f, -halfD), new Vector3(halfW, 0f, -halfD));
+            FenceLine(parent, fencePrefab, new Vector3(halfW, 0f, -halfD), new Vector3(halfW, 0f, halfD));
+            FenceLine(parent, fencePrefab, new Vector3(halfW, 0f, halfD), new Vector3(-halfW, 0f, halfD));
+            FenceLine(parent, fencePrefab, new Vector3(-halfW, 0f, halfD), new Vector3(-halfW, 0f, -halfD));
         }
 
-        private static void CreateUnlockPad(string name, Vector2 position, AreaDefinition area, AreaDefinition requiredArea,
-                                            GameConfig config, FlyingVisual coinPrefab)
+        private static void FenceLine(Transform parent, GameObject fencePrefab, Vector3 from, Vector3 to)
         {
-            GameObject pad = new GameObject(name);
-            pad.transform.position = position;
-
-            CreateBox("Visual", pad.transform, Vector2.zero, PadSize, PadColor, SortOrder.Zone);
-            Text label = CreateWorldLabel(area.DisplayName + "\n" + area.Price, pad.transform, Vector2.zero, PadSize, 30);
-
-            BoxCollider2D trigger = pad.AddComponent<BoxCollider2D>();
-            trigger.isTrigger = true;
-            trigger.size = PadSize;
-
-            UnlockPad unlockPad = pad.AddComponent<UnlockPad>();
-            SetField(unlockPad, "config", config);
-            SetField(unlockPad, "area", area);
-            SetField(unlockPad, "requiredArea", requiredArea);
-            SetField(unlockPad, "label", label);
-            SetField(unlockPad, "coinPrefab", coinPrefab);
+            float length = Vector3.Distance(from, to);
+            int count = Mathf.Max(1, Mathf.RoundToInt(length / ModelCatalog.Fence.Size));
+            float yaw = Quaternion.LookRotation(to - from).eulerAngles.y - 90f; // çit modeli X yönünde uzanır
+            for (int i = 0; i < count; i++)
+            {
+                GameObject piece = (GameObject)PrefabUtility.InstantiatePrefab(fencePrefab);
+                piece.transform.SetParent(parent, false);
+                piece.transform.localPosition = Vector3.Lerp(from, to, (i + 0.5f) / count);
+                piece.transform.localRotation = Quaternion.Euler(0f, yaw, 0f);
+            }
         }
 
-        // İşçi kampı: çadır (işçiler etrafından dolaşır) + "KAMP" yazısı + işçilerin çıktığı nokta.
-        //   Camp
-        //   ├ Tent (NavObstacle), Door, Label, SpawnPoint
-        //   ├ Lumberjacks (WorkerSpawner) └ Lumberjack (gizli hazır işçi)
-        //   └ Carriers    (WorkerSpawner) └ Carrier    (gizli hazır işçi)
-        private static Transform CreateCamp(out Transform spawnPoint)
+        // Bina da bir açılabilir alandır: kapalıyken silik zemin (üstünde açma karesi), açılınca bina zıplayarak belirir.
+        private static GameObject PlaceBuilding(string name, Transform parent, Vector3 position, GameObject prefab,
+                                                AreaDefinition area, GameConfig config)
         {
-            GameObject camp = new GameObject("Camp");
-            camp.transform.position = CampPosition;
+            GameObject root = new GameObject(name);
+            root.transform.SetParent(parent, false);
+            root.transform.position = position;
 
-            GameObject tent = CreateBox("Tent", camp.transform, Vector2.zero, CampTentSize, TentColor, SortOrder.Building);
-            SetVector2(tent.AddComponent<NavObstacle>(), "size", CampTentSize);
-            CreateBox("Door", camp.transform, new Vector2(0f, -CampTentSize.y * 0.25f), new Vector2(0.35f, CampTentSize.y * 0.5f),
-                      RoofColor, SortOrder.BuildingTop);
-            CreateWorldLabel("KAMP", camp.transform, new Vector2(0f, CampTentSize.y * 0.5f + 0.3f), new Vector2(2f, 0.5f), 36);
+            GameObject locked = new GameObject("Locked");
+            locked.transform.SetParent(root.transform, false);
+            PrefabFactory.AddGroundDecal("Footprint", locked.transform, new Vector3(0f, 0f, 0.3f), new Vector2(4.6f, 4.4f),
+                                         new Color(1f, 1f, 1f, 0.22f));
 
-            spawnPoint = new GameObject("SpawnPoint").transform;
-            spawnPoint.SetParent(camp.transform, false);
-            spawnPoint.localPosition = CampSpawnOffset;
-            return camp.transform;
+            GameObject content = new GameObject("Content");
+            content.transform.SetParent(root.transform, false);
+            GameObject building = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+            building.transform.SetParent(content.transform, false);
+            content.SetActive(false);
+
+            UnlockableArea unlockable = root.AddComponent<UnlockableArea>();
+            BuilderUtil.SetField(unlockable, "config", config);
+            BuilderUtil.SetField(unlockable, "area", area);
+            BuilderUtil.SetField(unlockable, "content", content);
+            BuilderUtil.SetField(unlockable, "lockedVisual", locked);
+            return building;
         }
 
-        // Gizli hazır işçi kurar (WorkerSpawner bunu kopyalar). Oyuncu gibi: Kinematic gövde + collider + yığın,
-        // ama joystick yerine WorkerMover ile yürür. Kinematic gövdeler birbirini itmez: oyuncu ve işçiler iç içe geçebilir.
-        private static T CreateWorkerTemplate<T>(string name, WorkerType type, Color color, Vector2 position,
-                                                 GameConfig config, Rect walkArea) where T : Worker
+        private static void CreatePad(GameObject prefab, Transform parent, string name, Vector3 position,
+                                      AreaDefinition area, AreaDefinition requiredArea, List<Vector3> reserved)
         {
-            GameObject worker = new GameObject(name);
-            worker.transform.position = position;
-
-            CreateBox("Body", worker.transform, Vector2.zero, Vector2.one * WorkerSize, color, SortOrder.Character);
-
-            Rigidbody2D body = worker.AddComponent<Rigidbody2D>();
-            body.bodyType = RigidbodyType2D.Kinematic;
-            body.gravityScale = 0f;
-            body.interpolation = RigidbodyInterpolation2D.Interpolate;
-            body.sleepMode = RigidbodySleepMode2D.NeverSleep;
-            worker.AddComponent<CircleCollider2D>().radius = WorkerSize / 2f;
-
-            Transform stackRoot = new GameObject("StackRoot").transform;
-            stackRoot.SetParent(worker.transform, false);
-            stackRoot.localPosition = new Vector3(0f, WorkerSize * 0.66f, 0f);
-
-            CarryStack stack = worker.AddComponent<CarryStack>();
-            SetField(stack, "config", config);
-            SetField(stack, "stackRoot", stackRoot);
-
-            WorkerMover mover = worker.AddComponent<WorkerMover>();
-            SetRect(mover, "moveArea", walkArea);
-            SetFloat(mover, "clearance", WorkerClearance);
-
-            T component = worker.AddComponent<T>();
-            SetField(component, "type", type);
-            return component;
+            GameObject pad = Place(prefab, parent, position, 0f);
+            pad.name = name;
+            UnlockPad component = pad.GetComponent<UnlockPad>();
+            BuilderUtil.SetField(component, "area", area);
+            BuilderUtil.SetField(component, "requiredArea", requiredArea);
+            Transform nameLabel = pad.transform.Find("Canvas/Name"); // editörde de doğru ad görünsün
+            if (nameLabel != null) nameLabel.GetComponent<TMPro.TextMeshProUGUI>().text = area.DisplayName;
+            Reserve(reserved, position, 1.9f);
         }
 
-        // Görev tutulunca hazır işçiyi kopyalayıp kamptan çıkaran nokta. Hazır işçi bunun altına taşınır ve gizlenir.
-        private static void CreateSpawner(string name, Transform camp, AreaDefinition hireArea, WorkerType type, Worker template,
-                                          Transform spawnPoint, GameConfig config)
+        // ---------------------------------------------------------------- İşçiler
+
+        // Gizli hazır işçi: WorkerSpawner bunu kopyalayıp kamptan çıkarır.
+        private static T CreateWorkerTemplate<T>(GameObject prefab, WorkerType type) where T : Worker
+        {
+            GameObject go = Place(prefab, null, MapLayout.CampSpawn, 180f);
+            T worker = go.AddComponent<T>();
+            BuilderUtil.SetField(worker, "type", type);
+            return worker;
+        }
+
+        private static void CreateSpawner(string name, Transform parent, AreaDefinition hireArea, WorkerType type, Worker template, GameConfig config)
         {
             GameObject go = new GameObject(name);
-            go.transform.SetParent(camp, false);
+            go.transform.SetParent(parent, false);
+            go.transform.position = MapLayout.CampSpawn;
 
             template.transform.SetParent(go.transform, true);
             template.gameObject.SetActive(false);
 
             WorkerSpawner spawner = go.AddComponent<WorkerSpawner>();
-            SetField(spawner, "config", config);
-            SetField(spawner, "hireArea", hireArea);
-            SetField(spawner, "workerType", type);
-            SetField(spawner, "template", template);
-            SetField(spawner, "spawnPoint", spawnPoint);
+            BuilderUtil.SetField(spawner, "config", config);
+            BuilderUtil.SetField(spawner, "hireArea", hireArea);
+            BuilderUtil.SetField(spawner, "workerType", type);
+            BuilderUtil.SetField(spawner, "template", template);
+            BuilderUtil.SetField(spawner, "spawnPoint", go.transform);
         }
 
-        private static void CreateDock()
+        // ---------------------------------------------------------------- Tersane: gemi, toplar, son gece
+
+        private static void CreateShipyard(Prefabs p, IslandShape island, GameConfig config, Transform pads, CameraFollow follow,
+                                           List<Vector3> reserved)
         {
-            GameObject dock = new GameObject("Dock");
-            CreateBox("Dock Area", dock.transform, DockAreaRect.center, DockAreaRect.size, DockColor, SortOrder.GroundPatch);
-            CreateBox("Pier", dock.transform, PierRect.center, PierRect.size, DockColor, SortOrder.GroundPatch);
-            Text label = CreateWorldLabel("İSKELE (yakında)", dock.transform, DockAreaRect.center, new Vector2(DockAreaRect.width, 1f), 44);
-            label.color = new Color(1f, 1f, 1f, 0.8f);
+            ShipConfig shipConfig = BuilderUtil.Load<ShipConfig>(ShipConfigPath);
+            Transform root = new GameObject("Shipyard").transform;
+            Vector3 start = MapLayout.DockStart(island);
+
+            // İskele: uzun kenarı denize (+Z), güverte kumun biraz üstünde.
+            GameObject dock = Place(p.Decor[ModelCatalog.Dock.Key], root, start, 0f);
+            Bounds b = PrefabFactory.WorldBounds(dock);
+            if (b.size.x > b.size.z)
+            {
+                dock.transform.rotation = Quaternion.Euler(0f, 90f, 0f);
+                b = PrefabFactory.WorldBounds(dock);
+            }
+            dock.transform.position += new Vector3(start.x - b.center.x, -(b.size.y - 0.45f), start.z - b.min.z);
+            BuilderUtil.MarkStatic(dock);
+
+            GameObject wreck = Place(p.Decor[ModelCatalog.ShipWreck.Key], root, start + MapLayout.WreckOffset, 35f);
+            wreck.transform.position += Vector3.down * (PrefabFactory.WorldBounds(wreck).size.y * 0.3f);
+            BuilderUtil.MarkStatic(wreck);
+            Place(p.Decor["Anchor"], root, start + new Vector3(-2.4f, 0f, -0.6f), 20f);
+            Place(p.Decor["BucketFish"], root, start + new Vector3(-1.6f, 0f, -1.6f), 0f);
+
+            // Gemi (aşağıdan yukarıya belirir)
+            GameObject shipRoot = new GameObject("Ship");
+            shipRoot.transform.SetParent(root, false);
+            shipRoot.transform.position = start + MapLayout.ShipOffset;
+            Transform hull = new GameObject("Hull").transform;
+            hull.SetParent(shipRoot.transform, false);
+            GameObject model = PrefabFactory.CreateModel(ModelCatalog.Ship, hull);
+            Bounds sb = PrefabFactory.WorldBounds(model);
+            if (sb.size.x > sb.size.z) hull.localRotation = Quaternion.Euler(0f, 90f, 0f);
+            sb = PrefabFactory.WorldBounds(model);
+            hull.localPosition = new Vector3(0f, -sb.size.y * 0.18f, 0f);
+            sb = PrefabFactory.WorldBounds(model);
+
+            Material reveal = ArtGenerator.GetMaterial("M_ShipReveal", "KayipAda/BuildReveal", m =>
+            {
+                m.SetTexture("_BaseMap", BuilderUtil.Load<Texture2D>(BuilderUtil.ThirdParty + "/Quaternius_Pirate/Textures/Atlas_Pirate.png"));
+                m.SetColor("_BaseColor", Color.white);
+            });
+            foreach (Renderer r in model.GetComponentsInChildren<Renderer>(true))
+            {
+                Material[] mats = r.sharedMaterials;
+                for (int i = 0; i < mats.Length; i++) mats[i] = reveal;
+                r.sharedMaterials = mats;
+            }
+
+            // Erzak: güvertede beliren variller ve sandıklar.
+            Transform supplies = new GameObject("Supplies").transform;
+            supplies.SetParent(shipRoot.transform, false);
+            float deckY = sb.min.y + sb.size.y * 0.4f;
+            string[] supplyKeys = { "Barrel", "Chest", "Barrel", "Crate", "Barrel", "Chest" };
+            for (int i = 0; i < supplyKeys.Length; i++)
+            {
+                float along = (i / (supplyKeys.Length - 1f) - 0.5f) * sb.size.z * 0.45f;
+                Vector3 world = new Vector3(sb.center.x + (i % 2 == 0 ? -0.5f : 0.5f), deckY, sb.center.z + along);
+                GameObject item = Place(p.Decor[supplyKeys[i]], supplies, world, i * 50f);
+                item.transform.localScale = Vector3.one * 0.85f;
+            }
+
+            // İnşa iskelesi: geminin çevresinde direkler.
+            GameObject scaffolding = new GameObject("Scaffolding");
+            scaffolding.transform.SetParent(shipRoot.transform, false);
+            for (int side = -1; side <= 1; side += 2)
+            {
+                for (int k = -1; k <= 1; k++)
+                {
+                    Vector3 pos = new Vector3(sb.center.x + side * (sb.extents.x + 0.5f), -0.6f, sb.center.z + k * sb.extents.z * 0.6f);
+                    Place(p.Decor[ModelCatalog.DockPole.Key], scaffolding.transform, pos, k * 30f);
+                }
+            }
+
+            Transform target = new GameObject("DeliveryTarget").transform;
+            target.SetParent(shipRoot.transform, false);
+            target.position = new Vector3(sb.center.x, sb.min.y + sb.size.y * 0.45f, sb.center.z);
+
+            // Teslim alanı (karada): mavi halka ve "Omurga: 5/15" göstergesi.
+            GameObject delivery = new GameObject("ShipDelivery");
+            delivery.transform.SetParent(root, false);
+            delivery.transform.position = start + MapLayout.DeliveryOffset;
+            CapsuleCollider trigger = delivery.AddComponent<CapsuleCollider>();
+            trigger.isTrigger = true;
+            trigger.radius = 1.4f;
+            trigger.height = 3f;
+            trigger.center = new Vector3(0f, 1.5f, 0f);
+            ProgressRing ring = CreateFlatRing(delivery.transform, new Color(0.45f, 0.85f, 1f));
+            TMPro.TextMeshPro label = UiFactory.CreateWorldText("Progress", delivery.transform, new Vector3(0f, 3.4f, 0f), "", 3.6f, Color.white);
+            label.gameObject.AddComponent<Billboard>();
+            ShipDelivery shipDelivery = delivery.AddComponent<ShipDelivery>();
+
+            ShipBuilder builder = shipRoot.AddComponent<ShipBuilder>();
+            BuilderUtil.SetField(builder, "ship", shipConfig);
+            BuilderUtil.SetField(builder, "config", config);
+            BuilderUtil.SetField(builder, "shipModel", hull);
+            BuilderUtil.SetField(builder, "suppliesRoot", supplies);
+            BuilderUtil.SetField(builder, "scaffolding", scaffolding);
+            BuilderUtil.SetField(builder, "progressLabel", label);
+            BuilderUtil.SetField(builder, "progressRing", ring);
+            BuilderUtil.SetField(builder, "deliveryTarget", target);
+            BuilderUtil.SetField(builder, "delivery", shipDelivery);
+            BuilderUtil.SetField(shipDelivery, "config", config);
+            BuilderUtil.SetField(shipDelivery, "builder", builder);
+            Reserve(reserved, start, 4.5f);
+            Reserve(reserved, delivery.transform.position, 2.2f);
+
+            // Toplar: omurga bitince açma kareleri belirir.
+            AreaDefinition keel = Data<AreaDefinition>(AreasFolder, "ShipKeel");
+            for (int i = 0; i < MapLayout.CannonOffsets.Length; i++)
+            {
+                Vector3 pos = start + MapLayout.CannonOffsets[i];
+                AreaDefinition area = Data<AreaDefinition>(AreasFolder, "Cannon" + (i + 1));
+                PlaceUnlockable("Cannon " + (i + 1), root, pos, p.Cannon, area, config, new Vector2(2.4f, 3.6f), new Vector3(0f, 0f, -0.6f));
+                CreatePad(p.UnlockPad, pads, "Pad Cannon " + (i + 1), pos + new Vector3(0f, 0f, -0.9f), area, keel, reserved);
+                Reserve(reserved, pos, 2.6f);
+            }
+
+            // Düşmanların çıktığı kıyı noktaları
+            Transform spawnRoot = new GameObject("EnemySpawns").transform;
+            spawnRoot.SetParent(root, false);
+            List<Object> spawns = new List<Object>();
+            foreach (float angle in MapLayout.EnemySpawnAngles)
+            {
+                Vector2 coast = island.CoastPoint(angle * Mathf.Deg2Rad);
+                Vector2 inland = coast + (island.Center - coast).normalized * 2.5f;
+                Transform t = new GameObject("Spawn " + angle).transform;
+                t.SetParent(spawnRoot, false);
+                t.position = new Vector3(inland.x, 0f, inland.y);
+                spawns.Add(t);
+            }
+
+            // Gündüz/gece ve son gece
+            GameObject night = new GameObject("NightDefense");
+            DayNightController dayNight = night.AddComponent<DayNightController>();
+            BuilderUtil.SetField(dayNight, "ship", shipConfig);
+            BuilderUtil.SetField(dayNight, "sun", RenderSettings.sun);
+            BuilderUtil.SetField(dayNight, "cam", follow.GetComponent<Camera>());
+
+            NightUi ui = UiBuilder.CreateNightUi();
+            NightDefense defense = night.AddComponent<NightDefense>();
+            BuilderUtil.SetField(defense, "ship", shipConfig);
+            BuilderUtil.SetField(defense, "config", config);
+            BuilderUtil.SetField(defense, "builder", builder);
+            BuilderUtil.SetField(defense, "enemyPrefab", p.Skeleton != null ? p.Skeleton.GetComponent<Enemy>() : null);
+            BuilderUtil.SetArray(defense, "spawnPoints", spawns.ToArray());
+            BuilderUtil.SetField(defense, "attackPoint", delivery.transform);
+            BuilderUtil.SetField(defense, "cameraFollow", follow);
+            BuilderUtil.SetField(defense, "healthBar", ui.HealthBar);
+            BuilderUtil.SetField(defense, "healthFill", ui.HealthFill);
+            BuilderUtil.SetField(defense, "bannerText", ui.Banner);
+            BuilderUtil.SetField(defense, "defeatPanel", ui.DefeatPanel);
+            BuilderUtil.SetField(defense, "retryButton", ui.RetryButton);
+            BuilderUtil.SetField(defense, "escapePanel", ui.Escape);
         }
 
-        // Renkli kare sprite'lı basit bir kutu oluşturur. localPos ebeveyne göredir (ebeveyn yoksa dünya konumu).
-        private static GameObject CreateBox(string name, Transform parent, Vector2 localPos, Vector2 size, Color color, int order)
+        // Yerde yatan, dolan halka (gemi teslim alanı).
+        private static ProgressRing CreateFlatRing(Transform parent, Color color)
         {
-            GameObject go = new GameObject(name);
-            go.transform.SetParent(parent, false);
-            go.transform.localPosition = localPos;
-            go.transform.localScale = new Vector3(size.x, size.y, 1f);
-
-            SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
-            sr.sprite = square;
-            sr.color = color;
-            sr.sortingOrder = order;
-            return go;
+            Canvas canvas = UiFactory.CreateWorldCanvas("Ring", parent, new Vector3(0f, 0.04f, 0f), Quaternion.Euler(90f, 0f, 0f), new Vector2(260f, 260f));
+            Image back = UiFactory.CreateImage("Back", canvas.transform, ArtGenerator.LoadSprite(ArtGenerator.CirclePath), new Color(0.05f, 0.08f, 0.12f, 0.45f));
+            UiFactory.Stretch(back.rectTransform);
+            Image ringBack = UiFactory.CreateImage("RingBack", canvas.transform, ArtGenerator.LoadSprite(ArtGenerator.RingPath), new Color(1f, 1f, 1f, 0.5f));
+            UiFactory.Stretch(ringBack.rectTransform);
+            Image fill = UiFactory.CreateImage("Fill", canvas.transform, ArtGenerator.LoadSprite(ArtGenerator.RingPath), color);
+            UiFactory.Stretch(fill.rectTransform);
+            fill.type = Image.Type.Filled;
+            fill.fillMethod = Image.FillMethod.Radial360;
+            fill.fillOrigin = (int)Image.Origin360.Top;
+            fill.fillAmount = 0f;
+            ProgressRing ring = canvas.gameObject.AddComponent<ProgressRing>();
+            BuilderUtil.SetField(ring, "fill", fill);
+            return ring;
         }
 
-        // Dünya içinde duran yazı (World Space Canvas). size dünya birimidir; 1 birim = 100 UI birimi.
-        private static Text CreateWorldLabel(string text, Transform parent, Vector2 localPos, Vector2 size, int fontSize)
+        // Açılabilir nesne (top gibi): kapalıyken silik zemin, açılınca zıplayarak belirir.
+        private static GameObject PlaceUnlockable(string name, Transform parent, Vector3 position, GameObject prefab, AreaDefinition area,
+                                                  GameConfig config, Vector2 footprint, Vector3 footprintOffset)
         {
-            const float unitsToUi = 100f;
+            GameObject root = new GameObject(name);
+            root.transform.SetParent(parent, false);
+            root.transform.position = position;
+            GameObject locked = new GameObject("Locked");
+            locked.transform.SetParent(root.transform, false);
+            PrefabFactory.AddGroundDecal("Footprint", locked.transform, footprintOffset, footprint, new Color(1f, 1f, 1f, 0.22f));
+            GameObject content = new GameObject("Content");
+            content.transform.SetParent(root.transform, false);
+            GameObject instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+            instance.transform.SetParent(content.transform, false);
+            content.SetActive(false);
+            UnlockableArea unlockable = root.AddComponent<UnlockableArea>();
+            BuilderUtil.SetField(unlockable, "config", config);
+            BuilderUtil.SetField(unlockable, "area", area);
+            BuilderUtil.SetField(unlockable, "content", content);
+            BuilderUtil.SetField(unlockable, "lockedVisual", locked);
+            return instance;
+        }
 
-            GameObject go = new GameObject("Label", typeof(RectTransform));
-            go.transform.SetParent(parent, false);
-            go.transform.localPosition = localPos;
-            go.transform.localScale = Vector3.one / unitsToUi;
+        // ---------------------------------------------------------------- Yönlendirme oku
 
-            Canvas canvas = go.AddComponent<Canvas>();
-            canvas.renderMode = RenderMode.WorldSpace;
-            canvas.sortingOrder = SortOrder.WorldLabel;
-            ((RectTransform)go.transform).sizeDelta = size * unitsToUi;
+        private static void CreateGuide(GameConfig config, Camera cam)
+        {
+            GameObject guide = new GameObject("ProgressionGuide");
+            GameObject arrow = new GameObject("WorldArrow");
+            arrow.transform.SetParent(guide.transform, false);
+            arrow.AddComponent<Billboard>();
+            GameObject quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            Object.DestroyImmediate(quad.GetComponent<Collider>());
+            quad.name = "Arrow";
+            quad.transform.SetParent(arrow.transform, false);
+            quad.transform.localRotation = Quaternion.Euler(0f, 0f, 180f); // doku yukarıyı gösterir, ok aşağı baksın
+            quad.transform.localScale = Vector3.one * 1.3f;
+            Renderer r = quad.GetComponent<Renderer>();
+            r.sharedMaterial = ArtGenerator.GetTransparent("M_GuideArrow", ArtGenerator.LoadSprite(ArtGenerator.ArrowPath)?.texture, UiFactory.Gold);
+            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
 
-            Text label = CreateText(go.transform, text, fontSize);
-            label.color = LabelColor;
-            Stretch(label.rectTransform);
-            return label;
+            Transform safe = GameObject.Find("Canvas/SafeArea").transform;
+            Image screenArrow = UiFactory.CreateImage("GuideScreenArrow", safe, ArtGenerator.LoadSprite(ArtGenerator.ArrowPath), UiFactory.Gold);
+            screenArrow.rectTransform.sizeDelta = new Vector2(110f, 110f);
+            screenArrow.gameObject.SetActive(false);
+
+            ProgressionGuide component = guide.AddComponent<ProgressionGuide>();
+            BuilderUtil.SetField(component, "config", config);
+            BuilderUtil.SetField(component, "worldArrow", arrow.transform);
+            BuilderUtil.SetField(component, "screenArrow", screenArrow.rectTransform);
+            BuilderUtil.SetField(component, "cam", cam);
+        }
+
+        // ---------------------------------------------------------------- Süsler
+
+        private static void ScatterDecor(Prefabs p, IslandShape island, List<Vector3> reserved)
+        {
+            Transform root = new GameObject("Decor").transform;
+            System.Random random = new System.Random(42);
+            List<Vector3> placed = new List<Vector3>(reserved);
+
+            // Pazar ve bıçkıhane çevresinde liman eşyaları
+            PlaceNear(p, root, "Barrel", MapLayout.Market + new Vector3(-2.6f, 0f, 1.6f), placed);
+            PlaceNear(p, root, "Crate", MapLayout.Market + new Vector3(-2.9f, 0f, 0.4f), placed);
+            PlaceNear(p, root, "CrateBottles", MapLayout.Market + new Vector3(2.9f, 0f, 2.6f), placed);
+            PlaceNear(p, root, "Chest", MapLayout.Camp + new Vector3(-1.6f, 0f, 1.8f), placed);
+            PlaceNear(p, root, "Barrel", MapLayout.Camp + new Vector3(1.8f, 0f, 1.6f), placed);
+            PlaceNear(p, root, "Crate", MapLayout.Sawmill + new Vector3(3.1f, 0f, 1.8f), placed);
+
+            // Kumsal (kıyı şeridi): çakıllar, taşlar, kemikler, süs palmiyeleri
+            Scatter(p, root, island, random, placed, "Pebble_A", 12, -2.8f, -0.8f, 0.8f);
+            Scatter(p, root, island, random, placed, "Pebble_B", 10, -2.8f, -0.8f, 0.8f);
+            Scatter(p, root, island, random, placed, "SandRocks_A", 4, -2.6f, -0.6f, 1.6f);
+            Scatter(p, root, island, random, placed, "SandRocks_B", 4, -2.6f, -0.6f, 1.6f);
+            Scatter(p, root, island, random, placed, "SandRocks_C", 3, -2.6f, -0.6f, 1.6f);
+            Scatter(p, root, island, random, placed, "Bones", 1, -2.8f, -1.6f, 3f);
+            Scatter(p, root, island, random, placed, "Skulls", 1, -2.8f, -1.2f, 1.5f);
+            Scatter(p, root, island, random, placed, "BrokenDock", 2, -1.6f, -0.4f, 3f);
+            Scatter(p, root, island, random, placed, "DecorPalm", 8, -3.2f, -1.6f, 3.2f);
+            Scatter(p, root, island, random, placed, "SmallRock", 6, -6f, -2.5f, 1.2f);
+
+            // Çimenlik iç kısım: otlar, çiçekler, çalılar
+            Scatter(p, root, island, random, placed, "GrassTuft", 22, -40f, -3.6f, 0.9f);
+            Scatter(p, root, island, random, placed, "Grass", 18, -40f, -3.6f, 0.8f);
+            Scatter(p, root, island, random, placed, "FlowerYellow", 10, -40f, -4f, 0.8f);
+            Scatter(p, root, island, random, placed, "FlowerRed", 8, -40f, -4f, 0.8f);
+            Scatter(p, root, island, random, placed, "Bush", 8, -40f, -4f, 1.6f);
+            Scatter(p, root, island, random, placed, "BigRock", 4, -40f, -4f, 2f);
+            BuilderUtil.MarkStatic(root.gameObject);
+        }
+
+        private static void PlaceNear(Prefabs p, Transform parent, string key, Vector3 position, List<Vector3> placed)
+        {
+            if (!p.Decor.TryGetValue(key, out GameObject prefab)) return;
+            Place(prefab, parent, position, position.x * 37f % 360f);
+            placed.Add(new Vector3(position.x, position.z, 0.8f));
+        }
+
+        // Kıyıya uzaklığı [minSd, maxSd] arasında (içeride eksi), yollardan ve diğer nesnelerden uzak rastgele yerlere koyar.
+        private static void Scatter(Prefabs p, Transform parent, IslandShape island, System.Random random, List<Vector3> placed,
+                                    string key, int count, float minSd, float maxSd, float radius)
+        {
+            if (count <= 0 || !p.Decor.TryGetValue(key, out GameObject prefab)) return;
+            Vector2 c = island.Center, r = island.Radius;
+            int done = 0;
+            for (int attempt = 0; attempt < count * 60 && done < count; attempt++)
+            {
+                Vector2 pos = new Vector2(c.x + ((float)random.NextDouble() * 2f - 1f) * r.x * 1.1f,
+                                          c.y + ((float)random.NextDouble() * 2f - 1f) * r.y * 1.1f);
+                float sd = island.SignedDistance(pos);
+                if (sd < minSd || sd > maxSd) continue;
+                if (MapLayout.DistanceToPaths(pos) < MapLayout.PathWidth * 0.5f + radius * 0.6f) continue;
+                if (InsideRect(pos, MapLayout.RockyRect, 1f) || InsideRect(pos, MapLayout.OrchardRect, 1f)) continue;
+
+                bool free = true;
+                foreach (Vector3 other in placed)
+                {
+                    float min = other.z + radius;
+                    if ((new Vector2(other.x, other.y) - pos).sqrMagnitude < min * min) { free = false; break; }
+                }
+                if (!free) continue;
+
+                GameObject go = Place(prefab, parent, new Vector3(pos.x, 0f, pos.y), (float)random.NextDouble() * 360f);
+                go.transform.localScale = Vector3.one * (0.85f + (float)random.NextDouble() * 0.3f);
+                if (key == "DecorPalm") AlignLean(go, new Vector3(pos.x - island.Center.x, 0f, pos.y - island.Center.y)); // denize doğru
+                placed.Add(new Vector3(pos.x, pos.y, radius));
+                done++;
+            }
+        }
+
+        private static bool InsideRect(Vector2 p, Rect rect, float margin)
+        {
+            return p.x > rect.xMin - margin && p.x < rect.xMax + margin && p.y > rect.yMin - margin && p.y < rect.yMax + margin;
         }
 
         // ================================================================ Arayüz
 
-        private static VirtualJoystick CreateUI(GameConfig config, out RectTransform topBar)
+        private static VirtualJoystick CreateUI(GameConfig config)
         {
             // Dokunma/fare olaylarını UI'ya ileten EventSystem (yeni Input System ile).
             GameObject es = new GameObject("EventSystem");
             es.AddComponent<EventSystem>();
             es.AddComponent<InputSystemUIInputModule>().AssignDefaultActions();
 
-            // Telefon ekranına göre ölçeklenen Canvas (1080x1920 referans).
             GameObject canvasGo = new GameObject("Canvas", typeof(RectTransform));
             Canvas canvas = canvasGo.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
@@ -854,163 +1132,66 @@ namespace KayipAda.EditorTools
             canvasGo.AddComponent<GraphicRaycaster>();
 
             VirtualJoystick joystick = CreateJoystick(canvasGo.transform, config); // önce: en arkada kalsın
-            topBar = CreateTopBar(canvasGo.transform);
+
+            GameObject safe = new GameObject("SafeArea", typeof(RectTransform));
+            safe.transform.SetParent(canvasGo.transform, false);
+            UiFactory.Stretch((RectTransform)safe.transform);
+            safe.AddComponent<SafeArea>();
+            CreateCoinPanel(safe.transform, config);
             return joystick;
         }
 
         private static VirtualJoystick CreateJoystick(Transform canvas, GameConfig config)
         {
-            Sprite circle = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
-
             // Ekranın tamamını kaplayan görünmez dokunma alanı.
-            Image area = CreateImage("JoystickArea", canvas, null, new Color(1f, 1f, 1f, 0f));
-            Stretch(area.rectTransform);
+            Image area = UiFactory.CreateImage("JoystickArea", canvas, null, new Color(1f, 1f, 1f, 0f));
+            area.raycastTarget = true;
+            UiFactory.Stretch(area.rectTransform);
 
-            // Halka boyutu joystick menziline göre ayarlanır.
             float ringSize = config.JoystickRange * 2.5f;
-            Image bg = CreateImage("Background", area.transform, circle, new Color(1f, 1f, 1f, 0.35f));
+            Image bg = UiFactory.CreateImage("Background", area.transform, ArtGenerator.LoadSprite(ArtGenerator.RingPath), new Color(1f, 1f, 1f, 0.35f));
             bg.rectTransform.sizeDelta = Vector2.one * ringSize;
-            bg.raycastTarget = false;
-
-            Image handle = CreateImage("Handle", bg.transform, circle, new Color(1f, 1f, 1f, 0.85f));
-            handle.rectTransform.sizeDelta = Vector2.one * ringSize * 0.43f;
-            handle.raycastTarget = false;
+            Image handle = UiFactory.CreateImage("Handle", bg.transform, ArtGenerator.LoadSprite(ArtGenerator.CirclePath), new Color(1f, 1f, 1f, 0.6f));
+            handle.rectTransform.sizeDelta = Vector2.one * ringSize * 0.42f;
 
             VirtualJoystick joystick = area.gameObject.AddComponent<VirtualJoystick>();
-            SetField(joystick, "config", config);
-            SetField(joystick, "background", bg.rectTransform);
-            SetField(joystick, "handle", handle.rectTransform);
+            BuilderUtil.SetField(joystick, "config", config);
+            BuilderUtil.SetField(joystick, "background", bg.rectTransform);
+            BuilderUtil.SetField(joystick, "handle", handle.rectTransform);
             return joystick;
         }
 
-        // Ekranın en üstünde, tam genişlikte koyu çubuk. Kamera görüntüsü bunun altında kalır,
-        // böylece çubuk hiçbir dünya nesnesini kapatmaz. Para göstergesi bunun içindedir.
-        private static RectTransform CreateTopBar(Transform canvas)
+        // Üstte ortada yuvarlak köşeli, gölgeli para paneli: altın ikon + büyük sayı.
+        private static void CreateCoinPanel(Transform parent, GameConfig config)
         {
-            Image bar = CreateImage("TopBar", canvas, null, TopBarColor);
-            bar.raycastTarget = false;
-            RectTransform rt = bar.rectTransform;
-            rt.anchorMin = new Vector2(0f, 1f);
-            rt.anchorMax = new Vector2(1f, 1f);
+            Vector2 size = new Vector2(430f, 128f);
+            GameObject holder = new GameObject("CoinPanel", typeof(RectTransform));
+            holder.transform.SetParent(parent, false);
+            RectTransform rt = (RectTransform)holder.transform;
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 1f);
             rt.pivot = new Vector2(0.5f, 1f);
-            rt.anchoredPosition = Vector2.zero;
-            rt.sizeDelta = new Vector2(0f, TopBarHeight);
+            rt.anchoredPosition = new Vector2(0f, -36f);
+            rt.sizeDelta = size;
 
-            // Para göstergesi: sarı kutucuk + sayı, çubuğun ortasında.
-            Image icon = CreateImage("CoinIcon", rt, null, CoinColor);
-            icon.raycastTarget = false;
-            icon.rectTransform.anchoredPosition = new Vector2(-80f, 0f);
-            icon.rectTransform.sizeDelta = new Vector2(64f, 64f);
+            Image shadow = UiFactory.CreateImage("Shadow", holder.transform, ArtGenerator.LoadSprite(ArtGenerator.PanelShadowPath), new Color(0f, 0f, 0f, 0.55f));
+            shadow.type = Image.Type.Sliced;
+            UiFactory.Size(shadow, new Vector2(0f, -8f), size + new Vector2(48f, 48f));
 
-            Text text = CreateText(rt, "0", 64);
-            text.alignment = TextAnchor.MiddleLeft;
-            text.rectTransform.anchoredPosition = new Vector2(80f, 0f);
-            text.rectTransform.sizeDelta = new Vector2(220f, 100f);
+            Image panel = UiFactory.CreateImage("Panel", holder.transform, ArtGenerator.LoadSprite(ArtGenerator.RoundedRectPath), PanelColor);
+            panel.type = Image.Type.Sliced;
+            UiFactory.Size(panel, Vector2.zero, size);
 
-            SetField(bar.gameObject.AddComponent<CurrencyUI>(), "coinsText", text);
-            return rt;
-        }
+            Image icon = UiFactory.CreateImage("CoinIcon", panel.transform, ArtGenerator.LoadSprite(ArtGenerator.CoinIconPath), Color.white);
+            UiFactory.Size(icon, new Vector2(-135f, 0f), new Vector2(86f, 86f));
 
-        private static Image CreateImage(string name, Transform parent, Sprite sprite, Color color)
-        {
-            GameObject go = new GameObject(name, typeof(RectTransform));
-            go.transform.SetParent(parent, false);
-            Image image = go.AddComponent<Image>();
-            image.sprite = sprite;
-            image.color = color;
-            return image;
-        }
+            TMPro.TextMeshProUGUI text = UiFactory.CreateUIText("Coins", panel.transform, "0", 72f, Color.white);
+            text.alignment = TMPro.TextAlignmentOptions.MidlineLeft;
+            UiFactory.Size(text, new Vector2(45f, 0f), new Vector2(270f, 110f));
 
-        private static Text CreateText(Transform parent, string value, int fontSize)
-        {
-            GameObject go = new GameObject("Text", typeof(RectTransform));
-            go.transform.SetParent(parent, false);
-            Text text = go.AddComponent<Text>();
-            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            text.text = value;
-            text.fontSize = fontSize;
-            text.fontStyle = FontStyle.Bold;
-            text.color = Color.white;
-            text.alignment = TextAnchor.MiddleCenter;
-            text.verticalOverflow = VerticalWrapMode.Overflow; // uzun yazı alt satıra geçerse kesilmesin
-            text.raycastTarget = false;
-            return text;
-        }
-
-        // RectTransform'u ebeveyninin tamamını kaplayacak şekilde ayarlar.
-        private static void Stretch(RectTransform rt)
-        {
-            rt.anchorMin = Vector2.zero;
-            rt.anchorMax = Vector2.one;
-            rt.offsetMin = Vector2.zero;
-            rt.offsetMax = Vector2.zero;
-        }
-
-        // ================================================================ Yardımcı
-
-        // [SerializeField] private alanlara editörden değer atar (Inspector'da sürükle-bırak yapmak gibi).
-        private static void SetField(Object target, string fieldName, Object value)
-        {
-            SerializedProperty property = FindProperty(target, fieldName, out SerializedObject so);
-            if (property == null) return;
-            property.objectReferenceValue = value;
-            so.ApplyModifiedPropertiesWithoutUndo();
-        }
-
-        // Nesne listesi alanına (örn. ağaçlar) değer atar.
-        private static void SetArray(Object target, string fieldName, Object[] values)
-        {
-            SerializedProperty property = FindProperty(target, fieldName, out SerializedObject so);
-            if (property == null) return;
-            property.arraySize = values.Length;
-            for (int i = 0; i < values.Length; i++)
-            {
-                property.GetArrayElementAtIndex(i).objectReferenceValue = values[i];
-            }
-            so.ApplyModifiedPropertiesWithoutUndo();
-        }
-
-        private static void SetRect(Object target, string fieldName, Rect value)
-        {
-            SerializedProperty property = FindProperty(target, fieldName, out SerializedObject so);
-            if (property == null) return;
-            property.rectValue = value;
-            so.ApplyModifiedPropertiesWithoutUndo();
-        }
-
-        private static void SetFloat(Object target, string fieldName, float value)
-        {
-            SerializedProperty property = FindProperty(target, fieldName, out SerializedObject so);
-            if (property == null) return;
-            property.floatValue = value;
-            so.ApplyModifiedPropertiesWithoutUndo();
-        }
-
-        private static void SetInt(Object target, string fieldName, int value)
-        {
-            SerializedProperty property = FindProperty(target, fieldName, out SerializedObject so);
-            if (property == null) return;
-            property.intValue = value;
-            so.ApplyModifiedPropertiesWithoutUndo();
-        }
-
-        private static void SetVector2(Object target, string fieldName, Vector2 value)
-        {
-            SerializedProperty property = FindProperty(target, fieldName, out SerializedObject so);
-            if (property == null) return;
-            property.vector2Value = value;
-            so.ApplyModifiedPropertiesWithoutUndo();
-        }
-
-        private static SerializedProperty FindProperty(Object target, string fieldName, out SerializedObject so)
-        {
-            so = new SerializedObject(target);
-            SerializedProperty property = so.FindProperty(fieldName);
-            if (property == null)
-            {
-                Debug.LogError($"Kayıp Ada: {target.GetType().Name} içinde '{fieldName}' alanı bulunamadı.");
-            }
-            return property;
+            CurrencyUI ui = holder.AddComponent<CurrencyUI>();
+            BuilderUtil.SetField(ui, "config", config);
+            BuilderUtil.SetField(ui, "coinsText", text);
+            BuilderUtil.SetField(ui, "punchTarget", rt);
         }
     }
 }

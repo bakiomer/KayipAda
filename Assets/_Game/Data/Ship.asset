@@ -1,0 +1,69 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b31ee529eae955a40a82be0a4edb22b9, type: 3}
+  m_Name: Ship
+  m_EditorClassIdentifier: KayipAda::KayipAda.ShipConfig
+  Stages:
+  - Name: Omurga
+    Requirements:
+    - Resource: {fileID: 11400000, guid: 7ab74ba8f70e3db42bc08928a82d2751, type: 2}
+      Amount: 40
+    RevealAtEnd: 0.3
+  - Name: "G\xF6vde"
+    Requirements:
+    - Resource: {fileID: 11400000, guid: 7ab74ba8f70e3db42bc08928a82d2751, type: 2}
+      Amount: 50
+    - Resource: {fileID: 11400000, guid: 11a4c8adf4f7f154682163628023af08, type: 2}
+      Amount: 40
+    RevealAtEnd: 0.7
+  - Name: Direk ve Yelken
+    Requirements:
+    - Resource: {fileID: 11400000, guid: 7ab74ba8f70e3db42bc08928a82d2751, type: 2}
+      Amount: 40
+    - Resource: {fileID: 11400000, guid: 189af04c5025270479ee3ed70e503a74, type: 2}
+      Amount: 60
+    RevealAtEnd: 1
+  - Name: Erzak
+    Requirements:
+    - Resource: {fileID: 11400000, guid: eb3c197c364d0454d993b7db541f2abc, type: 2}
+      Amount: 45
+    RevealAtEnd: 1
+  DeliverInterval: 0.08
+  KeelDoneArea: {fileID: 11400000, guid: 214d462b1519f504ca4908457e1346c8, type: 2}
+  WaveSizes: 05000000080000000b000000i
+  SpawnInterval: 1.4
+  TimeBetweenWaves: 6
+  NightStartDelay: 4
+  EnemySpeed: 1.8
+  EnemyHealth: 3
+  EnemyDps: 3
+  EnemyAttackRange: 1.6
+  ShipHealth: 100
+  CannonAmmoCapacity: 10
+  CannonStartAmmo: 4
+  AmmoResource: {fileID: 11400000, guid: f99d76690bc5c314cbc25e3431b2bcaf, type: 2}
+  CannonFireInterval: 1.6
+  CannonRange: 15
+  CannonDamage: 2
+  ExplosionRadius: 2
+  CannonBallFlightTime: 0.9
+  CannonBallArc: 4
+  CannonLoadInterval: 0.15
+  NightSunColor: {r: 0.55, g: 0.62, b: 0.95, a: 1}
+  NightSunIntensity: 0.45
+  NightAmbientSky: {r: 0.2, g: 0.24, b: 0.42, a: 1}
+  NightAmbientEquator: {r: 0.22, g: 0.2, b: 0.32, a: 1}
+  NightAmbientGround: {r: 0.1, g: 0.1, b: 0.14, a: 1}
+  NightFog: {r: 0.1, g: 0.14, b: 0.28, a: 1}
+  DayNightTransition: 3
+  SailSpeed: 3.5
+  SailDuration: 7

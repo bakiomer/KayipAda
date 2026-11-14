@@ -1,14 +1,15 @@
 // InteractionZone.cs
 // Üzerine gelen karakterlerle etkileşen tüm alanların ortak temeli (kaynak noktası, Pazar, açma kareleri,
 // bina giriş/çıkışları). İçerideki tüm CarryStack sahiplerini (oyuncu ve işçiler) Visitors listesinde tutar.
-// Oyuncuya her alan hizmet eder; işçiye sadece o an hedeflediği alan (CanServe). Alanın trigger Collider2D'si olmalıdır.
+// Oyuncuya her alan hizmet eder; işçiye sadece o an hedeflediği alan (CanServe).
+// Alanın trigger Collider'ı (3D, isTrigger) olmalıdır.
 
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace KayipAda
 {
-    [RequireComponent(typeof(Collider2D))]
+    [RequireComponent(typeof(Collider))]
     public abstract class InteractionZone : MonoBehaviour
     {
         [SerializeField] protected GameConfig config;
@@ -21,6 +22,15 @@ namespace KayipAda
         // Biri alana girdiğinde çağrılır; alt sınıflar isterse kullanır.
         protected virtual void OnVisitorEnter(CarryStack visitor) { }
 
+        // Biri alandan çıktığında çağrılır.
+        protected virtual void OnVisitorExit(CarryStack visitor) { }
+
+        // İşçinin bu alanla iş yapmak için yürüyeceği nokta (varsayılan: alanın ortası).
+        public virtual Vector3 GetStandPoint(Vector3 from)
+        {
+            return transform.position;
+        }
+
         // Bu karaktere hizmet edilsin mi? İşçi yoldan geçerken başka alanlara takılmasın diye
         // (örn. odun taşırken Pazar'dan geçince odunu satılmasın) işçiye sadece hedefi olan alan dokunur.
         protected bool CanServe(CarryStack visitor)
@@ -28,7 +38,7 @@ namespace KayipAda
             return visitor != null && (visitor.IsPlayer || visitor.WorkTarget == this);
         }
 
-        private void OnTriggerEnter2D(Collider2D other)
+        private void OnTriggerEnter(Collider other)
         {
             if (other.TryGetComponent(out CarryStack stack) && !visitors.Contains(stack))
             {
@@ -37,11 +47,11 @@ namespace KayipAda
             }
         }
 
-        private void OnTriggerExit2D(Collider2D other)
+        private void OnTriggerExit(Collider other)
         {
-            if (other.TryGetComponent(out CarryStack stack))
+            if (other.TryGetComponent(out CarryStack stack) && visitors.Remove(stack))
             {
-                visitors.Remove(stack);
+                OnVisitorExit(stack);
             }
         }
 

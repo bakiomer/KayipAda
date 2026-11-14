@@ -45,7 +45,7 @@ namespace KayipAda
         protected void GoTo(InteractionZone zone)
         {
             Stack.WorkTarget = zone;
-            Mover.MoveTo(zone.transform.position);
+            Mover.MoveTo(zone.GetStandPoint(transform.position));
         }
 
         // Yapacak iş yok: olduğu yerde bekle.
@@ -57,8 +57,8 @@ namespace KayipAda
 
         private void ApplyStats()
         {
-            Stack.Capacity = type.CarryCapacity;
-            Mover.Speed = type.MoveSpeed;
+            Stack.Capacity = type.CarryCapacity + UpgradeManager.Extra(UpgradeStat.WorkerCapacity, type.CarryCapacity);
+            Mover.Speed = type.MoveSpeed * UpgradeManager.Multiplier(UpgradeStat.WorkerSpeed);
         }
     }
 }

@@ -1,8 +1,7 @@
 // CameraFollow.cs
-// Kamerayı oyuncunun peşinden yumuşakça kaydırır. Kamera oyuncunun biraz yukarısına bakar;
-// böylece dikey ekranda oyuncu ekranın biraz altında durur ve önündeki alan daha çok görünür.
-// Ayrıca kameranın görüntüsünü üstteki arayüz çubuğunun ALTINDA bitirir: böylece arayüz,
-// kamera nereye giderse gitsin hiçbir dünya nesnesinin üstünü kapatmaz.
+// Popüler idle arcade oyunlarındaki kamera: yukarıdan ~50 derece eğik, dar açılı perspektif,
+// oyuncuyu yumuşakça takip eder. Oyuncunun biraz önüne baktığı için oyuncu ekranın biraz altında durur.
+// Tüm ayarlar (açı, uzaklık, görüş açısı, hız) GameConfig'tedir ve Play sırasında değiştirilebilir.
 
 using UnityEngine;
 
@@ -13,10 +12,10 @@ namespace KayipAda
     {
         [SerializeField] private GameConfig config;
         [SerializeField] private Transform target;
-        [Tooltip("Ekranın üstündeki arayüz çubuğu. Kamera görüntüsü bunun altında kalır.")]
-        [SerializeField] private RectTransform topBar;
 
         private Camera cam;
+
+        public Quaternion Rotation => Quaternion.Euler(config.CameraPitch, config.CameraYaw, 0f);
 
         private void Awake()
         {
@@ -29,30 +28,28 @@ namespace KayipAda
             if (target != null) transform.position = GoalPosition();
         }
 
+        // Kamerayı başka bir nesneye bağlar (kaçışta gemi).
+        public void SetTarget(Transform newTarget)
+        {
+            target = newTarget;
+        }
+
         private void LateUpdate()
         {
-            FitBelowTopBar();
-            cam.orthographicSize = config.CameraSize;
-
+            cam.fieldOfView = config.CameraFov;
+            transform.rotation = Rotation;
             if (target == null) return;
-            transform.position = Vector3.Lerp(transform.position, GoalPosition(), config.CameraFollowSpeed * Time.deltaTime);
+
+            // Kare hızından bağımsız yumuşak takip.
+            float blend = 1f - Mathf.Exp(-config.CameraFollowSpeed * Time.deltaTime);
+            transform.position = Vector3.Lerp(transform.position, GoalPosition(), blend);
         }
 
         private Vector3 GoalPosition()
         {
-            // Z konumu korunur, yoksa 2D sahne görünmez olur.
-            return new Vector3(target.position.x, target.position.y + config.CameraOffsetY, transform.position.z);
-        }
-
-        // Kameranın ekranda kapladığı alanı, üst çubuğun yüksekliği kadar aşağıdan bitirir.
-        private void FitBelowTopBar()
-        {
-            if (topBar == null || Screen.height <= 0) return;
-
-            // Çubuğun ekrandaki gerçek piksel yüksekliği (Canvas ölçeği dahil).
-            float barPixels = topBar.rect.height * topBar.lossyScale.y;
-            float barFraction = Mathf.Clamp01(barPixels / Screen.height);
-            cam.rect = new Rect(0f, 0f, 1f, 1f - barFraction);
+            Quaternion yaw = Quaternion.Euler(0f, config.CameraYaw, 0f);
+            Vector3 focus = target.position + yaw * Vector3.forward * config.CameraFocusOffset;
+            return focus - Rotation * Vector3.forward * config.CameraDistance;
         }
     }
 }

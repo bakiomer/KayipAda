@@ -1,6 +1,6 @@
 // ItemPile.cs
-// Yerde duran kaynak yığını (örn. bina girişinde bekleyen odunlar, çıkışta biriken kalaslar).
-// Parçaları birkaç sütunlu düzgün bir yığın halinde dizer; eklenen parça yerine doğru kayar.
+// Yerde duran kaynak yığını (örn. bina girişinde bekleyen odunlar, çıkışta biriken kalaslar), 3D.
+// Parçalar sütun x satır x kat düzeninde dizilir; eklenen parça yerine kavis çizerek uçar.
 // Kapasiteyi sahibi belirler (örn. ProcessingBuilding, BuildingType'tan).
 
 using System.Collections.Generic;
@@ -11,10 +11,12 @@ namespace KayipAda
     public class ItemPile : MonoBehaviour
     {
         [SerializeField] private GameConfig config;
-        [Tooltip("Yığın kaç sütun halinde dizilir.")]
+        [Tooltip("Bir katta yan yana kaç parça (X).")]
         [SerializeField, Min(1)] private int columns = 2;
-        [Tooltip("Parçalar arası yatay (x) ve dikey (y) aralık.")]
-        [SerializeField] private Vector2 spacing = new Vector2(0.4f, 0.2f);
+        [Tooltip("Bir katta arka arkaya kaç parça (Z).")]
+        [SerializeField, Min(1)] private int rows = 2;
+        [Tooltip("Parçalar arası aralık: X = yan, Y = kat yüksekliği, Z = arka.")]
+        [SerializeField] private Vector3 spacing = new Vector3(0.55f, 0.28f, 0.45f);
 
         private readonly List<ResourceItem> items = new List<ResourceItem>();
 
@@ -23,14 +25,15 @@ namespace KayipAda
         public bool IsFull => items.Count >= Capacity;
         public bool IsEmpty => items.Count == 0;
 
-        // Yer varsa parçayı yığına ekler.
+        // Yer varsa parçayı yığına ekler (yerine uçar).
         public bool TryAdd(ResourceItem item)
         {
-            if (IsFull) return false;
+            if (IsFull || item == null) return false;
 
-            item.transform.SetParent(transform, true); // dünyadaki yerini koruyarak bağla, sonra yerine kayar
-            item.SetSortingOrder(SortOrder.PileItem + items.Count);
+            item.transform.SetParent(transform, true);
             items.Add(item);
+            item.FlyTo(() => transform.TransformPoint(SlotPosition(Mathf.Max(0, items.IndexOf(item)))),
+                       config.ItemFlyHeight, config.ItemFlyDuration);
             return true;
         }
 
@@ -46,22 +49,29 @@ namespace KayipAda
             return item;
         }
 
-        private void Update()
+        private void LateUpdate()
         {
+            float blend = 1f - Mathf.Exp(-20f * Time.deltaTime);
             for (int i = 0; i < items.Count; i++)
             {
+                if (items[i].IsFlying) continue;
                 Transform t = items[i].transform;
-                t.localPosition = Vector3.Lerp(t.localPosition, SlotPosition(i), config.ItemFlySpeed * Time.deltaTime);
+                t.localPosition = Vector3.Lerp(t.localPosition, SlotPosition(i), blend);
+                t.localRotation = Quaternion.Slerp(t.localRotation, Quaternion.identity, blend);
             }
         }
 
-        // i. parçanın yığın içindeki yeri: alttan yukarı, soldan sağa.
+        // i. parçanın yığın içindeki yeri: önce bir katı doldurur, sonra üstüne çıkar.
         private Vector3 SlotPosition(int index)
         {
-            int column = index % columns;
-            int row = index / columns;
+            int perLayer = columns * rows;
+            int layer = index / perLayer;
+            int inLayer = index % perLayer;
+            int column = inLayer % columns;
+            int row = inLayer / columns;
             float x = (column - (columns - 1) / 2f) * spacing.x;
-            return new Vector3(x, row * spacing.y, 0f);
+            float z = (row - (rows - 1) / 2f) * spacing.z;
+            return new Vector3(x, layer * spacing.y, z);
         }
     }
 }

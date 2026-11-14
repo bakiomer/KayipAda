@@ -27,6 +27,13 @@ namespace KayipAda
             Coins = config.StartingCoins;
         }
 
+        // Kayıttan yükleme.
+        public void SetCoins(int amount)
+        {
+            Coins = Mathf.Max(0, amount);
+            CoinsChanged?.Invoke(Coins);
+        }
+
         public void Add(int amount)
         {
             Coins += amount;

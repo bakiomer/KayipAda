@@ -1,7 +1,8 @@
 // Pathfinder.cs
-// İşçiler için basit yol bulucu. Hedefe düz çizgi engele çarpmıyorsa doğrudan gidilir; çarpıyorsa
-// engellerin köşelerinden geçen en kısa yol bulunur (köşeler arası Dijkstra). Engeller az olduğu için hızlıdır.
-// Başlangıç ya da hedef bir engelin içindeyse o engel yok sayılır (örn. kamptan çıkarken).
+// İşçiler için basit yol bulucu (yerde, XZ düzleminde; Vector2.y = dünya Z). Hedefe düz çizgi engele
+// çarpmıyorsa doğrudan gidilir; çarpıyorsa engellerin köşelerinden geçen en kısa yol bulunur (köşeler arası
+// Dijkstra). Denize düşen köşeler kullanılmaz (IslandShape). Başlangıç ya da hedef bir engelin içindeyse o engel
+// yok sayılır (örn. kamptan çıkarken).
 
 using System.Collections.Generic;
 using UnityEngine;
@@ -17,8 +18,8 @@ namespace KayipAda
         private static readonly List<Vector2> points = new List<Vector2>();
 
         // from → to yolunu "path" listesine yazar (başlangıç hariç, hedef dahil).
-        // clearance: engellerden ne kadar uzak durulacağı. bounds: yürünebilir alan.
-        public static void FindPath(Vector2 from, Vector2 to, float clearance, Rect bounds, List<Vector2> path)
+        // clearance: engellerden ne kadar uzak durulacağı.
+        public static void FindPath(Vector2 from, Vector2 to, float clearance, List<Vector2> path)
         {
             path.Clear();
 
@@ -42,10 +43,10 @@ namespace KayipAda
             points.Add(to);
             foreach (Rect rect in obstacles)
             {
-                AddCorner(new Vector2(rect.xMin - CornerMargin, rect.yMin - CornerMargin), bounds);
-                AddCorner(new Vector2(rect.xMax + CornerMargin, rect.yMin - CornerMargin), bounds);
-                AddCorner(new Vector2(rect.xMin - CornerMargin, rect.yMax + CornerMargin), bounds);
-                AddCorner(new Vector2(rect.xMax + CornerMargin, rect.yMax + CornerMargin), bounds);
+                AddCorner(new Vector2(rect.xMin - CornerMargin, rect.yMin - CornerMargin), clearance);
+                AddCorner(new Vector2(rect.xMax + CornerMargin, rect.yMin - CornerMargin), clearance);
+                AddCorner(new Vector2(rect.xMin - CornerMargin, rect.yMax + CornerMargin), clearance);
+                AddCorner(new Vector2(rect.xMax + CornerMargin, rect.yMax + CornerMargin), clearance);
             }
 
             // Dijkstra: başlangıçtan her noktaya en kısa mesafe.
@@ -93,9 +94,9 @@ namespace KayipAda
             path.Reverse();
         }
 
-        private static void AddCorner(Vector2 corner, Rect bounds)
+        private static void AddCorner(Vector2 corner, float clearance)
         {
-            if (!bounds.Contains(corner)) return;
+            if (IslandShape.Instance != null && !IslandShape.Instance.Contains(corner, clearance)) return; // denizde
             foreach (Rect rect in obstacles)
             {
                 if (rect.Contains(corner)) return; // başka bir engelin içinde

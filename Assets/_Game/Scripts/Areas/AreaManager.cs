@@ -18,6 +18,8 @@ namespace KayipAda
         // Bir bölge açıldığında o bölgeyi gönderir.
         public event Action<AreaDefinition> AreaUnlocked;
 
+        [SerializeField] private GameConfig config;
+
         private readonly HashSet<string> unlockedIds = new HashSet<string>();
         private readonly Dictionary<string, int> paidAmounts = new Dictionary<string, int>(); // kimlik → ödenen para
 
@@ -37,9 +39,28 @@ namespace KayipAda
             return paidAmounts.TryGetValue(area.Id, out int paid) ? paid : 0;
         }
 
+        // Asıl fiyat (hızlı test modunda indirimli).
+        public int PriceOf(AreaDefinition area)
+        {
+            return config != null ? config.ScalePrice(area.Price) : area.Price;
+        }
+
         public int GetRemaining(AreaDefinition area)
         {
-            return Mathf.Max(0, area.Price - GetPaid(area));
+            return Mathf.Max(0, PriceOf(area) - GetPaid(area));
+        }
+
+        // Kayıt sistemi için: açık alanların kimlikleri ve yarım ödemeler.
+        public IEnumerable<string> UnlockedIds => unlockedIds;
+        public IReadOnlyDictionary<string, int> PaidAmounts => paidAmounts;
+
+        // Kayıttan geri yükler (oyun başında, olay yayınlamadan; sahne nesneleri Start'ta kendini günceller).
+        public void Restore(IEnumerable<string> ids, IDictionary<string, int> paid)
+        {
+            unlockedIds.Clear();
+            paidAmounts.Clear();
+            foreach (string id in ids) unlockedIds.Add(id);
+            foreach (KeyValuePair<string, int> pair in paid) paidAmounts[pair.Key] = pair.Value;
         }
 
         // Bölgeye ödeme ekler; fiyat tamamlanırsa bölgeyi açar. (Paranın düşülmesi çağıranın işidir.)
