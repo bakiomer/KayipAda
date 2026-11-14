@@ -828,7 +828,7 @@ namespace KayipAda.EditorTools
                 dock.transform.rotation = Quaternion.Euler(0f, 90f, 0f);
                 b = PrefabFactory.WorldBounds(dock);
             }
-            dock.transform.position += new Vector3(start.x - b.center.x, -(b.size.y - 0.45f), start.z - b.min.z);
+            dock.transform.position += new Vector3(start.x - b.center.x, -b.size.y * 0.3f, start.z - b.min.z);
             BuilderUtil.MarkStatic(dock);
 
             GameObject wreck = Place(p.Decor[ModelCatalog.ShipWreck.Key], root, start + MapLayout.WreckOffset, 35f);
@@ -845,9 +845,28 @@ namespace KayipAda.EditorTools
             hull.SetParent(shipRoot.transform, false);
             GameObject model = PrefabFactory.CreateModel(ModelCatalog.Ship, hull);
             Bounds sb = PrefabFactory.WorldBounds(model);
-            if (sb.size.x > sb.size.z) hull.localRotation = Quaternion.Euler(0f, 90f, 0f);
+            Quaternion yaw = sb.size.x > sb.size.z ? Quaternion.Euler(0f, 90f, 0f) : Quaternion.identity;
+            hull.localRotation = yaw;
             sb = PrefabFactory.WorldBounds(model);
-            hull.localPosition = new Vector3(0f, -sb.size.y * 0.18f, 0f);
+            // Gemi modeli yan yatık gelebiliyor (direkler yatay). Uzun eksen Z'de; yandaki genişlik yükseklikten
+            // büyükse direkler yatıyor demektir: modeli uzun ekseni etrafında çevirip direkleri yukarı kaldır.
+            // Yön: model pivotu omurgadadır, görsel merkez direklere doğru kayar.
+            if (sb.size.x > sb.size.y)
+            {
+                float side = sb.center.x - model.transform.position.x;
+                hull.localRotation = yaw * Quaternion.Euler(0f, 0f, side >= 0f ? 90f : -90f);
+                sb = PrefabFactory.WorldBounds(model);
+                if (sb.center.y < model.transform.position.y) // yanlış tarafa döndüyse ters çevir
+                {
+                    hull.localRotation = yaw * Quaternion.Euler(0f, 0f, side >= 0f ? -90f : 90f);
+                }
+                // Modeli tekrar geminin köküne ortala.
+                sb = PrefabFactory.WorldBounds(model);
+                Vector3 offset = new Vector3(sb.center.x - shipRoot.transform.position.x, 0f, sb.center.z - shipRoot.transform.position.z);
+                hull.position -= offset;
+                sb = PrefabFactory.WorldBounds(model);
+            }
+            hull.position += Vector3.down * (sb.min.y - shipRoot.transform.position.y + sb.size.y * 0.12f);
             sb = PrefabFactory.WorldBounds(model);
 
             Material reveal = ArtGenerator.GetMaterial("M_ShipReveal", "KayipAda/BuildReveal", m =>
@@ -878,14 +897,15 @@ namespace KayipAda.EditorTools
             // İnşa iskelesi: geminin çevresinde direkler.
             GameObject scaffolding = new GameObject("Scaffolding");
             scaffolding.transform.SetParent(shipRoot.transform, false);
-            for (int side = -1; side <= 1; side += 2)
+            // Direkler sadece deniz tarafında ve uçlarda: kara tarafındaki teslim alanını ve yazıyı kapatmasın.
+            Vector3[] poles =
             {
-                for (int k = -1; k <= 1; k++)
-                {
-                    Vector3 pos = new Vector3(sb.center.x + side * (sb.extents.x + 0.5f), -0.6f, sb.center.z + k * sb.extents.z * 0.6f);
-                    Place(p.Decor[ModelCatalog.DockPole.Key], scaffolding.transform, pos, k * 30f);
-                }
-            }
+                new Vector3(sb.max.x + 0.5f, -0.6f, sb.center.z - sb.extents.z * 0.6f),
+                new Vector3(sb.max.x + 0.5f, -0.6f, sb.center.z),
+                new Vector3(sb.max.x + 0.5f, -0.6f, sb.center.z + sb.extents.z * 0.6f),
+                new Vector3(sb.center.x, -0.6f, sb.max.z + 0.6f)
+            };
+            for (int k = 0; k < poles.Length; k++) Place(p.Decor[ModelCatalog.DockPole.Key], scaffolding.transform, poles[k], k * 30f);
 
             Transform target = new GameObject("DeliveryTarget").transform;
             target.SetParent(shipRoot.transform, false);

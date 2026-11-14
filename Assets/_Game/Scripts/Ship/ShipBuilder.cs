@@ -35,6 +35,7 @@ namespace KayipAda
 
         private readonly Dictionary<string, int> delivered = new Dictionary<string, int>();
         private Renderer[] renderers;
+        private readonly List<Material> revealMaterials = new List<Material>();
         private float reveal;
         private float shownReveal;
         private float minY, maxY;
@@ -55,8 +56,17 @@ namespace KayipAda
         {
             Instance = this;
             renderers = shipModel.GetComponentsInChildren<Renderer>(true);
-            // Her parçaya kendi malzeme kopyası: belirme oranı sadece bu gemiyi etkilesin.
-            foreach (Renderer r in renderers) r.material = new Material(r.sharedMaterial);
+            // Her parçanın TÜM malzemelerine kendi kopyası: belirme oranı sadece bu gemiyi etkilesin.
+            foreach (Renderer r in renderers)
+            {
+                Material[] mats = r.sharedMaterials;
+                for (int i = 0; i < mats.Length; i++)
+                {
+                    mats[i] = new Material(mats[i]);
+                    revealMaterials.Add(mats[i]);
+                }
+                r.sharedMaterials = mats;
+            }
             Bounds b = renderers.Length > 0 ? renderers[0].bounds : new Bounds(shipModel.position, Vector3.one);
             foreach (Renderer r in renderers) b.Encapsulate(r.bounds);
             minY = b.min.y;
@@ -199,9 +209,8 @@ namespace KayipAda
 
         private void ApplyReveal()
         {
-            foreach (Renderer r in renderers)
+            foreach (Material m in revealMaterials)
             {
-                Material m = r.material;
                 m.SetFloat("_Reveal", shownReveal);
                 m.SetFloat("_MinY", minY);
                 m.SetFloat("_MaxY", maxY);

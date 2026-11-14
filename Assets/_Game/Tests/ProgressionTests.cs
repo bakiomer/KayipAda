@@ -114,6 +114,8 @@ namespace KayipAda.Tests
             Time.timeScale = 1f;
             Assert.Less(cannon.Ammo, ammo, "Top ateş etmedi");
             Shot("C_son_gece");
+            Vector3 dock = ship.Delivery.transform.position;
+            ScreenshotUtil.CaptureOverview(ShotPrefix + "_C_son_gece_genel", dock + new Vector3(0f, 26f, -16f), new Vector3(55f, 0f, 0f), 45f);
         }
 
         [UnityTest]
@@ -138,6 +140,29 @@ namespace KayipAda.Tests
             Assert.IsTrue(escape.IsShown, "Kaçış ekranı açılmadı");
             yield return new WaitForSeconds(0.8f);
             Shot("C_kacis_ekrani");
+        }
+
+        [UnityTest]
+        public IEnumerator QuickTestMode_LowersPricesAndAmounts()
+        {
+            GameConfig config = (GameConfig)typeof(AreaManager)
+                .GetField("config", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                .GetValue(AreaManager.Instance);
+            AreaDefinition rocky = PadArea("Pad Rocky");
+            int normalPrice = AreaManager.Instance.PriceOf(rocky);
+            ShipConfig.Requirement keel = ShipBuilder.Instance.Config.Stages[0].Requirements[0];
+            try
+            {
+                config.EditorSetQuickTest(true);
+                Assert.Less(AreaManager.Instance.PriceOf(rocky), normalPrice, "Hızlı test modu fiyatı düşürmedi");
+                Assert.Less(config.ScaleAmount(keel.Amount), keel.Amount, "Hızlı test modu malzemeyi azaltmadı");
+            }
+            finally
+            {
+                config.EditorSetQuickTest(false);
+            }
+            Assert.AreEqual(normalPrice, AreaManager.Instance.PriceOf(rocky), "Kapatınca normal fiyata dönmedi");
+            yield return null;
         }
 
         [UnityTest]
