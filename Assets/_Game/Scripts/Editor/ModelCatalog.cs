@@ -84,7 +84,7 @@ namespace KayipAda.EditorTools
 
         // ---------------------------------------------------------------- Binalar ve alanlar
         public static readonly ModelSpec Sawmill = M("Sawmill", ModelPack.Quaternius, "Environment_Sawmill", 3.8f, SizeAxis.Largest, true, true, "Bıçkıhane");
-        public static readonly ModelSpec Workshop = M("StoneWorkshop", ModelPack.Quaternius, "Environment_House2", 3.8f, SizeAxis.Largest, true, true, "Taş Atölyesi (ev modeli)");
+        public static readonly ModelSpec Workshop = M("StoneWorkshop", ModelPack.Quaternius, "Environment_House3", 3.8f, SizeAxis.Largest, true, true, "Taş Atölyesi (ev modeli)");
         public static readonly ModelSpec MarketStall = M("MarketStall", ModelPack.KenneySurvival, "structure-canvas", 3.2f, SizeAxis.Largest, true, true, "Pazar tezgahı (bez çatılı) — Quaternius'ta yok");
         public static readonly ModelSpec MarketChest = M("MarketChest", ModelPack.Quaternius, "Prop_Chest_Gold", 0.9f, SizeAxis.Largest, true, true, "Pazardaki altın sandığı");
         public static readonly ModelSpec Tent = M("CampTent", ModelPack.KenneySurvival, "tent-canvas", 2.6f, SizeAxis.Largest, true, true, "Kamp çadırı — Quaternius'ta yok");

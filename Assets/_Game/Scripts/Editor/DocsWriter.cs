@@ -54,7 +54,8 @@ namespace KayipAda.EditorTools
             sb.AppendLine("| Olay | Ses dosyaları (ThirdParty/Audio) |");
             sb.AppendLine("|---|---|");
             sb.AppendLine("| Toplama | Interface/pluck_001, pluck_002 |");
-            sb.AppendLine("| Vuruş (ağaç/kaya) | RPG/chop |");
+            sb.AppendLine("| Vuruş (ağaç) | RPG/chop |");
+            sb.AppendLine("| Vuruş (kaya) | Impact/impactMining_000..003 |");
             sb.AppendLine("| Satış | RPG/handleCoins, handleCoins2 |");
             sb.AppendLine("| Para akışı (açma karesi) | Interface/tick_001, tick_002, tick_004 |");
             sb.AppendLine("| Alan açıldı | Interface/confirmation_002 |");

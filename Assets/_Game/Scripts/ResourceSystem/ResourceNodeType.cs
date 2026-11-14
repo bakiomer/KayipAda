@@ -22,6 +22,9 @@ namespace KayipAda
         [field: Tooltip("Tükendikten kaç saniye sonra yeniden dolar.")]
         [field: SerializeField, Min(0f)] public float RegrowTime { get; private set; } = 10f;
 
+        [field: Tooltip("Her toplamada çalan vuruş sesi (ağaç: Chop, kaya: Mine).")]
+        [field: SerializeField] public SoundId HitSound { get; private set; } = SoundId.Chop;
+
 #if UNITY_EDITOR
         // Sadece editör komutları için: yeni oluşturulan dosyaya ilk değerleri yazar.
         public void EditorSetup(ResourceType resource, int stock, float gatherInterval, float regrowTime)
@@ -30,6 +33,11 @@ namespace KayipAda
             Stock = stock;
             GatherInterval = gatherInterval;
             RegrowTime = regrowTime;
+        }
+
+        public void EditorSetHitSound(SoundId sound)
+        {
+            HitSound = sound;
         }
 #endif
     }

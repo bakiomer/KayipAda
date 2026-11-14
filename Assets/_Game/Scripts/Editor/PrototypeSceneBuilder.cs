@@ -274,7 +274,9 @@ namespace KayipAda.EditorTools
                 Sound(SoundId.EnemyDie, 0.7f, "Impact/impactSoft_heavy_000", "Impact/impactSoft_heavy_001"),
                 Sound(SoundId.ShipHit, 0.6f, "Impact/impactWood_heavy_000", "Impact/impactWood_heavy_001", "Impact/impactWood_heavy_002"),
                 Sound(SoundId.NightStart, 0.9f, "Interface/bong_001"),
-                Sound(SoundId.Victory, 1f, "Interface/confirmation_004")
+                Sound(SoundId.Victory, 1f, "Interface/confirmation_004"),
+                Sound(SoundId.Mine, 0.6f, "Impact/impactMining_000", "Impact/impactMining_001", "Impact/impactMining_002",
+                      "Impact/impactMining_003")
             };
 
             SoundLibrary existing = BuilderUtil.Load<SoundLibrary>(SoundLibraryPath);
@@ -372,13 +374,20 @@ namespace KayipAda.EditorTools
             ResourceNodeType tree = Data<ResourceNodeType>(NodeTypesFolder, "Tree");
             ResourceNodeType rock = Data<ResourceNodeType>(NodeTypesFolder, "Rock");
             ResourceNodeType bush = Data<ResourceNodeType>(NodeTypesFolder, "FruitBush");
+            // Vuruş sesleri (oynanış sayısı değil, her seferinde ayarlanır).
+            rock.EditorSetHitSound(SoundId.Mine);
+            bush.EditorSetHitSound(SoundId.Collect);
+            EditorUtility.SetDirty(rock);
+            EditorUtility.SetDirty(bush);
             p.Palms = new GameObject[ModelCatalog.Palms.Length];
             for (int i = 0; i < p.Palms.Length; i++)
                 p.Palms[i] = PrefabFactory.BuildNode(ModelCatalog.Palms[i], tree, config, 1.6f, new Vector2(0.6f, 0.6f), 1.1f);
             p.Rocks = new GameObject[ModelCatalog.Rocks.Length];
             for (int i = 0; i < p.Rocks.Length; i++)
-                p.Rocks[i] = PrefabFactory.BuildNode(ModelCatalog.Rocks[i], rock, config, 1.9f, new Vector2(1.3f, 1.3f), 1.5f);
-            p.FruitTree = PrefabFactory.BuildNode(ModelCatalog.FruitTree, bush, config, 1.7f, new Vector2(0.8f, 0.8f), 1.2f);
+                p.Rocks[i] = PrefabFactory.BuildNode(ModelCatalog.Rocks[i], rock, config, 1.9f, new Vector2(1.3f, 1.3f), 1.5f,
+                                                     null, 0, new Color(0.62f, 0.6f, 0.58f));
+            p.FruitTree = PrefabFactory.BuildNode(ModelCatalog.FruitTree, bush, config, 1.7f, new Vector2(0.8f, 0.8f), 1.2f,
+                                                  ModelCatalog.Fruit, 6);
 
             // Binalar ve alanlar
             p.Sawmill = PrefabFactory.BuildBuilding(ModelCatalog.Sawmill, Data<BuildingType>(BuildingTypesFolder, "Sawmill"), config,
@@ -469,7 +478,7 @@ namespace KayipAda.EditorTools
             {
                 GameObject palm = Place(p.Palms[i % p.Palms.Length], beach, MapLayout.Palms[i], 0f);
                 // Eğik palmiye tepesi kameraya doğru yatıp oyuncuyu kapatmasın: yana (yoldan dışarı) yatır.
-                AlignLean(palm, MapLayout.Palms[i].x < 0f ? Vector3.left : Vector3.right);
+                AlignLean(palm, Vector3.forward); // kameradan uzağa: gövde dik görünür, tepe oyuncuyu kapatmaz
                 palms[i] = palm.GetComponent<ResourceNode>();
                 Reserve(reserved, MapLayout.Palms[i], 2.2f);
             }
@@ -534,8 +543,9 @@ namespace KayipAda.EditorTools
             CreateGuide(config, follow.GetComponent<Camera>());
 
             // Süsler (yolları ve oyun alanlarını kapatmadan)
-            Reserve(reserved, new Vector3(MapLayout.RockyRect.center.x, 0f, MapLayout.RockyRect.center.y), 6.6f);
-            Reserve(reserved, new Vector3(MapLayout.OrchardRect.center.x, 0f, MapLayout.OrchardRect.center.y), 6.6f);
+            foreach (Vector3 rock in MapLayout.Rocks) Reserve(reserved, rock, 2.4f);
+            foreach (Vector3 tree in MapLayout.FruitTrees) Reserve(reserved, tree, 2.3f);
+            Reserve(reserved, MapLayout.Workshop, 3.9f);
             ScatterDecor(p, island, reserved);
 
             // Kaydet ve proje ayarları
@@ -1066,6 +1076,14 @@ namespace KayipAda.EditorTools
             Scatter(p, root, island, random, placed, "FlowerRed", 8, -40f, -4f, 0.8f);
             Scatter(p, root, island, random, placed, "Bush", 8, -40f, -4f, 1.6f);
             Scatter(p, root, island, random, placed, "BigRock", 4, -40f, -4f, 2f);
+
+            // Bölgelerin içi: kayalıkta çakıl ve küçük taşlar, bahçede çiçek ve çalı (oyun alanlarına değmeden).
+            Scatter(p, root, island, random, placed, "SmallRock", 7, -40f, -1f, 0.9f, MapLayout.RockyRect);
+            Scatter(p, root, island, random, placed, "Pebble_A", 10, -40f, -1f, 0.5f, MapLayout.RockyRect);
+            Scatter(p, root, island, random, placed, "SandRocks_B", 3, -40f, -1f, 1.2f, MapLayout.RockyRect);
+            Scatter(p, root, island, random, placed, "FlowerYellow", 10, -40f, -1f, 0.6f, MapLayout.OrchardRect);
+            Scatter(p, root, island, random, placed, "FlowerRed", 10, -40f, -1f, 0.6f, MapLayout.OrchardRect);
+            Scatter(p, root, island, random, placed, "Bush", 4, -40f, -1f, 1.2f, MapLayout.OrchardRect);
             BuilderUtil.MarkStatic(root.gameObject);
         }
 
@@ -1080,17 +1098,27 @@ namespace KayipAda.EditorTools
         private static void Scatter(Prefabs p, Transform parent, IslandShape island, System.Random random, List<Vector3> placed,
                                     string key, int count, float minSd, float maxSd, float radius)
         {
+            Scatter(p, parent, island, random, placed, key, count, minSd, maxSd, radius, null);
+        }
+
+        // inside verilirse sadece o dikdörtgenin içine (bölge süsleri) koyar; verilmezse bölgelerin dışına.
+        private static void Scatter(Prefabs p, Transform parent, IslandShape island, System.Random random, List<Vector3> placed,
+                                    string key, int count, float minSd, float maxSd, float radius, Rect? inside)
+        {
             if (count <= 0 || !p.Decor.TryGetValue(key, out GameObject prefab)) return;
             Vector2 c = island.Center, r = island.Radius;
             int done = 0;
             for (int attempt = 0; attempt < count * 60 && done < count; attempt++)
             {
-                Vector2 pos = new Vector2(c.x + ((float)random.NextDouble() * 2f - 1f) * r.x * 1.1f,
-                                          c.y + ((float)random.NextDouble() * 2f - 1f) * r.y * 1.1f);
+                Vector2 pos = inside.HasValue
+                    ? new Vector2(inside.Value.xMin + 0.6f + (float)random.NextDouble() * (inside.Value.width - 1.2f),
+                                  inside.Value.yMin + 0.6f + (float)random.NextDouble() * (inside.Value.height - 1.2f))
+                    : new Vector2(c.x + ((float)random.NextDouble() * 2f - 1f) * r.x * 1.1f,
+                                  c.y + ((float)random.NextDouble() * 2f - 1f) * r.y * 1.1f);
                 float sd = island.SignedDistance(pos);
                 if (sd < minSd || sd > maxSd) continue;
                 if (MapLayout.DistanceToPaths(pos) < MapLayout.PathWidth * 0.5f + radius * 0.6f) continue;
-                if (InsideRect(pos, MapLayout.RockyRect, 1f) || InsideRect(pos, MapLayout.OrchardRect, 1f)) continue;
+                if (!inside.HasValue && (InsideRect(pos, MapLayout.RockyRect, 1f) || InsideRect(pos, MapLayout.OrchardRect, 1f))) continue;
 
                 bool free = true;
                 foreach (Vector3 other in placed)
@@ -1102,7 +1130,12 @@ namespace KayipAda.EditorTools
 
                 GameObject go = Place(prefab, parent, new Vector3(pos.x, 0f, pos.y), (float)random.NextDouble() * 360f);
                 go.transform.localScale = Vector3.one * (0.85f + (float)random.NextDouble() * 0.3f);
-                if (key == "DecorPalm") AlignLean(go, new Vector3(pos.x - island.Center.x, 0f, pos.y - island.Center.y)); // denize doğru
+                if (key == "DecorPalm")
+                {
+                    // Denize doğru ama kameraya doğru değil (tepe görüşü kapatmasın).
+                    Vector3 outward = new Vector3(pos.x - island.Center.x, 0f, pos.y - island.Center.y).normalized;
+                    AlignLean(go, new Vector3(outward.x, 0f, Mathf.Max(outward.z, 0.4f)));
+                }
                 placed.Add(new Vector3(pos.x, pos.y, radius));
                 done++;
             }

@@ -22,6 +22,7 @@ namespace KayipAda
         EnemyDie,  // düşman öldü
         ShipHit,   // gemi hasar aldı
         NightStart,// son gece başladı
-        Victory    // kaçış
+        Victory,   // kaçış
+        Mine       // kayaya vurma
     }
 }

@@ -485,23 +485,73 @@ namespace KayipAda.EditorTools
         // ================================================================ Kaynak noktaları
 
         public static GameObject BuildNode(ModelSpec spec, ResourceNodeType nodeType, GameConfig config,
-                                           float zoneRadius, Vector2 trunkSize, float standRadius)
+                                           float zoneRadius, Vector2 trunkSize, float standRadius,
+                                           ModelSpec fruit = null, int fruitCount = 0, Color? chipColor = null)
         {
             GameObject root = new GameObject(spec.Key);
             Transform visual = new GameObject("Visual").transform;
             visual.SetParent(root.transform, false);
-            CreateModel(spec, visual);
+            GameObject model = CreateModel(spec, visual);
+
+            // Meyve ağacı: tepenin çevresine meyveler (ağaçla birlikte sallanır).
+            if (fruit != null && fruitCount > 0)
+            {
+                Bounds crown = WorldBounds(model);
+                for (int i = 0; i < fruitCount; i++)
+                {
+                    float angle = i * Mathf.PI * 2f / fruitCount + 0.4f;
+                    Transform holder = new GameObject("Fruit " + i).transform;
+                    holder.SetParent(visual, false);
+                    holder.position = crown.center + new Vector3(Mathf.Cos(angle) * crown.extents.x * 0.8f,
+                                                                 (i % 2 == 0 ? -0.15f : 0.25f) * crown.extents.y,
+                                                                 Mathf.Sin(angle) * crown.extents.z * 0.8f);
+                    holder.localRotation = Quaternion.Euler(0f, i * 67f, 0f);
+                    CreateModel(fruit, holder);
+                }
+            }
 
             AddRoundTrigger(root, zoneRadius);
             BuilderUtil.SetVector2(root.AddComponent<NavObstacle>(), "size", trunkSize);
+            ParticleSystem chips = CreateHitChips(root.transform, Mathf.Min(spec.Size * 0.6f, 2.2f), chipColor ?? new Color(0.45f, 0.75f, 0.25f));
 
             ResourceNode node = root.AddComponent<ResourceNode>();
+            BuilderUtil.SetField(node, "hitEffect", chips);
             BuilderUtil.SetField(node, "config", config);
             BuilderUtil.SetField(node, "nodeType", nodeType);
             BuilderUtil.SetField(node, "visual", visual);
             BuilderUtil.SetFloat(node, "standRadius", standRadius);
             BuilderUtil.SetFloat(node, "spawnHeight", Mathf.Min(spec.Size * 0.5f, 1.6f));
             return Save(root, Folder + "/Nodes/" + spec.Key + ".prefab");
+        }
+
+        // Kaynak noktasına vurunca saçılan küçük parçalar (yaprak / taş kırıntısı). Kod Emit ile tetikler.
+        private static ParticleSystem CreateHitChips(Transform parent, float height, Color color)
+        {
+            GameObject go = new GameObject("HitChips");
+            go.transform.SetParent(parent, false);
+            go.transform.localPosition = new Vector3(0f, height, 0f);
+            ParticleSystem ps = go.AddComponent<ParticleSystem>();
+            ParticleSystemRenderer r = go.GetComponent<ParticleSystemRenderer>();
+            r.sharedMaterial = Cached("M_Confetti", () => ArtGenerator.GetTransparent("M_Confetti", ArtGenerator.LoadSprite(ArtGenerator.SquarePath)?.texture, Color.white));
+            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            ParticleSystem.MainModule main = ps.main;
+            main.playOnAwake = false;
+            main.loop = false;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.5f, 0.8f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(1.5f, 3f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.08f, 0.16f);
+            main.startRotation = new ParticleSystem.MinMaxCurve(0f, Mathf.PI * 2f);
+            main.startColor = new ParticleSystem.MinMaxGradient(color, color * 0.8f);
+            main.gravityModifier = 1.2f;
+            main.maxParticles = 20;
+            ParticleSystem.EmissionModule emission = ps.emission;
+            emission.rateOverTime = 0f;
+            ParticleSystem.ShapeModule shape = ps.shape;
+            shape.shapeType = ParticleSystemShapeType.Sphere;
+            shape.radius = 0.4f;
+            FadeOut(ps);
+            return ps;
         }
 
         // ================================================================ İşleme binası

@@ -16,6 +16,10 @@ namespace KayipAda
         [SerializeField] private float spawnHeight = 1.2f;
         [Tooltip("İşçinin durduğu yerin merkezden uzaklığı (gövdenin içine girmesin).")]
         [SerializeField] private float standRadius = 1.1f;
+        [Tooltip("Her toplamada saçılan parçacıklar (yaprak, taş kırıntısı). Boş olabilir.")]
+        [SerializeField] private ParticleSystem hitEffect;
+        [Tooltip("Her vuruşta kaç parçacık saçılır.")]
+        [SerializeField] private int hitParticles = 5;
 
         public int Stock { get; private set; }
         public bool IsDepleted => Stock <= 0;
@@ -97,7 +101,8 @@ namespace KayipAda
             if (!gave) return;
             gatherTimer = nodeType.GatherInterval;
             Hit();
-            if (playerGot) AudioManager.Play(SoundId.Chop, 0.6f);
+            if (playerGot) AudioManager.Play(nodeType.HitSound, 0.6f);
+            if (hitEffect != null) hitEffect.Emit(hitParticles);
 
             if (IsDepleted) regrowTimer = nodeType.RegrowTime;
         }
