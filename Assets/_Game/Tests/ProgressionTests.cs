@@ -61,11 +61,22 @@ namespace KayipAda.Tests
             yield return new WaitForSeconds(1f);
             Shot("C_gemi_asama_0");
 
+            // Omurganın yarısı: parçaların bir kısmı görünür (tek tek gelir).
+            ShipConfig.Requirement keelReq = ship.Config.Stages[0].Requirements[0];
+            int half = Mathf.Max(1, ship.Config.Stages[0].Requirements[0].Amount > 0 ? Mathf.CeilToInt(QuickAmount(keelReq) * 0.5f) : 1);
+            for (int k = 0; k < half; k++) ship.Deliver(keelReq.Resource.Spawn(ship.Delivery.transform.position + Vector3.up));
+            yield return new WaitForSeconds(1f);
+            Assert.Greater(ship.ShownPieces(0), 0, "Omurga parçası gelmedi");
+            Assert.Less(ship.ShownPieces(0), ship.PieceCount(0), "Omurganın yarısında tüm parçalar gelmiş olmamalı");
+            Shot("C_gemi_omurga_yarim");
+
             for (int i = 0; i < ship.Config.Stages.Length; i++)
             {
                 ShipConfig.Stage stage = ship.Config.Stages[i];
                 yield return CompleteStage(ship);
                 Assert.AreEqual(i + 1, ship.StageIndex, stage.Name + " bitince aşama ilerlemedi");
+                if (i != 1) Assert.Greater(ship.PieceCount(i), 0, stage.Name + " aşamasının görünen parçası yok");
+                Assert.AreEqual(ship.PieceCount(i), ship.ShownPieces(i), stage.Name + " bitince parçaların hepsi görünmedi");
                 if (stage.UnlockOnComplete != null)
                 {
                     Assert.IsTrue(AreaManager.Instance.IsUnlocked(stage.UnlockOnComplete), stage.Name + " bitince sonraki hedef açılmadı");
@@ -96,16 +107,16 @@ namespace KayipAda.Tests
             AreaManager.Instance.Unlock(PadArea("Pad Loom"));
             yield return new WaitForSeconds(1f);
 
-            // Oyuncu koydaki palmiyeden lif toplar.
-            ResourceNode fiberPalm = null;
+            // Oyuncu koydaki keten tarlasından lif toplar.
+            ResourceNode flax = null;
             foreach (ResourceNode n in Object.FindObjectsByType<ResourceNode>(FindObjectsSortMode.None))
             {
-                if (n.name.StartsWith("Node_FiberPalm")) fiberPalm = n;
+                if (n.name.StartsWith("Node_FlaxField")) flax = n;
             }
-            Assert.IsNotNull(fiberPalm, "Lif palmiyesi yok (Palmiye Koyu açılmadı mı?)");
-            Teleport(fiberPalm.GetStandPoint(fiberPalm.transform.position + Vector3.back * 3f));
+            Assert.IsNotNull(flax, "Keten tarlası yok (Palmiye Koyu açılmadı mı?)");
+            Teleport(flax.GetStandPoint(flax.transform.position + Vector3.back * 3f));
             yield return WaitFor(() => PlayerStack.Count >= 4, 6f);
-            Assert.GreaterOrEqual(PlayerStack.Count, 4, "Palmiyeden lif toplanmadı");
+            Assert.GreaterOrEqual(PlayerStack.Count, 4, "Keten tarlasından lif toplanmadı");
             Shot("B_lif_topluyor");
 
             ProcessingBuilding rope = null, cloth = null;
@@ -128,6 +139,12 @@ namespace KayipAda.Tests
         }
 
         // Geminin şu anki aşamasını, gereken malzemeleri teslim ederek bitirir.
+        private static int QuickAmount(ShipConfig.Requirement req)
+        {
+            GameConfig config = Object.FindAnyObjectByType<CameraFollow>().Config;
+            return config.ScaleAmount(req.Amount);
+        }
+
         private static IEnumerator CompleteStage(ShipBuilder ship)
         {
             ShipConfig.Stage stage = ship.Config.Stages[ship.StageIndex];
@@ -160,14 +177,26 @@ namespace KayipAda.Tests
             Vector3 shipStart = ship.Model.position;
             yield return FinishShip(ship);
             Assert.IsTrue(ceremony.IsRunning, "Gemi bitince tören başlamadı");
-            yield return new WaitForSeconds(ship.Config.GatherTime + ship.Config.SlideDuration * 0.75f);
+            ShipConfig c = ship.Config;
+            yield return new WaitForSeconds(c.GatherTime * 0.6f);
+            Shot("C_toren_toplanma");
+            yield return WaitFor(() => ceremony.Phase == "kamera", c.GatherTime + 2f);
+            yield return new WaitForSeconds(c.OrbitDuration * 0.5f);
+            Shot("C_toren_kamera");
+            yield return WaitFor(() => ceremony.Phase == "kayma", c.OrbitDuration + 2f);
+            yield return new WaitForSeconds(c.SlideDuration * 0.8f);
             Shot("C_toren_suya_iniyor");
-            yield return WaitFor(() => escape.IsShown, ship.Config.SlideDuration + ship.Config.SailDuration + 5f);
+            yield return WaitFor(() => ceremony.Phase == "uzaklasma", c.SlideDuration + 2f);
+            yield return new WaitForSeconds(c.TurnDuration + 1.5f);
+            Shot("C_toren_havai_fisek");
+            yield return WaitFor(() => escape.IsShown, c.TurnDuration + c.SailDuration + 5f);
             Assert.IsTrue(escape.IsShown, "Kaçış ekranı açılmadı");
-            Assert.Greater(Vector3.Distance(ship.Model.position, shipStart), ship.Config.SlideDistance * 0.9f, "Gemi suya kaymadı");
+            Assert.Greater(Vector3.Distance(ship.Model.position, shipStart), c.SlideDistance * 0.9f, "Gemi suya kaymadı");
+            Assert.IsFalse(IslandShape.Instance.Contains(new Vector2(ship.Model.position.x, ship.Model.position.z), 0f), "Gemi denize açılmadı");
             Assert.Less(ship.Model.position.y, shipStart.y, "Gemi suya inmedi");
-            yield return new WaitForSeconds(0.8f);
+            yield return new WaitForSeconds(3f); // yıldızlar ve sayaç dolsun
             Shot("C_kacis_ekrani");
+            Assert.GreaterOrEqual(escape.StarCount, 1, "Yıldız yok");
         }
 
         [UnityTest]

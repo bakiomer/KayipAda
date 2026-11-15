@@ -1,0 +1,13 @@
+Kayip Display (KayipDisplay-Regular.ttf)
+========================================
+Bu font, Google Fonts'taki "Lilita One" fontunun (Juan Montoreano, SIL Open Font License 1.1)
+degistirilmis halidir. Kaynak: https://github.com/google/fonts/tree/main/ofl/lilitaone
+
+Neden degistirildi: Lilita One'da Turkce harfler eksik (I-noktali, g-breve, s-cedilla ve buyukleri).
+Bu harfler fontun kendi harflerinden ve isaretlerinden birlestirilerek eklendi:
+- İ = I + i'nin noktasi
+- Ş ş = S s + fontun cedilla isareti (Ç ç ile ayni yerlesim)
+- Ğ ğ = G g + kodla cizilen breve isareti
+
+OFL geregi degistirilmis surum ayrilmis ad olan "Lilita" adini tasiyamaz; bu yuzden ad "Kayip Display".
+Lisans: OFL.txt (SIL Open Font License 1.1). Ucretsiz, ticari kullanim serbest; font tek basina satilamaz.

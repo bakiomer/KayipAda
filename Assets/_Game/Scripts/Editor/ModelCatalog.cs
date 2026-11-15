@@ -70,10 +70,10 @@ namespace KayipAda.EditorTools
         // ---------------------------------------------------------------- Taşınan kaynaklar
         public static readonly ModelSpec Wood = M("Wood", ModelPack.Quaternius, "UI_Wood", 0.7f, SizeAxis.Largest, true, false, "Odun");
         public static readonly ModelSpec Stone = M("Stone", ModelPack.Quaternius, "UI_Rocks", 0.6f, SizeAxis.Largest, true, false, "Taş");
-        public static readonly ModelSpec Fruit = M("Fruit", ModelPack.KenneyNature, "crop_melon", 0.5f, SizeAxis.Largest, true, false, "Meyve (kavun) — Quaternius'ta meyve yok");
+        public static readonly ModelSpec Fruit = M("Fruit", ModelPack.KenneyNature, "crop_melon", 0.5f, SizeAxis.Largest, true, false, "Meyve — kullanılmıyor: meyve kodla üretilir (kırmızı/turuncu, yapraklı)");
         public static readonly ModelSpec Plank = M("Plank", ModelPack.KenneySurvival, "resource-planks", 0.75f, SizeAxis.Largest, true, false, "Kalas — Quaternius'ta yok");
         public static readonly ModelSpec Brick = M("Brick", ModelPack.KenneySurvival, "resource-stone", 0.6f, SizeAxis.Largest, true, false, "Tuğla (kesme taş) — Quaternius'ta yok");
-        public static readonly ModelSpec Fiber = M("Fiber", ModelPack.Quaternius, "UI_Wheat", 0.6f, SizeAxis.Largest, true, false, "Lif (palmiye lifi demeti)");
+        public static readonly ModelSpec Fiber = M("Fiber", ModelPack.Quaternius, "UI_Wheat", 0.6f, SizeAxis.Largest, true, false, "Lif (sarı keten demeti)");
         public static readonly ModelSpec Cloth = M("Cloth", ModelPack.KenneySurvival, "bedroll-packed", 0.7f, SizeAxis.Largest, true, false, "Yelken bezi (sarılı bez) — Quaternius'ta yok");
         // Halat: hiçbir pakette yok → ArtGenerator kodla halka (simit) şeklinde üretir.
         public static readonly ModelSpec Coin = M("Coin", ModelPack.Quaternius, "UI_Gold", 0.45f, SizeAxis.Largest, true, false, "Uçan/zıplayan para");
@@ -95,7 +95,13 @@ namespace KayipAda.EditorTools
         // Tükenen kaynak noktasının yerinde kalan parça: ağaçlarda kütük, kayalarda kırık taşlar.
         public static readonly ModelSpec Stump = M("Stump", ModelPack.KenneyNature, "stump_round", 0.55f, SizeAxis.Height, true, true, "Kesilen ağacın kütüğü (tükenince)");
         public static readonly ModelSpec Rubble = M("Rubble", ModelPack.KenneyPirate, "rocks-sand-a", 1.1f, SizeAxis.Largest, true, false, "Tükenen kayanın yerinde kalan taşlar");
-        public static readonly ModelSpec FruitTree = M("Node_FruitTree", ModelPack.KenneyNature, "tree_fat", 3.4f, SizeAxis.Height, true, true, "Meyve ağacı — Quaternius'ta yok");
+        public static readonly ModelSpec FruitTree = M("Node_FruitTree", ModelPack.KenneyNature, "plant_bushLarge", 1.8f, SizeAxis.Height, true, true, "Meyve çalısı (üstünde kodla üretilen kırmızı/turuncu meyveler) — Quaternius'ta yok");
+        public const int FruitsPerBush = 8;
+        // Keten/saz tarlası (lif): alçak buğday benzeri bitki kümeleri, sarımsı-yeşile boyanır.
+        public static readonly ModelSpec FlaxClump = M("FlaxClump", ModelPack.KenneyNature, "crops_wheatStageB", 1.1f, SizeAxis.Height, true, false, "Keten/saz bitkisi (lif tarlası) — sarımsı-yeşile boyanır");
+        public const int FlaxClumps = 9;
+        public const float FlaxRadius = 1.0f;
+        public static readonly UnityEngine.Color FlaxColor = new UnityEngine.Color(0.78f, 0.8f, 0.4f);
 
         // ---------------------------------------------------------------- Binalar ve alanlar
         public static readonly ModelSpec Sawmill = M("Sawmill", ModelPack.Quaternius, "Environment_Sawmill", 3.8f, SizeAxis.Largest, true, true, "Bıçkıhane");
@@ -106,6 +112,8 @@ namespace KayipAda.EditorTools
         public static readonly ModelSpec MarketChest = M("MarketChest", ModelPack.Quaternius, "Prop_Chest_Gold", 0.9f, SizeAxis.Largest, true, true, "Pazardaki altın sandığı");
         public static readonly ModelSpec Tent = M("CampTent", ModelPack.KenneySurvival, "tent-canvas", 2.6f, SizeAxis.Largest, true, true, "Kamp çadırı — Quaternius'ta yok");
         public static readonly ModelSpec Campfire = M("Campfire", ModelPack.KenneySurvival, "campfire-pit", 1.1f, SizeAxis.Largest, true, false, "Kamp ateşi");
+        public static readonly ModelSpec ShipFlag = M("ShipFlag", ModelPack.KenneyPirate, "flag-pirate-high", 2.2f, SizeAxis.Height, true, false, "Erzak aşamasında direğin tepesine çıkan korsan bayrağı");
+        public static readonly ModelSpec Sign = M("Sign", ModelPack.KenneyNature, "sign", 2.4f, SizeAxis.Largest, true, true, "Bölge tabelası (ahşap) — korsan paketlerinde tabela yok");
         public static readonly ModelSpec Fence = M("Fence", ModelPack.KenneySurvival, "fence", 2f, SizeAxis.Largest, true, true, "Kapalı bölge çiti — Quaternius'ta yok");
         public static readonly ModelSpec Dock = M("Dock", ModelPack.Quaternius, "Environment_Dock", 7f, SizeAxis.Largest, true, true, "İskele");
         public static readonly ModelSpec DockPole = M("DockPole", ModelPack.Quaternius, "Environment_Dock_Pole", 2.6f, SizeAxis.Largest, true, true, "İskele direği / inşa iskelesi");

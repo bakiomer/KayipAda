@@ -58,9 +58,34 @@ namespace KayipAda.EditorTools
 
         // Tersane: gemi iskelenin doğusunda kumsalda, kızağın üstünde; pruvası denize bakar.
         public const float ShipX = 6.5f;
-        public const float ShipInland = 2.2f;   // geminin ortası kıyıdan bu kadar içeride
+        public const float ShipInland = 3.2f;   // geminin ortası kıyıdan bu kadar içeride
+        public const float ShipBowTilt = 20f;   // gemi kıyıya paralel; burnu bu kadar (derece) denize dönük
+        public const float ShipCradleHeight = 0.35f; // kızak altlığının yüksekliği (gemi bunun üstünde)
+        public const int ShipBlockCount = 5;    // gövdeyi kapatan engel karesi sayısı
+        public const float DeliveryGap = 2.2f;  // teslim alanının gövde kenarından uzaklığı
+        public const int ShipRailCount = 4;     // denize uzanan kayma rayı sayısı
+        public const float ShipRailLength = 12f;
+        public const float ShipDeckFraction = 0.36f; // güverte yüksekliği (gemi boyunun oranı): altı gövde
+        public const float ShipMastGap = 0.9f;  // farklı direk sayılması için boy eksenindeki en az uzaklık
+        public const float ShipMastReach = 1.6f; // bir parçanın direğe ait sayıldığı en fazla uzaklık
+        public const int ShipRibCount = 7;      // omurga aşamasındaki kaburga sayısı
+        public static readonly Color ShipWoodColor = new Color(0.55f, 0.34f, 0.17f);
+        public static readonly Color ShipPlankColor = new Color(0.78f, 0.58f, 0.36f);
         public static readonly Vector3 DeliveryFromShip = new Vector3(-3.8f, 0f, -1.2f);
         public static readonly Vector3 WreckOffset = new Vector3(-10f, 0f, 3f);
+
+        // Sırttaki kaynakların renkleri (kolay ayırt edilsin).
+        public static readonly Color ItemStoneColor = new Color(0.62f, 0.63f, 0.67f);
+        public static readonly Color ItemBrickColor = new Color(0.86f, 0.4f, 0.22f);
+        public static readonly Color ItemFiberColor = new Color(0.97f, 0.83f, 0.3f);
+        public static readonly Color ItemClothColor = new Color(0.97f, 0.94f, 0.84f);
+
+        // Bölge çiti: kapı aralığı (metre), çit engelinin kalınlığı, kapı kanadının açılma açısı, tabela yazısının yüksekliği (oran).
+        public const float GateWidth = 2.8f;
+        public const float FenceThickness = 0.35f;
+        public const float GateOpenAngle = 100f;
+        public const float SignTextHeight = 0.72f;
+        public static readonly Color SignWoodColor = new Color(0.58f, 0.38f, 0.2f);
 
         // Ağaçların doğal çeşitliliği: en fazla eğim (derece), boy farkı (0.1 = ±%10), rastgele tohum.
         public const float TreeTiltMax = 8f;

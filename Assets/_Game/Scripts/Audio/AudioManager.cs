@@ -1,7 +1,9 @@
 // AudioManager.cs
 // Tek ses yöneticisi: AudioManager.Play(SoundId.Sell) ile her yerden ses çalınır.
 // Aynı ses kısa sürede üst üste çalınırsa perdesi hafifçe yükselir (toplarken/satarken "tıngır" hissi).
-// Arka planda sürekli bir dalga sesi çalar; ses dosyası yoksa yumuşak bir dalga sesi kendisi üretir.
+// Arka planda sürekli bir dalga sesi ve ara sıra kuş cıvıltıları çalar (ses dosyası yoksa kendisi üretir).
+// Her çalışta perde hafifçe rastgele değişir (Entry.PitchJitter). Müzik (final) ayrı kaynaktan sırayla çalar.
+// Ayarlar: ses açık/kapalı (PlayerPrefs "ses").
 // Ses dosyası eksikse sessizce geçer, hata vermez.
 
 using System.Collections.Generic;
@@ -23,7 +25,25 @@ namespace KayipAda
         private readonly Dictionary<SoundId, float> lastPlayTime = new Dictionary<SoundId, float>();
         private readonly Dictionary<SoundId, float> comboPitch = new Dictionary<SoundId, float>();
         private AudioSource ambientSource;
+        private AudioSource birdSource;
+        private AudioSource musicSource;
+        private readonly Queue<AudioClip> musicQueue = new Queue<AudioClip>();
+        private float musicVolume = 1f;
         private int nextVoice;
+
+        private const string SoundPref = "ses";
+
+        // Ayarlar: ses açık mı? (cihazda saklanır)
+        public static bool SoundOn
+        {
+            get => PlayerPrefs.GetInt(SoundPref, 1) == 1;
+            set
+            {
+                PlayerPrefs.SetInt(SoundPref, value ? 1 : 0);
+                PlayerPrefs.Save();
+                AudioListener.volume = value ? 1f : 0f;
+            }
+        }
 
         private void Awake()
         {
@@ -40,6 +60,16 @@ namespace KayipAda
             ambientSource.loop = true;
             ambientSource.playOnAwake = false;
             ambientSource.spatialBlend = 0f;
+
+            birdSource = gameObject.AddComponent<AudioSource>();
+            birdSource.loop = true;
+            birdSource.playOnAwake = false;
+            birdSource.spatialBlend = 0f;
+
+            musicSource = gameObject.AddComponent<AudioSource>();
+            musicSource.playOnAwake = false;
+            musicSource.spatialBlend = 0f;
+            AudioListener.volume = SoundOn ? 1f : 0f;
         }
 
         private void Start()
@@ -48,11 +78,33 @@ namespace KayipAda
             ambientSource.clip = ambient;
             ambientSource.volume = config.AmbientVolume;
             ambientSource.Play();
+            birdSource.clip = CreateBirdClip();
+            birdSource.volume = config.BirdVolume;
+            birdSource.Play();
         }
 
         private void Update()
         {
             ambientSource.volume = config.AmbientVolume;
+            birdSource.volume = config.BirdVolume;
+            if (!musicSource.isPlaying && musicQueue.Count > 0)
+            {
+                musicSource.clip = musicQueue.Dequeue();
+                musicSource.volume = musicVolume * config.MusicVolume;
+                musicSource.Play();
+            }
+        }
+
+        // Türün tüm seslerini sırayla çalar (final müziği). Önceki müzik kuyruğu silinir.
+        public static void PlaySequence(SoundId id)
+        {
+            if (instance == null || instance.library == null) return;
+            SoundLibrary.Entry entry = instance.library.Find(id);
+            if (entry == null || entry.Clips == null) return;
+            instance.musicQueue.Clear();
+            instance.musicSource.Stop();
+            instance.musicVolume = entry.Volume;
+            foreach (AudioClip clip in entry.Clips) if (clip != null) instance.musicQueue.Enqueue(clip);
         }
 
         public static void Play(SoundId id, float volumeScale = 1f)
@@ -81,7 +133,7 @@ namespace KayipAda
 
             AudioSource source = voices[nextVoice];
             nextVoice = (nextVoice + 1) % voices.Count;
-            source.pitch = 1f + pitch + Random.Range(-0.03f, 0.03f);
+            source.pitch = 1f + pitch + Random.Range(-entry.PitchJitter, entry.PitchJitter);
             source.PlayOneShot(clip, entry.Volume * volumeScale * config.SfxVolume);
         }
 
@@ -106,6 +158,35 @@ namespace KayipAda
                 data[i] = (low * 0.6f + lower * 1.8f) * swell;
             }
             AudioClip clip = AudioClip.Create("Waves (üretilmiş)", length, 1, rate, false);
+            clip.SetData(data, 0);
+            return clip;
+        }
+
+        // Dosya yoksa: 12 saniyelik döngüde birkaç kısa kuş cıvıltısı (yükselip alçalan tiz sesler), arası sessiz.
+        private static AudioClip CreateBirdClip()
+        {
+            const int rate = 22050;
+            const int seconds = 12;
+            int length = rate * seconds;
+            float[] data = new float[length];
+            System.Random random = new System.Random(11);
+            float[] starts = { 1.2f, 1.5f, 4.8f, 7.3f, 7.55f, 7.8f, 10.4f };
+            foreach (float start in starts)
+            {
+                float baseFreq = 2600f + (float)random.NextDouble() * 1400f;
+                float duration = 0.09f + (float)random.NextDouble() * 0.08f;
+                int from = (int)(start * rate), count = (int)(duration * rate);
+                float phase = 0f;
+                for (int i = 0; i < count && from + i < length; i++)
+                {
+                    float t = (float)i / count;
+                    float freq = baseFreq * (1f + 0.35f * Mathf.Sin(t * Mathf.PI)); // yükselip alçalan
+                    phase += 2f * Mathf.PI * freq / rate;
+                    float envelope = Mathf.Sin(t * Mathf.PI);
+                    data[from + i] += Mathf.Sin(phase) * envelope * 0.25f;
+                }
+            }
+            AudioClip clip = AudioClip.Create("Birds (üretilmiş)", length, 1, rate, false);
             clip.SetData(data, 0);
             return clip;
         }

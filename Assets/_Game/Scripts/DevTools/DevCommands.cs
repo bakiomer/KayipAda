@@ -16,24 +16,35 @@ namespace KayipAda
         public static bool Available => false;
 #endif
 
+        // Bu oturumda bir test komutu kullanıldı mı? (Kullanıldıysa oyun süresi sayılmaz.)
+        public static bool Used { get; private set; }
+
+        private static bool Use()
+        {
+            if (!Available) return false;
+            Used = true;
+            return true;
+        }
+
         public static bool InfiniteMoney => CurrencyManager.Instance != null && CurrencyManager.Instance.IsInfinite;
 
         public static void SetInfiniteMoney(GameConfig config, bool on)
         {
-            if (!Available || CurrencyManager.Instance == null) return;
+            if (CurrencyManager.Instance == null || !Use()) return;
             CurrencyManager.Instance.SetInfinite(on, config.DevInfiniteCoins);
         }
 
         public static void AddMoney(GameConfig config)
         {
-            if (!Available || CurrencyManager.Instance == null) return;
-            CurrencyManager.Instance.Add(config.DevMoneyAmount);
+            if (CurrencyManager.Instance == null || !Use()) return;
+            CurrencyManager currency = CurrencyManager.Instance;
+            currency.SetCoins(currency.Coins + config.DevMoneyAmount); // kazanılan para sayılmaz
         }
 
         // Bölgeler: Kayalık, Meyve Bahçesi, Palmiye Koyu (bina ve işçi kareleri hariç).
         public static void UnlockAllRegions()
         {
-            if (!Available) return;
+            if (!Use()) return;
             foreach (UnlockableArea area in Object.FindObjectsByType<UnlockableArea>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
                 if (!area.HoldsBuilding) Unlock(area.Area);
@@ -44,7 +55,7 @@ namespace KayipAda
         // görünsün diye o bölge de açılır.
         public static void UnlockAllBuildings()
         {
-            if (!Available) return;
+            if (!Use()) return;
             foreach (UnlockableArea area in Object.FindObjectsByType<UnlockableArea>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
                 if (!area.HoldsBuilding) continue;
@@ -60,7 +71,7 @@ namespace KayipAda
         // Her işçi türünün karesini açar (işçi sayısı WorkerType.Count; başlangıçta her türden 1).
         public static void HireAllWorkers()
         {
-            if (!Available) return;
+            if (!Use()) return;
             foreach (WorkerSpawner spawner in Object.FindObjectsByType<WorkerSpawner>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
                 Unlock(spawner.HireArea);
@@ -75,7 +86,7 @@ namespace KayipAda
         // Oyuncunun sırtındaki yığını seçilen malzemeyle doldurur (önce boşaltır).
         public static void FillPlayerStack(ResourceType type)
         {
-            if (!Available || type == null) return;
+            if (type == null || !Use()) return;
             CarryStack stack = PlayerStack();
             if (stack == null) return;
             while (!stack.IsEmpty)
@@ -100,27 +111,28 @@ namespace KayipAda
 
         public static void CompleteShipStage()
         {
-            if (!Available || ShipBuilder.Instance == null) return;
+            if (ShipBuilder.Instance == null || !Use()) return;
             ShipBuilder.Instance.ForceCompleteStage();
         }
 
         // Kalan tüm aşamaları bitirir; gemi tamamlanınca suya indirme töreni kendiliğinden başlar.
         public static void SkipToCeremony()
         {
-            if (!Available || ShipBuilder.Instance == null) return;
+            if (ShipBuilder.Instance == null || !Use()) return;
             while (!ShipBuilder.Instance.IsComplete) ShipBuilder.Instance.ForceCompleteStage();
         }
 
         public static void SetSpeed(float speed)
         {
-            if (!Available) return;
+            if (!Use()) return;
             Time.timeScale = speed;
         }
 
         public static void ResetSaveAndRestart()
         {
-            if (!Available) return;
+            if (!Use()) return;
             if (CurrencyManager.Instance != null) CurrencyManager.Instance.SetInfinite(false, 0);
+            Used = false; // yeni oyun: süre yeniden sayılır (başka test komutu kullanılmazsa)
             if (SaveManager.Instance != null)
             {
                 SaveManager.Instance.DeleteAndRestart();

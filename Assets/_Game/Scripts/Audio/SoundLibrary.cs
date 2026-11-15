@@ -17,11 +17,17 @@ namespace KayipAda
             public SoundId Id;
             public AudioClip[] Clips;
             [Range(0f, 1f)] public float Volume = 1f;
+            [Tooltip("Her çalışta perdenin rastgele ne kadar değişeceği (0.06 = ±%6). Tekrar sıkıcı olmasın.")]
+            [Range(0f, 0.3f)] public float PitchJitter = 0.05f;
         }
 
         [SerializeField] private Entry[] entries = new Entry[0];
         [Tooltip("Arka plandaki dalga/doğa sesi. Boşsa oyun kendi yumuşak dalga sesini üretir.")]
         [SerializeField] private AudioClip ambient;
+        [Tooltip("Sahne kurma komutunun yazdığı ses düzeni sürümü. Komuttaki sürüm büyükse liste yeniden kurulur.")]
+        [SerializeField] private int version;
+
+        public int Version => version;
 
         public AudioClip Ambient => ambient;
 
@@ -47,10 +53,11 @@ namespace KayipAda
             entries = list.ToArray();
         }
 
-        public void EditorSetup(Entry[] newEntries, AudioClip newAmbient)
+        public void EditorSetup(Entry[] newEntries, AudioClip newAmbient, int newVersion)
         {
             entries = newEntries;
             ambient = newAmbient;
+            version = newVersion;
         }
 #endif
     }

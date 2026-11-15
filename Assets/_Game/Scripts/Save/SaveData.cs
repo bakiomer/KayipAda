@@ -26,6 +26,7 @@ namespace KayipAda
         public int ShipStage;
         public List<IdValue> ShipDelivered = new List<IdValue>();
         public float PlayTime;
+        public int EarnedCoins; // bu adada kazanılan toplam para (kaçış ekranında sayılır)
 
         // Kalıcı (kaçıştan sonra da kalır)
         public int CaptainXp;
@@ -40,6 +41,7 @@ namespace KayipAda
             ShipStage = 0;
             ShipDelivered.Clear();
             PlayTime = 0f;
+            EarnedCoins = 0;
         }
 
         public static Dictionary<string, int> ToDictionary(List<IdValue> list)

@@ -23,6 +23,13 @@ namespace KayipAda
         Mine = 17,          // kayaya vurma
         StageComplete = 18, // gemi aşaması tamamlandı
         Splash = 19,        // gemi suya indi
-        Firework = 20       // havai fişek
+        Firework = 20,      // havai fişek
+        Pop = 21,           // meyve toplama
+        Rustle = 22,        // lif toplama (hışırtı)
+        UnlockJingle = 23,  // alan/bina açılınca kısa müzik
+        GateOpen = 24,      // çit kapısı açılıyor (gıcırtı)
+        Whoosh = 25,        // alan açma "vuuş"
+        VictoryMusic = 26,  // final töreni müziği (sesler sırayla çalınır)
+        PartPlace = 27      // gemi parçası yerine oturdu
     }
 }

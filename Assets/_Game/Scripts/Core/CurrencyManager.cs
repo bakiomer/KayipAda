@@ -21,6 +21,9 @@ namespace KayipAda
 
         public int Coins { get; private set; }
 
+        // Bu adada kazanılan toplam para (satışlar). Kaçış ekranında sayarak gösterilir; kayıtta saklanır.
+        public int TotalEarned { get; set; }
+
         // Test Menüsü: sınırsız para açıkken harcama parayı azaltmaz (sadece Editor/geliştirme sürümü).
         public bool IsInfinite { get; private set; }
         private int coinsBeforeInfinite;
@@ -57,6 +60,7 @@ namespace KayipAda
         public void Add(int amount)
         {
             Coins += amount;
+            if (amount > 0) TotalEarned += amount;
             CoinsChanged?.Invoke(Coins);
         }
 

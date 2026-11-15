@@ -29,10 +29,10 @@
 |---|---|---|---|---|---|
 | Odun | Wood | Quaternius | UI_Wood.fbx | 0,7 m (en büyük kenar) | ✅ |
 | Taş | Stone | Quaternius | UI_Rocks.fbx | 0,6 m (en büyük kenar) | ✅ |
-| Meyve (kavun) — Quaternius'ta meyve yok | Fruit | KenneyNature | crop_melon.fbx | 0,5 m (en büyük kenar) | ✅ |
+| Meyve — kullanılmıyor: meyve kodla üretilir (kırmızı/turuncu, yapraklı) | Fruit | KenneyNature | crop_melon.fbx | 0,5 m (en büyük kenar) | ✅ |
 | Kalas — Quaternius'ta yok | Plank | KenneySurvival | resource-planks.fbx | 0,75 m (en büyük kenar) | ✅ |
 | Tuğla (kesme taş) — Quaternius'ta yok | Brick | KenneySurvival | resource-stone.fbx | 0,6 m (en büyük kenar) | ✅ |
-| Lif (palmiye lifi demeti) | Fiber | Quaternius | UI_Wheat.fbx | 0,6 m (en büyük kenar) | ✅ |
+| Lif (sarı keten demeti) | Fiber | Quaternius | UI_Wheat.fbx | 0,6 m (en büyük kenar) | ✅ |
 | Yelken bezi (sarılı bez) — Quaternius'ta yok | Cloth | KenneySurvival | bedroll-packed.fbx | 0,7 m (en büyük kenar) | ✅ |
 | Uçan/zıplayan para | Coin | Quaternius | UI_Gold.fbx | 0,45 m (en büyük kenar) | ✅ |
 
@@ -46,8 +46,8 @@
 | Taş veren kaya | Node_Rock_1 | Quaternius | Environment_Rock_1.fbx | 1,7 m (yükseklik) | ✅ |
 | Taş veren kaya | Node_Rock_2 | Quaternius | Environment_Rock_2.fbx | 1,6 m (yükseklik) | ✅ |
 | Taş veren kaya | Node_Rock_3 | Quaternius | Environment_Rock_3.fbx | 1,8 m (yükseklik) | ✅ |
-| Meyve ağacı — Quaternius'ta yok | Node_FruitTree | KenneyNature | tree_fat.fbx | 3,4 m (yükseklik) | ✅ |
-| Lif veren palmiye (Palmiye Koyu) | Node_FiberPalm | Quaternius | Environment_PalmTree_1.fbx | 4,6 m (yükseklik) | ✅ |
+| Meyve çalısı (üstünde kodla üretilen kırmızı/turuncu meyveler) — Quaternius'ta yok | Node_FruitTree | KenneyNature | plant_bushLarge.fbx | 1,8 m (yükseklik) | ✅ |
+| Keten/saz bitkisi (lif tarlası) — sarımsı-yeşile boyanır | FlaxClump | KenneyNature | crops_wheatStageB.fbx | 1,1 m (yükseklik) | ✅ |
 | Kesilen ağacın kütüğü (tükenince) | Stump | KenneyNature | stump_round.fbx | 0,55 m (yükseklik) | ✅ |
 | Tükenen kayanın yerinde kalan taşlar | Rubble | KenneyPirate | rocks-sand-a.fbx | 1,1 m (en büyük kenar) | ✅ |
 
@@ -64,6 +64,8 @@
 | Kamp çadırı — Quaternius'ta yok | CampTent | KenneySurvival | tent-canvas.fbx | 2,6 m (en büyük kenar) | ✅ |
 | Kamp ateşi | Campfire | KenneySurvival | campfire-pit.fbx | 1,1 m (en büyük kenar) | ✅ |
 | Kapalı bölge çiti — Quaternius'ta yok | Fence | KenneySurvival | fence.fbx | 2 m (en büyük kenar) | ✅ |
+| Bölge tabelası (ahşap) — korsan paketlerinde tabela yok | Sign | KenneyNature | sign.fbx | 2,4 m (en büyük kenar) | ✅ |
+| Erzak aşamasında direğin tepesine çıkan korsan bayrağı | ShipFlag | KenneyPirate | flag-pirate-high.fbx | 2,2 m (yükseklik) | ✅ |
 | İskele | Dock | Quaternius | Environment_Dock.fbx | 7 m (en büyük kenar) | ✅ |
 | İskele direği / inşa iskelesi | DockPole | Quaternius | Environment_Dock_Pole.fbx | 2,6 m (en büyük kenar) | ✅ |
 | Yarım kalmış gemi iskeleti (dekor) | ShipWreck | KenneyPirate | ship-wreck.fbx | 10 m (en büyük kenar) | ✅ |
@@ -122,26 +124,37 @@ Yok — tüm modeller yüklendi.
 - Quaternius renk dokusu (Atlas_Pirate.png): indirilen FBX klasöründe yoktu → Quaternius'un resmi paylaşımından eklendi (CC0).
 
 ## Font
-- **Paytone One** (Google Fonts, SIL Open Font License 1.1 — ücretsiz, ticari kullanım serbest). Dosya: `Assets/_Game/Art/Fonts/PaytoneOne-Regular.ttf`, lisans: `Assets/_Game/Art/Fonts/OFL.txt`. Türkçe harflerin hepsi (ı, ğ, ş, ç, ö, ü, İ) fontta var.
+- **Kayip Display** = Google Fonts'taki **Lilita One** (SIL Open Font License 1.1) + eklenen Türkçe harfler (İ, Ğ, ğ, Ş, ş; fontun kendi harf ve işaretlerinden birleştirildi). OFL gereği değiştirilmiş sürüm "Lilita" adını taşıyamaz. Dosya: `Assets/_Game/Art/Fonts/KayipDisplay-Regular.ttf`, lisans: `OFL.txt`, açıklama: `BENIOKU.txt`.
+
+## Kodla üretilenler
+- Kaynak ikonları (`Art/Generated/Icon_*.png`, IconGenerator), meyve modeli (FruitMesh), omurga ve kaburgalar,
+  gemi parçaları (gövde/direkler/yelkenler Quaternius gemisinden bölünür: `Art/Generated/Ship_*.asset`), kızak,
+  pop ve vuuş sesleri (`Assets/_Game/Audio/Generated`), kuş ve dalga ortam sesleri (AudioManager).
 
 ## Sesler (`Assets/_Game/Data/SoundLibrary.asset`)
 
-| Olay | Ses dosyaları (ThirdParty/Audio) |
+Toplama sesleri kısık ve 3-5 çeşitli (her çalışta perde ±%8 değişir); para ve kutlamalar öne çıkar.
+
+| Olay | Ses dosyaları |
 |---|---|
+| Odun (balta) | RPG/chop, Impact/impactWood_heavy_000/001/003 |
+| Taş (kazma) | Impact/impactMining_000..002, impactMetal_light_000/002 |
+| Meyve (pop) | Audio/Generated/pop_1..4 (kodla üretildi) |
+| Lif (hışırtı) | RPG/cloth1..4 |
 | Toplama | Interface/pluck_001, pluck_002 |
-| Vuruş (ağaç) | RPG/chop |
-| Vuruş (kaya) | Impact/impactMining_000..003 |
-| Satış | RPG/handleCoins, handleCoins2 |
+| Satış (para) | RPG/handleCoins, handleCoins2 |
 | Para akışı (açma karesi) | Interface/tick_001, tick_002, tick_004 |
-| Alan açıldı | Interface/confirmation_002 |
-| Buton | Interface/click_001 |
-| Adım | Impact/footstep_grass_000..004 |
-| Binaya bırakma | Impact/impactWood_light_000..002 |
-| Ürün çıktı | Impact/impactPlank_medium_000..001 |
-| Geliştirme alındı | Interface/maximize_006 |
-| Gemiye malzeme | Impact/impactWood_medium_000..002 |
-| Gemi aşaması tamamlandı | Interface/maximize_008 |
-| Gemi suya indi | Impact/impactSoft_heavy_000..001 |
-| Havai fişek | Impact/impactGlass_light_000..002 |
-| Kaçış | Interface/confirmation_004 |
-| Ortam (dalga) | Pakette yok → AudioManager üretir |
+| Alan açıldı | Audio/Generated/whoosh_1..2 + Impact/impactBell_heavy_000/002 + Jingles/STEEL01/04/05 |
+| Çit kapısı | RPG/creak1..3 |
+| Buton | Interface/click_001, click_002 |
+| Adım | Impact/footstep_grass_000..003 |
+| Binaya bırakma / ürün | Impact/impactWood_light_000..002 / impactPlank_medium_000..001 |
+| Geliştirme, yıldız | Interface/maximize_006 |
+| Gemiye malzeme / parça oturdu | Impact/impactWood_medium_000..002 / impactWood_heavy_002/004, impactPlank_medium_002 |
+| Gemi aşaması | Jingles/STEEL07, STEEL02 |
+| Final zafer müziği (sırayla) | Jingles/STEEL06, 03, 14, 12, PIZZI07, STEEL07, 02 |
+| Gemi suya indi / havai fişek | Impact/impactSoft_heavy_000..001 / impactGlass_light_000..002 |
+| Kaçış ekranı | Jingles/SAX07 |
+| Ortam (dalga + kuşlar) | Pakette yok → AudioManager üretir |
+
+Jingles: Kenney "Music Jingles" (CC0), `Assets/_Game/ThirdParty/Audio/Jingles` (+ License.txt). Uzun CC0 arka plan müziği bulunamadı; oyun içinde dalga + kuş ortam sesi çalar.

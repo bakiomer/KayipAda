@@ -19,6 +19,12 @@ namespace KayipAda
         [SerializeField] private float standRadius = 1.1f;
         [Tooltip("Her toplamada saçılan parçacıklar (yaprak, taş kırıntısı). Boş olabilir.")]
         [SerializeField] private ParticleSystem hitEffect;
+        [Tooltip("Stok azaldıkça tek tek kaybolan, dolarken tek tek geri gelen parçalar (çalıdaki meyveler). Boş olabilir.")]
+        [SerializeField] private Transform[] stockVisuals = new Transform[0];
+        [Tooltip("Toplandıkça nokta küçülsün mü? (Meyve çalısı küçülmez, sadece meyveleri azalır.)")]
+        [SerializeField] private bool shrinks = true;
+        [Tooltip("Küçülürken sadece boyu mu kısalsın? (Keten/saz tarlası)")]
+        [SerializeField] private bool shrinkHeightOnly;
         [Tooltip("Tükenince yerinde kalan parça (kütük, kırık taşlar). Boş olabilir: o zaman nokta sadece küçülür.")]
         [SerializeField] private GameObject remnant;
         [Tooltip("Her vuruşta kaç parçacık saçılır.")]
@@ -123,6 +129,7 @@ namespace KayipAda
         // yeniden dolma süresince büyüyerek eski boyuna döner.
         private float TargetSize()
         {
+            if (!shrinks) return 1f;
             float empty = remnant != null ? 0f : config.NodeDepletedScale;
             if (IsDepleted)
             {
@@ -143,6 +150,7 @@ namespace KayipAda
         private void UpdateVisual()
         {
             size = Mathf.Lerp(size, TargetSize(), 1f - Mathf.Exp(-8f * Time.deltaTime));
+            UpdateStockVisuals();
             bool visible = size > 0.02f;
             if (visual.gameObject.activeSelf != visible) visual.gameObject.SetActive(visible);
 
@@ -155,10 +163,50 @@ namespace KayipAda
             }
 
             float squash = wave * config.NodeSquash;
-            visual.localScale = new Vector3(visualBaseScale.x * size * (1f - squash * 0.6f),
+            float wide = shrinkHeightOnly ? 1f : size;
+            visual.localScale = new Vector3(visualBaseScale.x * wide * (1f - squash * 0.6f),
                                             visualBaseScale.y * size * (1f + squash),
-                                            visualBaseScale.z * size * (1f - squash * 0.6f));
+                                            visualBaseScale.z * wide * (1f - squash * 0.6f));
             visual.localRotation = visualBaseRotation * Quaternion.AngleAxis(wave * config.NodeShakeAngle, shakeAxis);
+        }
+
+        // Meyveler: stokla orantılı sayıda görünür; toplandıkça tek tek kaybolur, dolarken tek tek belirir.
+        private int visibleStock = -1;
+        private Vector3[] stockScales;
+
+        private void UpdateStockVisuals()
+        {
+            if (stockVisuals == null || stockVisuals.Length == 0) return;
+            if (stockScales == null)
+            {
+                stockScales = new Vector3[stockVisuals.Length];
+                for (int i = 0; i < stockVisuals.Length; i++) stockScales[i] = stockVisuals[i].localScale;
+            }
+            int n = stockVisuals.Length;
+            int want = IsDepleted
+                ? Mathf.FloorToInt((1f - Mathf.Clamp01(regrowTimer / Mathf.Max(0.01f, nodeType.RegrowTime))) * n)
+                : Mathf.CeilToInt((float)Stock / Mathf.Max(1, nodeType.Stock) * n);
+            if (want == visibleStock) return;
+            for (int i = 0; i < n; i++)
+            {
+                Transform fruit = stockVisuals[i];
+                bool show = i < want;
+                if (fruit.gameObject.activeSelf == show) continue;
+                if (show)
+                {
+                    fruit.gameObject.SetActive(true);
+                    if (visibleStock >= 0) Tween.PopIn(fruit, stockScales[i], config.PopInDuration);
+                }
+                else if (visibleStock >= 0)
+                {
+                    Tween.PopOut(fruit, 0.15f, () => fruit.gameObject.SetActive(false));
+                }
+                else
+                {
+                    fruit.gameObject.SetActive(false);
+                }
+            }
+            visibleStock = want;
         }
     }
 }

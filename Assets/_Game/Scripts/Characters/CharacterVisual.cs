@@ -12,6 +12,7 @@ namespace KayipAda
     public class CharacterVisual : MonoBehaviour
     {
         private static readonly int SpeedHash = Animator.StringToHash("Speed");
+        private static readonly int CheerHash = Animator.StringToHash("Cheer");
 
         [SerializeField] private GameConfig config;
         [SerializeField] private Animator animator;
@@ -33,6 +34,16 @@ namespace KayipAda
         private Transform upperL, lowerL, upperR, lowerR;
         private Vector3 lastPosition;
         private float smoothedSpeed;
+
+        // Sevinç animasyonu (final töreni). Denetleyicide "Cheer" yoksa bir şey yapmaz.
+        public void SetCheer(bool on)
+        {
+            if (animator == null || animator.runtimeAnimatorController == null) return;
+            foreach (AnimatorControllerParameter p in animator.parameters)
+            {
+                if (p.nameHash == CheerHash) { animator.SetBool(CheerHash, on); return; }
+            }
+        }
         private float carryWeight;
         private float stepDistance;
         private ParticleSystem.EmissionModule dustEmission;

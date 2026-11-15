@@ -1,8 +1,9 @@
 // UiFactory.cs
 // Yazı (TextMeshPro) ve arayüz parçaları kurma yardımcıları.
-// Tüm yazılar oyunun fontunu (Paytone One, OFL lisanslı, Art/Fonts) ve aynı kalın, koyu kenar çizgili, hafif
-// gölgeli malzemeyi kullanır. Font asset'i yoksa TTF'ten üretilir; Türkçe harfler dahil gereken tüm karakterler
-// atlasa önceden yazılır (oyunda kaynak font gerekmez). Eksik bir harf olursa TMP'nin varsayılan fontu yedektir.
+// Tüm yazılar oyunun fontunu (Kayip Display = Lilita One + Türkçe harfler, OFL, Art/Fonts) ve aynı malzemeyi
+// kullanır: krem dolgu, kalın koyu kahverengi kenar çizgisi, hafif alt gölge. Font asset'i yoksa TTF'ten üretilir;
+// Türkçe harfler dahil gereken tüm karakterler atlasa önceden yazılır (oyunda kaynak font gerekmez).
+// Dünyadaki yazılarda kutu yok; uzaktayken ve ekran kenarına yaklaşınca yumuşakça kaybolurlar (LabelFader).
 
 using System.Collections.Generic;
 using TMPro;
@@ -16,18 +17,18 @@ namespace KayipAda.EditorTools
     public static class UiFactory
     {
         public const string OutlineMaterialPath = ArtGenerator.MaterialsFolder + "/TMP_Outline.mat";
-        public const string GameFontPath = BuilderUtil.Root + "/Art/Fonts/PaytoneOne-Regular.ttf";
-        public const string GameFontAssetPath = BuilderUtil.Root + "/Art/Fonts/PaytoneOne SDF.asset";
+        public const string GameFontPath = BuilderUtil.Root + "/Art/Fonts/KayipDisplay-Regular.ttf";
+        public const string GameFontAssetPath = BuilderUtil.Root + "/Art/Fonts/KayipDisplay SDF.asset";
 
         // Atlasa önceden yazılan karakterler: ASCII + Türkçe + oyunda kullanılan birkaç işaret.
         private const string FontCharacters =
             " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~" +
             "ÇçĞğİıÖöŞşÜüÂâÎîÛûÉé•…×";
 
-        // Dünya yazılarının arkasındaki kutu
-        public static readonly Color LabelBoxColor = new Color(0.08f, 0.06f, 0.04f, 0.55f);
 
-        public static readonly Color TextDark = new Color(0.16f, 0.10f, 0.05f);
+
+        public static readonly Color TextDark = new Color(0.24f, 0.12f, 0.05f);   // koyu kahverengi kenar çizgisi
+        public static readonly Color Cream = new Color(1f, 0.97f, 0.88f);         // yazı dolgusu
         public static readonly Color Gold = new Color(1f, 0.80f, 0.20f);
 
         private static TMP_FontAsset font;
@@ -56,11 +57,11 @@ namespace KayipAda.EditorTools
 
             TMP_FontAsset asset = TMP_FontAsset.CreateFontAsset(source, 72, 8, GlyphRenderMode.SDFAA, 1024, 1024,
                                                                 AtlasPopulationMode.Dynamic, true);
-            asset.name = "PaytoneOne SDF";
+            asset.name = "KayipDisplay SDF";
             AssetDatabase.CreateAsset(asset, GameFontAssetPath);
-            asset.atlasTextures[0].name = "PaytoneOne Atlas";
+            asset.atlasTextures[0].name = "KayipDisplay Atlas";
             AssetDatabase.AddObjectToAsset(asset.atlasTextures[0], asset);
-            asset.material.name = "PaytoneOne Material";
+            asset.material.name = "KayipDisplay Material";
             AssetDatabase.AddObjectToAsset(asset.material, asset);
 
             if (!asset.TryAddCharacters(FontCharacters, out string missing))
@@ -97,15 +98,15 @@ namespace KayipAda.EditorTools
                 }
                 mat.EnableKeyword(ShaderUtilities.Keyword_Outline);
                 mat.EnableKeyword(ShaderUtilities.Keyword_Underlay);
-                mat.SetFloat("_FaceDilate", 0.1f);
-                mat.SetFloat("_OutlineWidth", 0.3f);
+                mat.SetFloat("_FaceDilate", 0.12f);
+                mat.SetFloat("_OutlineWidth", 0.32f);
                 mat.SetFloat("_OutlineSoftness", 0f);
                 mat.SetColor("_OutlineColor", TextDark);
-                mat.SetColor("_UnderlayColor", new Color(0f, 0f, 0f, 0.4f));
-                mat.SetFloat("_UnderlayOffsetX", 0.25f);
-                mat.SetFloat("_UnderlayOffsetY", -0.6f);
-                mat.SetFloat("_UnderlayDilate", 0.3f);
-                mat.SetFloat("_UnderlaySoftness", 0.35f);
+                mat.SetColor("_UnderlayColor", new Color(0.12f, 0.06f, 0.02f, 0.5f));
+                mat.SetFloat("_UnderlayOffsetX", 0.15f);
+                mat.SetFloat("_UnderlayOffsetY", -0.75f);
+                mat.SetFloat("_UnderlayDilate", 0.32f);
+                mat.SetFloat("_UnderlaySoftness", 0.25f);
                 EditorUtility.SetDirty(mat);
                 outline = mat;
                 return outline;
@@ -116,6 +117,7 @@ namespace KayipAda.EditorTools
         {
             if (Font != null) text.font = Font;
             if (OutlineMaterial != null) text.fontSharedMaterial = OutlineMaterial;
+            if (color == Color.white) color = Cream; // beyaz yerine sıcak krem dolgu
             text.text = value;
             text.fontSize = size;
             text.fontStyle = FontStyles.Normal; // font zaten kalın; TMP'nin sahte kalınlığı harfleri bozar
@@ -138,35 +140,22 @@ namespace KayipAda.EditorTools
             return text;
         }
 
-        // Dünyada kameraya dönük, arkasında yarı saydam koyu kutu olan yazı (bina adı, gemi aşaması, bölge adı).
+        // Dünyada kameraya dönük yazı (bina adı, gemi aşaması). Kutu yok; uzaktayken ve ekran kenarına yaklaşınca
+        // yumuşakça kaybolur, yaklaşınca belirir (LabelFader).
         public static TextMeshPro CreateWorldLabel(string name, Transform parent, Vector3 localPos, string value, float size, Color color)
         {
             TextMeshPro text = CreateWorldText(name, parent, localPos, value, size, color);
             text.gameObject.AddComponent<Billboard>();
-            AddLabelBox(text);
+            AddFader(text.gameObject);
             return text;
         }
 
-        // Yazının arkasına yuvarlak köşeli yarı saydam kutu ekler; kutu yazı değişince boyutlanır.
-        public static void AddLabelBox(TMP_Text text)
+        // Nesnenin altındaki tüm yazı ve resimleri uzaklığa/ekran kenarına göre yumuşakça gösterir/gizler.
+        public static LabelFader AddFader(GameObject go)
         {
-            GameObject go = new GameObject("Box");
-            go.transform.SetParent(text.transform, false);
-            go.transform.localPosition = new Vector3(0f, 0f, 0.02f); // yazının hemen arkası
-            SpriteRenderer box = go.AddComponent<SpriteRenderer>();
-            box.sprite = ArtGenerator.LoadSprite(ArtGenerator.LabelBoxPath);
-            box.drawMode = SpriteDrawMode.Sliced;
-            box.color = LabelBoxColor;
-            box.sharedMaterial = AssetDatabase.GetBuiltinExtraResource<Material>("Sprites-Default.mat");
-            box.sortingOrder = -1; // yazının arkasında çizilsin
-            box.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            box.receiveShadows = false;
-            float pad = text.fontSize * 0.06f;
-            Vector2 preferred = text.GetPreferredValues(string.IsNullOrEmpty(text.text) ? "A" : text.text);
-            box.size = preferred + new Vector2(pad * 1.6f, pad) * 2f;
-            LabelBackground background = go.AddComponent<LabelBackground>();
-            BuilderUtil.SetField(background, "text", text);
-            BuilderUtil.SetVector2(background, "padding", new Vector2(pad * 1.6f, pad));
+            LabelFader fader = go.GetComponent<LabelFader>();
+            if (fader == null) fader = go.AddComponent<LabelFader>();
+            return fader;
         }
 
         // Canvas içinde yazı.

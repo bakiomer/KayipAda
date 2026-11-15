@@ -51,7 +51,8 @@ namespace KayipAda
 
         private void Update()
         {
-            data.PlayTime += Time.unscaledDeltaTime;
+            // Test modunda (Hızlı Test Modu ya da Test Menüsü kullanıldıysa) süre sayılmaz.
+            if (!config.QuickTestMode && !DevCommands.Used) data.PlayTime += Time.unscaledDeltaTime;
             timer += Time.unscaledDeltaTime;
             if (timer >= config.AutoSaveInterval)
             {
@@ -92,7 +93,11 @@ namespace KayipAda
         // Para, alanlar, geliştirmeler: diğer nesnelerin Awake'inden ÖNCE.
         private void RestoreEarly()
         {
-            if (CurrencyManager.Instance != null) CurrencyManager.Instance.SetCoins(data.Coins);
+            if (CurrencyManager.Instance != null)
+            {
+                CurrencyManager.Instance.SetCoins(data.Coins);
+                CurrencyManager.Instance.TotalEarned = data.EarnedCoins;
+            }
             if (AreaManager.Instance != null) AreaManager.Instance.Restore(data.Unlocked, SaveData.ToDictionary(data.Paid));
 
             UpgradeManager upgrades = UpgradeManager.Instance;
@@ -129,7 +134,8 @@ namespace KayipAda
 
         private void Collect()
         {
-            if (CurrencyManager.Instance != null) data.Coins = CurrencyManager.Instance.Coins;
+            if (CurrencyManager.Instance != null && !CurrencyManager.Instance.IsInfinite) data.Coins = CurrencyManager.Instance.Coins;
+            if (CurrencyManager.Instance != null) data.EarnedCoins = CurrencyManager.Instance.TotalEarned;
             if (AreaManager.Instance != null)
             {
                 data.Unlocked = new List<string>(AreaManager.Instance.UnlockedIds);

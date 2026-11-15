@@ -22,6 +22,9 @@ namespace KayipAda
         // Açık bir panel (geliştirmeler, kaçış ekranı) varken oyuncu yürümez.
         public static bool InputBlocked { get; set; }
 
+        // Testler ve sinematikler için: joystick yerine bu yön kullanılır (sıfırsa joystick).
+        public Vector2 ScriptedInput { get; set; }
+
         private Rigidbody body;
         private CarryStack stack;
         private Vector3 move;
@@ -39,7 +42,7 @@ namespace KayipAda
             // Her karede uygulanır ki Play sırasında GameConfig'te yapılan değişiklik hemen etkilesin.
             ApplyStats();
 
-            Vector2 input = joystick != null ? joystick.Direction : Vector2.zero;
+            Vector2 input = ScriptedInput != Vector2.zero ? ScriptedInput : joystick != null ? joystick.Direction : Vector2.zero;
             if (input == Vector2.zero) input = ReadKeyboard();
             if (InputBlocked) input = Vector2.zero; // geliştirme paneli açıkken yürümez
 

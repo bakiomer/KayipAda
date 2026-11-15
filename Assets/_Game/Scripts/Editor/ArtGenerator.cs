@@ -20,11 +20,11 @@ namespace KayipAda.EditorTools
         public const string RingPath = GeneratedFolder + "/Ring.png";
         public const string SoftCirclePath = GeneratedFolder + "/SoftCircle.png";
         public const string RoundedRectPath = GeneratedFolder + "/RoundedRect.png";
-        public const string LabelBoxPath = GeneratedFolder + "/LabelBox.png"; // dünya yazılarının arkasındaki kutu
         public const string PanelShadowPath = GeneratedFolder + "/PanelShadow.png";
         public const string CoinIconPath = GeneratedFolder + "/CoinIcon.png";
         public const string SquarePath = GeneratedFolder + "/Square.png";
         public const string ArrowPath = GeneratedFolder + "/Arrow.png";
+        public const string StarPath = GeneratedFolder + "/Star.png";
         public const string IslandTexturePath = GeneratedFolder + "/IslandGround.png";
         public const string ShoreTexturePath = GeneratedFolder + "/ShoreDistance.png";
         public const string IslandMeshPath = GeneratedFolder + "/IslandMesh.asset";
@@ -54,9 +54,34 @@ namespace KayipAda.EditorTools
             MakeSprite(RoundedRectPath, 64, (x, y, s) => Mathf.Clamp01(0.5f - RoundedBox(x, y, s, 28f)), 30);
             MakeSprite(PanelShadowPath, 128, (x, y, s) => (1f - Mathf.SmoothStep(-14f, 16f, RoundedBox(x, y, s, 44f) + 14f)) * 0.55f, 56);
             MakeSprite(SquarePath, 16, (x, y, s) => 1f, 0);
-            MakeSprite(LabelBoxPath, 64, (x, y, s) => Mathf.Clamp01(0.5f - RoundedBox(x, y, s, 28f)), 30, 220f);
             MakeCoinIcon(CoinIconPath, 128);
             MakeSprite(ArrowPath, 128, ArrowAlpha, 0);
+            MakeSprite(StarPath, 128, StarAlpha, 0);
+        }
+
+        // Beş köşeli keskin yıldız (kaçış ekranı): 10 köşeli çokgenin içi, kenarı yumuşatılmış.
+        private static float StarAlpha(int x, int y, int size)
+        {
+            Vector2 p = new Vector2(x + 0.5f, y + 0.5f) - Vector2.one * (size * 0.5f);
+            Vector2[] poly = new Vector2[10];
+            for (int i = 0; i < 10; i++)
+            {
+                float r = (i % 2 == 0 ? 0.48f : 0.2f) * size;
+                float a = Mathf.PI / 2f + i * Mathf.PI / 5f;
+                poly[i] = new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * r;
+            }
+            bool inside = false;
+            float best = float.MaxValue;
+            for (int i = 0, j = 9; i < 10; j = i++)
+            {
+                Vector2 a = poly[i], b = poly[j];
+                if ((a.y > p.y) != (b.y > p.y) && p.x < (b.x - a.x) * (p.y - a.y) / (b.y - a.y) + a.x) inside = !inside;
+                Vector2 ab = b - a;
+                float t = Mathf.Clamp01(Vector2.Dot(p - a, ab) / ab.sqrMagnitude);
+                best = Mathf.Min(best, (p - (a + ab * t)).magnitude);
+            }
+            float d = inside ? best : -best;
+            return Mathf.Clamp01(d + 0.5f);
         }
 
         // Yukarıyı gösteren kalın ok (4 alt örnekle yumuşak kenar).
@@ -305,6 +330,42 @@ namespace KayipAda.EditorTools
             float dx = Mathf.Max(r.xMin - p.x, 0f, p.x - r.xMax);
             float dz = Mathf.Max(r.yMin - p.y, 0f, p.y - r.yMax);
             return 1f - Mathf.Clamp01(new Vector2(dx, dz).magnitude / 1.5f);
+        }
+
+        // ================================================================ Meyve
+
+        public const string FruitMeshPath = GeneratedFolder + "/FruitMesh.asset";
+
+        // Alçak poligonlu küre (meyve gövdesi), yarıçap 0.5, merkez (0,0,0). Düz gölgeli görünsün diye köşeler paylaşılmaz.
+        public static Mesh BuildFruitMesh()
+        {
+            Mesh existing = BuilderUtil.Load<Mesh>(FruitMeshPath);
+            if (existing != null) return existing;
+            const int lon = 8, lat = 6;
+            System.Collections.Generic.List<Vector3> v = new System.Collections.Generic.List<Vector3>();
+            System.Collections.Generic.List<int> t = new System.Collections.Generic.List<int>();
+            System.Func<int, int, Vector3> P = (i, j) =>
+            {
+                float th = Mathf.PI * j / lat, ph = 2f * Mathf.PI * i / lon;
+                return new Vector3(Mathf.Sin(th) * Mathf.Cos(ph), Mathf.Cos(th), Mathf.Sin(th) * Mathf.Sin(ph)) * 0.5f;
+            };
+            for (int j = 0; j < lat; j++)
+            {
+                for (int i = 0; i < lon; i++)
+                {
+                    Vector3 a = P(i, j), b = P(i + 1, j), c = P(i, j + 1), d = P(i + 1, j + 1);
+                    int n = v.Count;
+                    v.Add(a); v.Add(b); v.Add(c); t.Add(n); t.Add(n + 1); t.Add(n + 2);
+                    n = v.Count;
+                    v.Add(b); v.Add(d); v.Add(c); t.Add(n); t.Add(n + 1); t.Add(n + 2);
+                }
+            }
+            Mesh mesh = new Mesh { name = "FruitMesh" };
+            mesh.SetVertices(v);
+            mesh.SetTriangles(t, 0);
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            return BuilderUtil.SaveAsset(mesh, FruitMeshPath);
         }
 
         // ================================================================ Halat

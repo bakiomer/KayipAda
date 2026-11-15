@@ -68,6 +68,7 @@ namespace KayipAda.Tests
             {
                 DevCommands.CompleteShipStage();
                 Assert.AreEqual(i + 1, ship.StageIndex, "Aşama tamamlanmadı");
+                Assert.AreEqual(ship.PieceCount(i), ship.ShownPieces(i), "Aşama parçaları görünmedi");
                 yield return new WaitForSeconds(1.8f);
                 Shot("D_gemi_" + (i + 1));
             }
@@ -75,12 +76,15 @@ namespace KayipAda.Tests
             DevCommands.SkipToCeremony();
             Assert.IsTrue(ship.IsComplete, "Gemi bitmedi");
             Assert.IsTrue(LaunchCeremony.Instance.IsRunning, "Tören başlamadı");
-            yield return new WaitForSeconds(ship.Config.GatherTime + ship.Config.SlideDuration * 0.8f);
+            LaunchCeremony ceremony = LaunchCeremony.Instance;
+            ShipConfig c = ship.Config;
+            yield return WaitFor(() => ceremony.Phase == "kayma", c.GatherTime + c.OrbitDuration + 3f);
+            yield return new WaitForSeconds(c.SlideDuration * 0.8f);
             Shot("D_toren");
             EscapePanel escape = FindAny<EscapePanel>();
-            yield return WaitFor(() => escape.IsShown, ship.Config.SlideDuration + ship.Config.SailDuration + 5f);
+            yield return WaitFor(() => escape.IsShown, c.SlideDuration + c.TurnDuration + c.SailDuration + 5f);
             Assert.IsTrue(escape.IsShown, "KAÇTIN! ekranı açılmadı");
-            yield return new WaitForSeconds(0.8f);
+            yield return new WaitForSeconds(3f);
             Shot("D_kacis");
         }
 
@@ -129,6 +133,98 @@ namespace KayipAda.Tests
             yield return new WaitForSeconds(1f);
             Assert.IsFalse(remnant.gameObject.activeSelf, "Palmiye büyüyünce kütük kaybolmadı");
             Assert.Greater(visual.localScale.y, fullScale * 0.95f, "Palmiye eski boyuna dönmedi");
+        }
+
+        // Kapalı bölgenin çitinden ve kapısından geçilemez; bölge açılınca kapı açılır ve içeri girilir.
+        [UnityTest]
+        public IEnumerator Collision_ClosedAreaFenceBlocksUntilUnlocked()
+        {
+            Rect rocky = new Rect(-11f, 6f, 9f, 9f); // MapLayout.RockyRect (kapı güney kenarın ortasında, x = -6.5)
+            Vector2 north = new Vector2(0f, 1f);
+
+            // Çitin düz kısmına doğru yürü: geçemez.
+            Teleport(new Vector3(-3.5f, 0f, rocky.yMin - 1.2f));
+            Player.ScriptedInput = north;
+            yield return new WaitForSeconds(1.5f);
+            Assert.Less(Player.transform.position.z, rocky.yMin, "Oyuncu kapalı bölgenin çitinden geçti");
+
+            // Kapalı kapıya doğru yürü: geçemez.
+            Teleport(new Vector3(-6.5f, 0f, rocky.yMin - 0.9f));
+            yield return new WaitForSeconds(1.5f);
+            Assert.Less(Player.transform.position.z, rocky.yMin, "Oyuncu kapalı kapıdan geçti");
+            Player.ScriptedInput = Vector2.zero;
+            Shot("E_kapi_kapali");
+
+            // Bölge açılınca kapı açılır, içeri girilir.
+            AreaManager.Instance.Unlock(PadArea("Pad Rocky"));
+            yield return new WaitForSeconds(1.5f);
+            Shot("E_kapi_acildi");
+            Teleport(new Vector3(-6.5f, 0f, rocky.yMin - 0.9f));
+            Player.ScriptedInput = north;
+            yield return new WaitForSeconds(1.2f);
+            Player.ScriptedInput = Vector2.zero;
+            Assert.Greater(Player.transform.position.z, rocky.yMin + 0.8f, "Bölge açılınca kapıdan girilemedi");
+
+            // Kayma: çite çapraz yürüyünce takılmadan yanından kayar (x değişir).
+            Teleport(new Vector3(-3.5f, 0f, rocky.yMin - 0.6f));
+            Player.ScriptedInput = new Vector2(0.7f, 0.7f);
+            float startX = Player.transform.position.x;
+            yield return new WaitForSeconds(0.8f);
+            Player.ScriptedInput = Vector2.zero;
+            Assert.Greater(Player.transform.position.x - startX, 1f, "Oyuncu çite çapraz yürürken kaymadı (takıldı)");
+        }
+
+        // Hiçbir açma karesi, bina girişi/çıkışı, teslim alanı ya da Pazar engeller yüzünden ulaşılamaz olmasın.
+        [UnityTest]
+        public IEnumerator Reachability_AllTargetsReachable()
+        {
+            Vector3 start = Player.transform.position;
+            yield return WaitFor(() => IslandNavMesh.IsUpToDate, 5f);
+            foreach (UnlockPad pad in Object.FindObjectsByType<UnlockPad>(FindObjectsSortMode.None))
+            {
+                Assert.IsTrue(IslandNavMesh.HasCompletePath(start, pad.transform.position), pad.name + " karesine ulaşılamıyor (başlangıç)");
+            }
+
+            DevCommands.UnlockAllRegions();
+            DevCommands.UnlockAllBuildings();
+            DevCommands.HireAllWorkers();
+            foreach (UnlockPad pad in Object.FindObjectsByType<UnlockPad>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                if (!AreaManager.Instance.IsUnlocked(pad.Area)) AreaManager.Instance.Unlock(pad.Area);
+            }
+            yield return new WaitForSeconds(2f); // kapılar açılsın
+            yield return WaitFor(() => IslandNavMesh.IsUpToDate, 5f);
+            Assert.IsTrue(IslandNavMesh.IsUpToDate, "NavMesh güncellenmedi");
+
+            foreach (BuildingInput input in Object.FindObjectsByType<BuildingInput>(FindObjectsSortMode.None))
+                Assert.IsTrue(IslandNavMesh.HasCompletePath(start, input.transform.position), input.transform.parent.name + " girişine ulaşılamıyor");
+            foreach (BuildingOutput output in Object.FindObjectsByType<BuildingOutput>(FindObjectsSortMode.None))
+                Assert.IsTrue(IslandNavMesh.HasCompletePath(start, output.transform.position), output.transform.parent.name + " çıkışına ulaşılamıyor");
+            Assert.IsTrue(IslandNavMesh.HasCompletePath(start, ShipBuilder.Instance.Delivery.transform.position), "Gemi teslim alanına ulaşılamıyor");
+            Assert.IsTrue(IslandNavMesh.HasCompletePath(start, FindAny<Market>().transform.position + Vector3.back * 1.5f), "Pazar'a ulaşılamıyor");
+            foreach (ResourceNode node in Object.FindObjectsByType<ResourceNode>(FindObjectsSortMode.None))
+                Assert.IsTrue(IslandNavMesh.HasCompletePath(start, node.GetStandPoint(start)), node.name + " kaynağına ulaşılamıyor");
+
+            // İşçiler takılmıyor: yürüyen (hedefi olan) hiçbir işçi 3 saniye boyunca yerinde saymamalı.
+            Worker[] workers = Object.FindObjectsByType<Worker>(FindObjectsSortMode.None);
+            Assert.Greater(workers.Length, 2, "İşçiler çıkmadı");
+            float[] stuckFor = new float[workers.Length];
+            Vector3[] last = new Vector3[workers.Length];
+            for (int i = 0; i < workers.Length; i++) last[i] = workers[i].transform.position;
+            for (float t = 0f; t < 12f; t += 0.5f)
+            {
+                yield return new WaitForSeconds(0.5f);
+                for (int i = 0; i < workers.Length; i++)
+                {
+                    WorkerMover mover = workers[i].GetComponent<WorkerMover>();
+                    bool walking = mover != null && mover.IsWalking;
+                    float moved = Vector3.Distance(last[i], workers[i].transform.position);
+                    stuckFor[i] = walking && moved < 0.05f ? stuckFor[i] + 0.5f : 0f;
+                    last[i] = workers[i].transform.position;
+                    Assert.Less(stuckFor[i], 3f, workers[i].name + " yürümeye çalışırken takıldı (" + workers[i].transform.position + ")");
+                }
+            }
+            Shot("E_hepsi_acik_isciler");
         }
     }
 }

@@ -15,18 +15,47 @@ namespace KayipAda
 
         private Camera cam;
 
+        public static CameraFollow Main { get; private set; }
+        public GameConfig Config => config;
+        // Kameranın şu an takip ettiği nokta (oyuncu; törende gemi). Uzaktaki yazılar buna göre kaybolur.
+        public Vector3 FocusPoint => target != null ? target.position : transform.position;
+
         public Quaternion Rotation => Quaternion.Euler(config.CameraPitch, config.CameraYaw, 0f);
 
         private void Awake()
         {
             cam = GetComponent<Camera>();
+            Main = this;
         }
 
         private void Start()
         {
             // İlk karede kayarak gelmesin, doğrudan yerine otursun.
+            transform.rotation = Rotation;
             if (target != null) transform.position = GoalPosition();
         }
+
+        private bool hasShot;
+        private Vector3 shotPosition;
+        private Quaternion shotRotation;
+        private float shotBlend;
+
+        // Sinematik çekim: kamera bu konum ve açıya yumuşakça gider (aşama kutlaması, final töreni).
+        // blendSpeed büyüdükçe daha hızlı yaklaşır. ClearShot ile normal takibe döner.
+        public void SetShot(Vector3 position, Quaternion rotation, float blendSpeed)
+        {
+            hasShot = true;
+            shotPosition = position;
+            shotRotation = rotation;
+            shotBlend = blendSpeed;
+        }
+
+        public void ClearShot()
+        {
+            hasShot = false;
+        }
+
+        public bool HasShot => hasShot;
 
         // Kamerayı başka bir nesneye bağlar (kaçışta gemi).
         public void SetTarget(Transform newTarget)
@@ -37,7 +66,15 @@ namespace KayipAda
         private void LateUpdate()
         {
             cam.fieldOfView = config.CameraFov;
-            transform.rotation = Rotation;
+            if (hasShot)
+            {
+                float k = 1f - Mathf.Exp(-shotBlend * Time.unscaledDeltaTime);
+                transform.position = Vector3.Lerp(transform.position, shotPosition, k);
+                transform.rotation = Quaternion.Slerp(transform.rotation, shotRotation, k);
+                return;
+            }
+            // Çekimden normal takibe yumuşak dönüş.
+            transform.rotation = Quaternion.Slerp(transform.rotation, Rotation, 1f - Mathf.Exp(-config.CameraFollowSpeed * Time.unscaledDeltaTime));
             if (target == null) return;
 
             // Kare hızından bağımsız yumuşak takip.

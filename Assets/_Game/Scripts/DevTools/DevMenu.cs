@@ -1,5 +1,6 @@
 // DevMenu.cs
-// Oyun içi Test Menüsü: sol üst köşede küçük "TEST" butonu; basınca komut listesi açılır.
+// Oyun içi Test Menüsü: sol üst köşede küçük "TEST" butonu; basınca soldan dar bir yan panel kayarak açılır
+// (ekranın ortasını kapatmaz). Tekrar basınca kayarak kapanır.
 // SADECE Unity Editor'da ve "Development Build" sürümlerinde görünür. Satış sürümünde ilk karede kendini siler.
 // Butonlar oyun başlarken kodla kurulur (sahnede sadece bu boş nesne durur). Komutlar DevCommands'tadır.
 // Menü açıkken oyuncu yürümez (PlayerController.InputBlocked).
@@ -35,7 +36,7 @@ namespace KayipAda
         private readonly List<Image> speedButtons = new List<Image>();
         private int resourceIndex;
 
-        public bool IsOpen => panel != null && panel.activeSelf;
+        public bool IsOpen => panel != null && panel.activeSelf && slideTarget > 0f;
         public GameConfig Config => config;
 
         private void Awake()
@@ -55,17 +56,34 @@ namespace KayipAda
             if (Instance == this) Instance = null;
         }
 
+        private const float PanelWidth = 400f;
+        private const float RowHeight = 56f;
+        private const float FontSize = 25f;
+        private const float SlideTime = 0.2f;
+        private float slide;      // 0 = kapalı (ekran dışında), 1 = açık
+        private float slideTarget;
+
         public void Open()
         {
             Refresh();
             panel.SetActive(true);
+            slideTarget = 1f;
             PlayerController.InputBlocked = true;
         }
 
         public void Close()
         {
-            panel.SetActive(false);
+            slideTarget = 0f;
             PlayerController.InputBlocked = false;
+        }
+
+        private void Update()
+        {
+            if (panel == null || Mathf.Approximately(slide, slideTarget)) return;
+            slide = Mathf.MoveTowards(slide, slideTarget, Time.unscaledDeltaTime / SlideTime);
+            RectTransform rt = (RectTransform)panel.transform;
+            rt.anchoredPosition = new Vector2(Mathf.Lerp(-PanelWidth - 30f, 16f, Tween.EaseOutQuad(slide)), rt.anchoredPosition.y);
+            if (slide <= 0f) panel.SetActive(false);
         }
 
         public void Toggle()
@@ -85,7 +103,7 @@ namespace KayipAda
 
             // Köşedeki küçük buton.
             Button corner = CreateButton(root, "TEST", ButtonColor, Toggle);
-            Place((RectTransform)corner.transform, new Vector2(0f, 1f), new Vector2(24f, -24f), new Vector2(150f, 74f));
+            Place((RectTransform)corner.transform, new Vector2(0f, 1f), new Vector2(24f, -24f), new Vector2(130f, 70f));
 
             panel = new GameObject("Panel", typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup)).gameObject;
             panel.transform.SetParent(root, false);
@@ -94,18 +112,18 @@ namespace KayipAda
             back.type = Image.Type.Sliced;
             back.color = PanelColor;
             RectTransform rt = (RectTransform)panel.transform;
-            Place(rt, new Vector2(0f, 1f), new Vector2(24f, -112f), new Vector2(620f, 0f));
+            Place(rt, new Vector2(0f, 1f), new Vector2(-PanelWidth - 30f, -108f), new Vector2(PanelWidth, 0f));
             ContentSizeFitter fitter = panel.AddComponent<ContentSizeFitter>();
             fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
             VerticalLayoutGroup layout = panel.GetComponent<VerticalLayoutGroup>();
-            layout.padding = new RectOffset(18, 18, 18, 18);
-            layout.spacing = 10f;
+            layout.padding = new RectOffset(12, 12, 12, 12);
+            layout.spacing = 6f;
             layout.childControlWidth = layout.childControlHeight = true;
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
 
             Transform p = panel.transform;
-            CreateLabel(p, "TEST MENÜSÜ", 40f, new Color(1f, 0.8f, 0.2f));
+            CreateLabel(p, "TEST MENÜSÜ", 30f, new Color(1f, 0.8f, 0.2f));
             infiniteButton = CreateButton(p, "", ButtonColor, () =>
             {
                 DevCommands.SetInfiniteMoney(config, !DevCommands.InfiniteMoney);
@@ -119,10 +137,10 @@ namespace KayipAda
 
             // Malzeme seçimi: <  Kalas  >   ve doldurma butonu.
             Transform row = CreateRow(p);
-            CreateButton(row, "<", ButtonColor, () => ChangeResource(-1), 90f);
-            resourceLabel = CreateLabel(row, "", 34f, Color.white);
+            CreateButton(row, "<", ButtonColor, () => ChangeResource(-1), 70f);
+            resourceLabel = CreateLabel(row, "", FontSize, Color.white);
             resourceLabel.GetComponent<LayoutElement>().flexibleWidth = 1f;
-            CreateButton(row, ">", ButtonColor, () => ChangeResource(1), 90f);
+            CreateButton(row, ">", ButtonColor, () => ChangeResource(1), 70f);
             CreateButton(p, "Sırttaki Yığını Doldur", ButtonColor, () =>
             {
                 if (resources.Length > 0) DevCommands.FillPlayerStack(resources[resourceIndex]);
@@ -190,7 +208,7 @@ namespace KayipAda
             h.childControlWidth = h.childControlHeight = true;
             h.childForceExpandWidth = false;
             h.childForceExpandHeight = true;
-            row.GetComponent<LayoutElement>().preferredHeight = 74f;
+            row.GetComponent<LayoutElement>().preferredHeight = RowHeight;
             return row.transform;
         }
 
@@ -219,13 +237,17 @@ namespace KayipAda
             image.type = Image.Type.Sliced;
             image.color = color;
             LayoutElement le = go.GetComponent<LayoutElement>();
-            le.preferredHeight = 74f;
+            le.preferredHeight = RowHeight;
             if (width > 0f) le.preferredWidth = width;
 
             Button button = go.GetComponent<Button>();
-            button.onClick.AddListener(() => onClick());
+            button.onClick.AddListener(() =>
+            {
+                AudioManager.Play(SoundId.Button);
+                onClick();
+            });
 
-            TMP_Text label = CreateLabel(go.transform, value, 32f, Color.white);
+            TMP_Text label = CreateLabel(go.transform, value, FontSize, Color.white);
             RectTransform lr = (RectTransform)label.transform;
             lr.anchorMin = Vector2.zero;
             lr.anchorMax = Vector2.one;

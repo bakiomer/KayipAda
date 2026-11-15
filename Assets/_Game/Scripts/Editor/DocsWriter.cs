@@ -29,14 +29,14 @@ namespace KayipAda.EditorTools
             List<ModelSpec> nodes = new List<ModelSpec>(ModelCatalog.Palms);
             nodes.AddRange(ModelCatalog.Rocks);
             nodes.Add(ModelCatalog.FruitTree);
-            nodes.Add(ModelCatalog.FiberPalm);
+            nodes.Add(ModelCatalog.FlaxClump);
             nodes.Add(ModelCatalog.Stump);
             nodes.Add(ModelCatalog.Rubble);
             Section(sb, "Kaynak noktaları", nodes.ToArray());
             Section(sb, "Binalar ve alanlar", new[]
             {
                 ModelCatalog.Sawmill, ModelCatalog.Workshop, ModelCatalog.RopeWorkshop, ModelCatalog.Loom, ModelCatalog.MarketStall, ModelCatalog.MarketChest, ModelCatalog.Tent,
-                ModelCatalog.Campfire, ModelCatalog.Fence, ModelCatalog.Dock, ModelCatalog.DockPole, ModelCatalog.ShipWreck,
+                ModelCatalog.Campfire, ModelCatalog.Fence, ModelCatalog.Sign, ModelCatalog.ShipFlag, ModelCatalog.Dock, ModelCatalog.DockPole, ModelCatalog.ShipWreck,
                 ModelCatalog.UpgradeBench, ModelCatalog.Ship
             });
             Section(sb, "Süsler", ModelCatalog.Decor);
@@ -52,32 +52,44 @@ namespace KayipAda.EditorTools
             foreach (string note in ModelCatalog.NotInPacks) sb.AppendLine("- " + note);
             sb.AppendLine();
             sb.AppendLine("## Font");
-            sb.AppendLine("- **Paytone One** (Google Fonts, SIL Open Font License 1.1 — ücretsiz, ticari kullanım serbest). " +
-                          "Dosya: `Assets/_Game/Art/Fonts/PaytoneOne-Regular.ttf`, lisans: `Assets/_Game/Art/Fonts/OFL.txt`. " +
-                          "Türkçe harflerin hepsi (ı, ğ, ş, ç, ö, ü, İ) fontta var.");
+            sb.AppendLine("- **Kayip Display** = Google Fonts'taki **Lilita One** (SIL Open Font License 1.1) + eklenen Türkçe harfler " +
+                          "(İ, Ğ, ğ, Ş, ş; fontun kendi harf ve işaretlerinden birleştirildi). OFL gereği değiştirilmiş sürüm \"Lilita\" " +
+                          "adını taşıyamaz. Dosya: `Assets/_Game/Art/Fonts/KayipDisplay-Regular.ttf`, lisans: `OFL.txt`, açıklama: `BENIOKU.txt`.");
+            sb.AppendLine();
+            sb.AppendLine("## Kodla üretilenler");
+            sb.AppendLine("- Kaynak ikonları (`Art/Generated/Icon_*.png`, IconGenerator), meyve modeli (FruitMesh), omurga ve kaburgalar,");
+            sb.AppendLine("  gemi parçaları (gövde/direkler/yelkenler Quaternius gemisinden bölünür: `Art/Generated/Ship_*.asset`), kızak,");
+            sb.AppendLine("  pop ve vuuş sesleri (`Assets/_Game/Audio/Generated`), kuş ve dalga ortam sesleri (AudioManager).");
             sb.AppendLine();
 
             sb.AppendLine("## Sesler (`Assets/_Game/Data/SoundLibrary.asset`)");
             sb.AppendLine();
-            sb.AppendLine("| Olay | Ses dosyaları (ThirdParty/Audio) |");
+            sb.AppendLine("Toplama sesleri kısık ve 3-5 çeşitli (her çalışta perde ±%8 değişir); para ve kutlamalar öne çıkar.");
+            sb.AppendLine();
+            sb.AppendLine("| Olay | Ses dosyaları |");
             sb.AppendLine("|---|---|");
+            sb.AppendLine("| Odun (balta) | RPG/chop, Impact/impactWood_heavy_000/001/003 |");
+            sb.AppendLine("| Taş (kazma) | Impact/impactMining_000..002, impactMetal_light_000/002 |");
+            sb.AppendLine("| Meyve (pop) | Audio/Generated/pop_1..4 (kodla üretildi) |");
+            sb.AppendLine("| Lif (hışırtı) | RPG/cloth1..4 |");
             sb.AppendLine("| Toplama | Interface/pluck_001, pluck_002 |");
-            sb.AppendLine("| Vuruş (ağaç) | RPG/chop |");
-            sb.AppendLine("| Vuruş (kaya) | Impact/impactMining_000..003 |");
-            sb.AppendLine("| Satış | RPG/handleCoins, handleCoins2 |");
+            sb.AppendLine("| Satış (para) | RPG/handleCoins, handleCoins2 |");
             sb.AppendLine("| Para akışı (açma karesi) | Interface/tick_001, tick_002, tick_004 |");
-            sb.AppendLine("| Alan açıldı | Interface/confirmation_002 |");
-            sb.AppendLine("| Buton | Interface/click_001 |");
-            sb.AppendLine("| Adım | Impact/footstep_grass_000..004 |");
-            sb.AppendLine("| Binaya bırakma | Impact/impactWood_light_000..002 |");
-            sb.AppendLine("| Ürün çıktı | Impact/impactPlank_medium_000..001 |");
-            sb.AppendLine("| Geliştirme alındı | Interface/maximize_006 |");
-            sb.AppendLine("| Gemiye malzeme | Impact/impactWood_medium_000..002 |");
-            sb.AppendLine("| Gemi aşaması tamamlandı | Interface/maximize_008 |");
-            sb.AppendLine("| Gemi suya indi | Impact/impactSoft_heavy_000..001 |");
-            sb.AppendLine("| Havai fişek | Impact/impactGlass_light_000..002 |");
-            sb.AppendLine("| Kaçış | Interface/confirmation_004 |");
-            sb.AppendLine("| Ortam (dalga) | Pakette yok → AudioManager üretir |");
+            sb.AppendLine("| Alan açıldı | Audio/Generated/whoosh_1..2 + Impact/impactBell_heavy_000/002 + Jingles/STEEL01/04/05 |");
+            sb.AppendLine("| Çit kapısı | RPG/creak1..3 |");
+            sb.AppendLine("| Buton | Interface/click_001, click_002 |");
+            sb.AppendLine("| Adım | Impact/footstep_grass_000..003 |");
+            sb.AppendLine("| Binaya bırakma / ürün | Impact/impactWood_light_000..002 / impactPlank_medium_000..001 |");
+            sb.AppendLine("| Geliştirme, yıldız | Interface/maximize_006 |");
+            sb.AppendLine("| Gemiye malzeme / parça oturdu | Impact/impactWood_medium_000..002 / impactWood_heavy_002/004, impactPlank_medium_002 |");
+            sb.AppendLine("| Gemi aşaması | Jingles/STEEL07, STEEL02 |");
+            sb.AppendLine("| Final zafer müziği (sırayla) | Jingles/STEEL06, 03, 14, 12, PIZZI07, STEEL07, 02 |");
+            sb.AppendLine("| Gemi suya indi / havai fişek | Impact/impactSoft_heavy_000..001 / impactGlass_light_000..002 |");
+            sb.AppendLine("| Kaçış ekranı | Jingles/SAX07 |");
+            sb.AppendLine("| Ortam (dalga + kuşlar) | Pakette yok → AudioManager üretir |");
+            sb.AppendLine();
+            sb.AppendLine("Jingles: Kenney \"Music Jingles\" (CC0), `Assets/_Game/ThirdParty/Audio/Jingles` (+ License.txt). " +
+                          "Uzun CC0 arka plan müziği bulunamadı; oyun içinde dalga + kuş ortam sesi çalar.");
 
             string folder = Path.Combine(Directory.GetParent(Application.dataPath).FullName, "Docs");
             Directory.CreateDirectory(folder);

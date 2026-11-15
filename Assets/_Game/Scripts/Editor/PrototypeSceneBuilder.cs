@@ -270,52 +270,75 @@ namespace KayipAda.EditorTools
         }
 
         // Ses seçimi (Docs/Modeller.md'de de listelenir). Dosya varsa sadece eksik ses türleri eklenir.
+        // Ses düzeni sürümü: bu sayı dosyadakinden büyükse ses listesi yeniden kurulur (ses dengesi değişti).
+        private const int SoundVersion = 2;
+
+        // Her eylemin ayırt edilir sesi: odun = balta, taş = kazma, meyve = pop, lif = hışırtı, satış = para,
+        // alan açma = vuuş + çan + kısa müzik, aşama = müzik, final = zafer müziği, buton = tık.
+        // Toplama sesleri kısık ve 3-4 çeşitli (perde de değişir); para ve kutlamalar öne çıkar.
         private static void CreateSoundLibraryIfMissing()
         {
+            const float gather = 0.08f, normal = 0.04f;
             SoundLibrary.Entry[] defaults =
             {
-                Sound(SoundId.Collect, 0.6f, "Interface/pluck_001", "Interface/pluck_002"),
-                Sound(SoundId.Chop, 0.5f, "RPG/chop"),
-                Sound(SoundId.Sell, 0.7f, "RPG/handleCoins", "RPG/handleCoins2"),
-                Sound(SoundId.Coin, 0.5f, "Interface/tick_001", "Interface/tick_002", "Interface/tick_004"),
-                Sound(SoundId.Unlock, 0.9f, "Interface/confirmation_002"),
-                Sound(SoundId.Button, 0.7f, "Interface/click_001"),
-                Sound(SoundId.Footstep, 0.5f, "Impact/footstep_grass_000", "Impact/footstep_grass_001", "Impact/footstep_grass_002",
-                      "Impact/footstep_grass_003", "Impact/footstep_grass_004"),
-                Sound(SoundId.Drop, 0.4f, "Impact/impactWood_light_000", "Impact/impactWood_light_001", "Impact/impactWood_light_002"),
-                Sound(SoundId.Produce, 0.5f, "Impact/impactPlank_medium_000", "Impact/impactPlank_medium_001"),
-                Sound(SoundId.Upgrade, 0.9f, "Interface/maximize_006"),
-                Sound(SoundId.Build, 0.6f, "Impact/impactWood_medium_000", "Impact/impactWood_medium_001", "Impact/impactWood_medium_002"),
-                Sound(SoundId.Victory, 1f, "Interface/confirmation_004"),
-                Sound(SoundId.Mine, 0.6f, "Impact/impactMining_000", "Impact/impactMining_001", "Impact/impactMining_002",
-                      "Impact/impactMining_003"),
-                Sound(SoundId.StageComplete, 1f, "Interface/maximize_008"),
-                Sound(SoundId.Splash, 1f, "Impact/impactSoft_heavy_000", "Impact/impactSoft_heavy_001"),
-                Sound(SoundId.Firework, 0.6f, "Impact/impactGlass_light_000", "Impact/impactGlass_light_001", "Impact/impactGlass_light_002")
+                Sound(SoundId.Collect, 0.3f, gather, "Interface/pluck_001", "Interface/pluck_002"),
+                Sound(SoundId.Chop, 0.5f, gather, "RPG/chop", "Impact/impactWood_heavy_000", "Impact/impactWood_heavy_001", "Impact/impactWood_heavy_003"),
+                Sound(SoundId.Mine, 0.45f, gather, "Impact/impactMining_000", "Impact/impactMining_001", "Impact/impactMining_002",
+                      "Impact/impactMetal_light_000", "Impact/impactMetal_light_002"),
+                Sound(SoundId.Pop, 0.55f, gather, "gen:pop_1", "gen:pop_2", "gen:pop_3", "gen:pop_4"),
+                Sound(SoundId.Rustle, 0.5f, gather, "RPG/cloth1", "RPG/cloth2", "RPG/cloth3", "RPG/cloth4"),
+                Sound(SoundId.Sell, 0.95f, normal, "RPG/handleCoins", "RPG/handleCoins2"),
+                Sound(SoundId.Coin, 0.6f, normal, "Interface/tick_001", "Interface/tick_002", "Interface/tick_004"),
+                Sound(SoundId.Unlock, 0.85f, 0.02f, "Impact/impactBell_heavy_000", "Impact/impactBell_heavy_002"),
+                Sound(SoundId.Whoosh, 0.8f, normal, "gen:whoosh_1", "gen:whoosh_2"),
+                Sound(SoundId.UnlockJingle, 0.9f, 0f, "Jingles/jingles_STEEL01", "Jingles/jingles_STEEL04", "Jingles/jingles_STEEL05"),
+                Sound(SoundId.GateOpen, 0.6f, normal, "RPG/creak1", "RPG/creak2", "RPG/creak3"),
+                Sound(SoundId.Button, 0.6f, 0.02f, "Interface/click_001", "Interface/click_002"),
+                Sound(SoundId.Footstep, 0.22f, gather, "Impact/footstep_grass_000", "Impact/footstep_grass_001", "Impact/footstep_grass_002",
+                      "Impact/footstep_grass_003"),
+                Sound(SoundId.Drop, 0.35f, gather, "Impact/impactWood_light_000", "Impact/impactWood_light_001", "Impact/impactWood_light_002"),
+                Sound(SoundId.Produce, 0.45f, normal, "Impact/impactPlank_medium_000", "Impact/impactPlank_medium_001"),
+                Sound(SoundId.Upgrade, 0.9f, 0.02f, "Interface/maximize_006"),
+                Sound(SoundId.Build, 0.5f, gather, "Impact/impactWood_medium_000", "Impact/impactWood_medium_001", "Impact/impactWood_medium_002"),
+                Sound(SoundId.PartPlace, 0.75f, normal, "Impact/impactWood_heavy_002", "Impact/impactWood_heavy_004", "Impact/impactPlank_medium_002"),
+                Sound(SoundId.StageComplete, 1f, 0f, "Jingles/jingles_STEEL07", "Jingles/jingles_STEEL02"),
+                Sound(SoundId.Victory, 1f, 0f, "Jingles/jingles_SAX07"),
+                Sound(SoundId.VictoryMusic, 1f, 0f, "Jingles/jingles_STEEL06", "Jingles/jingles_STEEL03", "Jingles/jingles_STEEL14",
+                      "Jingles/jingles_STEEL12", "Jingles/jingles_PIZZI07", "Jingles/jingles_STEEL07", "Jingles/jingles_STEEL02"),
+                Sound(SoundId.Splash, 1f, normal, "Impact/impactSoft_heavy_000", "Impact/impactSoft_heavy_001"),
+                Sound(SoundId.Firework, 0.65f, 0.1f, "Impact/impactGlass_light_000", "Impact/impactGlass_light_001", "Impact/impactGlass_light_002")
             };
 
             SoundLibrary existing = BuilderUtil.Load<SoundLibrary>(SoundLibraryPath);
-            if (existing != null)
+            if (existing != null && existing.Version >= SoundVersion)
             {
                 existing.EditorAddMissing(defaults);
                 EditorUtility.SetDirty(existing);
                 return;
             }
+            if (existing != null)
+            {
+                existing.EditorSetup(defaults, existing.Ambient, SoundVersion); // ses dengesi yenilendi
+                EditorUtility.SetDirty(existing);
+                return;
+            }
             SoundLibrary library = ScriptableObject.CreateInstance<SoundLibrary>();
-            library.EditorSetup(defaults, null);
+            library.EditorSetup(defaults, null, SoundVersion);
             AssetDatabase.CreateAsset(library, SoundLibraryPath);
         }
 
-        private static SoundLibrary.Entry Sound(SoundId id, float volume, params string[] files)
+        // "gen:ad" = kodla üretilen ses (Audio/Generated/ad.wav), diğerleri ThirdParty/Audio altındaki .ogg dosyaları.
+        private static SoundLibrary.Entry Sound(SoundId id, float volume, float pitchJitter, params string[] files)
         {
             List<AudioClip> clips = new List<AudioClip>();
             foreach (string file in files)
             {
-                AudioClip clip = BuilderUtil.Load<AudioClip>(AudioFolder + "/" + file + ".ogg");
+                string path = file.StartsWith("gen:") ? Root + "/Audio/Generated/" + file.Substring(4) + ".wav" : AudioFolder + "/" + file + ".ogg";
+                AudioClip clip = BuilderUtil.Load<AudioClip>(path);
                 if (clip != null) clips.Add(clip);
                 else Debug.LogWarning("Kayıp Ada: Ses bulunamadı (atlandı): " + file);
             }
-            return new SoundLibrary.Entry { Id = id, Clips = clips.ToArray(), Volume = volume };
+            return new SoundLibrary.Entry { Id = id, Clips = clips.ToArray(), Volume = volume, PitchJitter = pitchJitter };
         }
 
         // Model içe aktarma ayarları uygulanmamışsa (ör. ilk açılış) ThirdParty klasörünü yeniden içe aktarır.
@@ -336,7 +359,7 @@ namespace KayipAda.EditorTools
             public GameObject Player, Lumberjack, Carrier, Market, UnlockPad, Camp, Confetti, Coin, FloatingText;
             public GameObject[] Palms, Rocks;
             public GameObject FruitTree, Sawmill, Workshop;
-            public GameObject Sparkle, Splash, Firework, UpgradeStation, FiberWorker, RopeWorkshop, Loom;
+            public GameObject Sparkle, Splash, Firework, Puff, GoldBurst, ScreenConfetti, UpgradeStation, FiberWorker, RopeWorkshop, Loom;
             public GameObject[] FiberPalms;
             public readonly Dictionary<string, GameObject> Decor = new Dictionary<string, GameObject>();
         }
@@ -348,13 +371,14 @@ namespace KayipAda.EditorTools
 
             // Kaynak modelleri: her kaynak türü kendi prefab'ını bilir.
             LinkItem("Wood", PrefabFactory.BuildItem(ModelCatalog.Wood));
-            LinkItem("Stone", PrefabFactory.BuildItem(ModelCatalog.Stone));
-            LinkItem("Fruit", PrefabFactory.BuildItem(ModelCatalog.Fruit));
+            // Sırtta kolay ayırt edilsin: kütük, gri taş, kırmızı meyve, sarı lif, kalas, turuncu tuğla, halat, krem bez.
+            LinkItem("Stone", PrefabFactory.BuildTintedItem(ModelCatalog.Stone, MapLayout.ItemStoneColor));
+            LinkItem("Fruit", PrefabFactory.BuildFruitItem());
             LinkItem("Plank", PrefabFactory.BuildItem(ModelCatalog.Plank));
-            LinkItem("Brick", PrefabFactory.BuildItem(ModelCatalog.Brick));
-            LinkItem("Fiber", PrefabFactory.BuildItem(ModelCatalog.Fiber));
+            LinkItem("Brick", PrefabFactory.BuildTintedItem(ModelCatalog.Brick, MapLayout.ItemBrickColor));
+            LinkItem("Fiber", PrefabFactory.BuildTintedItem(ModelCatalog.Fiber, MapLayout.ItemFiberColor));
             LinkItem("Rope", PrefabFactory.BuildRopeItem());
-            LinkItem("Cloth", PrefabFactory.BuildItem(ModelCatalog.Cloth));
+            LinkItem("Cloth", PrefabFactory.BuildTintedItem(ModelCatalog.Cloth, MapLayout.ItemClothColor));
             p.Coin = PrefabFactory.BuildCoin();
 
             // Efektler
@@ -393,10 +417,15 @@ namespace KayipAda.EditorTools
             ResourceNodeType rock = Data<ResourceNodeType>(NodeTypesFolder, "Rock");
             ResourceNodeType bush = Data<ResourceNodeType>(NodeTypesFolder, "FruitBush");
             // Vuruş sesleri (oynanış sayısı değil, her seferinde ayarlanır).
+            tree.EditorSetHitSound(SoundId.Chop);
             rock.EditorSetHitSound(SoundId.Mine);
-            bush.EditorSetHitSound(SoundId.Collect);
+            bush.EditorSetHitSound(SoundId.Pop);
+            ResourceNodeType flaxType = Data<ResourceNodeType>(NodeTypesFolder, "FiberPalm");
+            flaxType.EditorSetHitSound(SoundId.Rustle);
+            EditorUtility.SetDirty(tree);
             EditorUtility.SetDirty(rock);
             EditorUtility.SetDirty(bush);
+            EditorUtility.SetDirty(flaxType);
             p.Palms = new GameObject[ModelCatalog.Palms.Length];
             for (int i = 0; i < p.Palms.Length; i++)
                 p.Palms[i] = PrefabFactory.BuildNode(ModelCatalog.Palms[i], tree, config, 1.6f, new Vector2(0.6f, 0.6f), 1.1f,
@@ -405,13 +434,11 @@ namespace KayipAda.EditorTools
             for (int i = 0; i < p.Rocks.Length; i++)
                 p.Rocks[i] = PrefabFactory.BuildNode(ModelCatalog.Rocks[i], rock, config, 1.9f, new Vector2(1.3f, 1.3f), 1.5f,
                                                      null, 0, new Color(0.62f, 0.6f, 0.58f), ModelCatalog.Rubble);
-            p.FruitTree = PrefabFactory.BuildNode(ModelCatalog.FruitTree, bush, config, 1.7f, new Vector2(0.8f, 0.8f), 1.2f,
-                                                  ModelCatalog.Fruit, 6, null, ModelCatalog.Stump);
+            p.FruitTree = PrefabFactory.BuildFruitBush(bush, config);
             ResourceNodeType fiberPalm = Data<ResourceNodeType>(NodeTypesFolder, "FiberPalm");
             p.FiberPalms = new[]
             {
-                PrefabFactory.BuildNode(ModelCatalog.FiberPalm, fiberPalm, config, 1.6f, new Vector2(0.6f, 0.6f), 1.1f,
-                                        ModelCatalog.Fiber, 4, new Color(0.86f, 0.76f, 0.46f), ModelCatalog.Stump)
+                PrefabFactory.BuildFlaxField(fiberPalm, config) // lif: keten/saz tarlası (palmiyeler sadece odun verir)
             };
 
             // Binalar ve alanlar
@@ -428,7 +455,7 @@ namespace KayipAda.EditorTools
             p.Camp = PrefabFactory.BuildCamp();
 
             foreach (ModelSpec spec in ModelCatalog.Decor) p.Decor[spec.Key] = PrefabFactory.BuildDecor(spec);
-            foreach (ModelSpec spec in new[] { ModelCatalog.Fence, ModelCatalog.Dock, ModelCatalog.DockPole, ModelCatalog.ShipWreck })
+            foreach (ModelSpec spec in new[] { ModelCatalog.Fence, ModelCatalog.Sign, ModelCatalog.ShipFlag, ModelCatalog.Dock, ModelCatalog.DockPole, ModelCatalog.ShipWreck })
                 p.Decor[spec.Key] = PrefabFactory.BuildDecor(spec);
 
             p.UpgradeStation = PrefabFactory.BuildUpgradeStation(config);
@@ -446,6 +473,7 @@ namespace KayipAda.EditorTools
             ResourceType type = Data<ResourceType>(ResourceTypesFolder, resourceFile);
             if (type == null) return;
             type.EditorSetPrefab(prefab);
+            type.EditorSetIcon(IconGenerator.Create(type.Id));
             EditorUtility.SetDirty(type);
         }
 
@@ -465,6 +493,9 @@ namespace KayipAda.EditorTools
 
             CreateLighting();
             CreateGroundAndWater(islandGo, island);
+            // İşçilerin yürüme alanı (NavMesh): ada zemininden, engeller oyularak; açılışlarda kendini günceller.
+            IslandNavMesh navMesh = islandGo.AddComponent<IslandNavMesh>();
+            BuilderUtil.SetField(navMesh, "ground", islandGo.GetComponent<MeshFilter>());
 
             // Yöneticiler
             GameObject managers = new GameObject("Managers");
@@ -526,7 +557,7 @@ namespace KayipAda.EditorTools
             Reserve(reserved, MapLayout.Sawmill, 3.8f);
 
             // Kayalık: kayalar + Taş Atölyesi (kendi karesiyle açılır)
-            Transform rockyContent = CreateArea("Area Rocky", rocky, MapLayout.RockyRect, p.Decor[ModelCatalog.Fence.Key], config);
+            Transform rockyContent = CreateArea("Area Rocky", rocky, MapLayout.RockyRect, p.Decor[ModelCatalog.Fence.Key], config, MapLayout.RockyPad, p.Decor[ModelCatalog.Sign.Key]);
             for (int i = 0; i < MapLayout.Rocks.Length; i++)
             {
                 Place(p.Rocks[i % p.Rocks.Length], rockyContent, MapLayout.Rocks[i], i * 110f);
@@ -534,11 +565,11 @@ namespace KayipAda.EditorTools
             GameObject workshop = PlaceBuilding("StoneWorkshop", rockyContent, MapLayout.Workshop, p.Workshop, workshopArea, config);
 
             // Meyve bahçesi
-            Transform orchardContent = CreateArea("Area Orchard", orchard, MapLayout.OrchardRect, p.Decor[ModelCatalog.Fence.Key], config);
+            Transform orchardContent = CreateArea("Area Orchard", orchard, MapLayout.OrchardRect, p.Decor[ModelCatalog.Fence.Key], config, MapLayout.OrchardPad, p.Decor[ModelCatalog.Sign.Key]);
             foreach (Vector3 pos in MapLayout.FruitTrees) VaryTree(Place(p.FruitTree, orchardContent, pos, 0f), treeRandom);
 
             // Palmiye Koyu: lif veren palmiyeler. Kuzeyinde Halat Atölyesi ve Dokuma Tezgahı.
-            Transform coveContent = CreateArea("Area Cove", cove, MapLayout.CoveRect, p.Decor[ModelCatalog.Fence.Key], config);
+            Transform coveContent = CreateArea("Area Cove", cove, MapLayout.CoveRect, p.Decor[ModelCatalog.Fence.Key], config, MapLayout.CovePad, p.Decor[ModelCatalog.Sign.Key]);
             ResourceNode[] fiberPalms = new ResourceNode[MapLayout.FiberPalms.Length];
             for (int i = 0; i < fiberPalms.Length; i++)
             {
@@ -603,10 +634,13 @@ namespace KayipAda.EditorTools
 
             // İskele: gemi inşası, final töreni ve kaçış; Test Menüsü
             UiBuilder.CreateCelebrationBanner();
+            UiBuilder.CreateBurstText(config);
+            UiBuilder.CreateSettings();
             ResourceType[] devResources = new ResourceType[DevResourceOrder.Length];
             for (int i = 0; i < devResources.Length; i++) devResources[i] = Data<ResourceType>(ResourceTypesFolder, DevResourceOrder[i]);
             UiBuilder.CreateDevMenu(config, devResources);
             CreateShipyard(p, island, config, follow, reserved);
+            UiBuilder.CreateConfettiOverlay(); // kaçış ekranının da önünde
             CreateGuide(config, follow.GetComponent<Camera>());
 
             // Süsler (yolları ve oyun alanlarını kapatmadan)
@@ -765,16 +799,25 @@ namespace KayipAda.EditorTools
 
         // ---------------------------------------------------------------- Bölgeler ve binalar
 
-        // Açılabilir bölge: kapalıyken çit + yerde ad; içerik (Content) açılınca zıplayarak belirir.
-        private static Transform CreateArea(string name, AreaDefinition area, Rect rect, GameObject fencePrefab, GameConfig config)
+        // Açılabilir bölge: her zaman çitle çevrili; kapı açma karesine bakan kenarda. Kapalıyken kapı kapalı
+        // (içeri girilmez), açılınca kanatlar açılır. Girişin yanında bölgenin adını taşıyan ahşap tabela.
+        // İçerik (Content) açılınca zıplayarak belirir.
+        private static Transform CreateArea(string name, AreaDefinition area, Rect rect, GameObject fencePrefab, GameConfig config,
+                                            Vector3 padPosition, GameObject signPrefab)
         {
             GameObject root = new GameObject(name);
             root.transform.position = new Vector3(rect.center.x, 0f, rect.center.y);
 
             GameObject locked = new GameObject("Locked");
             locked.transform.SetParent(root.transform, false);
-            CreateFence(locked.transform, rect, fencePrefab);
-            UiFactory.CreateWorldLabel("Name", locked.transform, new Vector3(0f, 1.6f, 0f), area.DisplayName, 7f, Color.white);
+            Transform fence = new GameObject("Fence").transform;
+            fence.SetParent(root.transform, false);
+            CreateFence(fence, locked.transform, rect, fencePrefab, padPosition, area, config,
+                        out Vector3 gateCenter, out Vector3 outward, out Vector3 along);
+
+            // Tabela: kapının yanında, biraz dışarıda (açma karesini kapatmasın).
+            Vector3 signPos = gateCenter + along * (MapLayout.GateWidth * 0.5f + 1.5f) + outward * 0.9f;
+            CreateSign(signPrefab, root.transform, root.transform.TransformPoint(signPos), area.DisplayName);
 
             GameObject content = new GameObject("Content");
             content.transform.SetParent(root.transform, false);
@@ -788,19 +831,125 @@ namespace KayipAda.EditorTools
             return content.transform;
         }
 
-        // Dikdörtgenin dört kenarına çit parçaları dizer (parent dikdörtgenin ortasında).
-        private static void CreateFence(Transform parent, Rect rect, GameObject fencePrefab)
+        // Ahşap tabela + üstünde bölgenin adı (kameraya dönük; uzakta yumuşakça kaybolur).
+        private static void CreateSign(GameObject signPrefab, Transform parent, Vector3 position, string title)
+        {
+            GameObject sign = Place(signPrefab, parent, position, 0f);
+            sign.name = "Sign";
+            Material wood = ArtGenerator.GetLit("M_SignWood", null, MapLayout.SignWoodColor);
+            foreach (Renderer r in sign.GetComponentsInChildren<Renderer>())
+            {
+                Material[] mats = r.sharedMaterials;
+                for (int i = 0; i < mats.Length; i++) mats[i] = wood;
+                r.sharedMaterials = mats;
+            }
+            Bounds b = PrefabFactory.WorldBounds(sign);
+            Vector3 textPos = new Vector3(b.center.x, b.min.y + b.size.y * MapLayout.SignTextHeight, b.min.z - 0.04f);
+            TMPro.TextMeshPro text = UiFactory.CreateWorldText("Title", sign.transform, sign.transform.InverseTransformPoint(textPos),
+                                                               title, 6f, Color.white);
+            RectTransform rt = (RectTransform)text.transform;
+            rt.sizeDelta = new Vector2(Mathf.Max(b.size.x * 0.92f, 1.6f), b.size.y * 0.34f);
+            text.enableAutoSizing = true;
+            text.fontSizeMin = 3f;
+            text.fontSizeMax = 7f;
+            UiFactory.AddFader(sign);
+            BuilderUtil.SetVector2(sign.AddComponent<NavObstacle>(), "size", new Vector2(0.5f, 0.5f));
+        }
+
+        // Dikdörtgenin dört kenarına çit dizer; açma karesine bakan kenarda (karenin hizasında) iki kanatlı kapı
+        // bırakır. Her çit çizgisi ince bir engeldir (kimse çitten geçemez); kapı aralığındaki engel "Locked"
+        // altındadır ve kapı açılınca kalkar.
+        private static void CreateFence(Transform parent, Transform locked, Rect rect, GameObject fencePrefab, Vector3 padPosition,
+                                        AreaDefinition area, GameConfig config, out Vector3 gateCenter, out Vector3 outward, out Vector3 along)
         {
             float halfW = rect.width / 2f, halfD = rect.height / 2f;
-            FenceLine(parent, fencePrefab, new Vector3(-halfW, 0f, -halfD), new Vector3(halfW, 0f, -halfD));
-            FenceLine(parent, fencePrefab, new Vector3(halfW, 0f, -halfD), new Vector3(halfW, 0f, halfD));
-            FenceLine(parent, fencePrefab, new Vector3(halfW, 0f, halfD), new Vector3(-halfW, 0f, halfD));
-            FenceLine(parent, fencePrefab, new Vector3(-halfW, 0f, halfD), new Vector3(-halfW, 0f, -halfD));
+            Vector3[] corners =
+            {
+                new Vector3(-halfW, 0f, -halfD), new Vector3(halfW, 0f, -halfD), new Vector3(halfW, 0f, halfD), new Vector3(-halfW, 0f, halfD)
+            };
+            Vector3 center = new Vector3(rect.center.x, 0f, rect.center.y);
+            Vector3 padLocal = padPosition - center;
+
+            // Kapı kenarı: karenin bulunduğu taraftaki kenar (karenin kenar dışındaki uzaklığı en büyük olan yön).
+            int gateSide;
+            float sx = Mathf.Abs(padLocal.x) - halfW, sz = Mathf.Abs(padLocal.z) - halfD;
+            if (sx > sz) gateSide = padLocal.x > 0f ? 1 : 3;
+            else gateSide = padLocal.z > 0f ? 2 : 0;
+
+            gateCenter = Vector3.zero;
+            outward = Vector3.back;
+            along = Vector3.right;
+            for (int i = 0; i < 4; i++)
+            {
+                Vector3 from = corners[i], to = corners[(i + 1) % 4];
+                if (i != gateSide)
+                {
+                    FenceLine(parent, fencePrefab, from, to);
+                    continue;
+                }
+
+                Vector3 dir = (to - from).normalized;
+                float length = Vector3.Distance(from, to);
+                float t = Mathf.Clamp(Vector3.Dot(padLocal - from, dir), MapLayout.GateWidth, length - MapLayout.GateWidth);
+                Vector3 gapStart = from + dir * (t - MapLayout.GateWidth * 0.5f);
+                Vector3 gapEnd = from + dir * (t + MapLayout.GateWidth * 0.5f);
+                FenceLine(parent, fencePrefab, from, gapStart);
+                FenceLine(parent, fencePrefab, gapEnd, to);
+
+                gateCenter = (gapStart + gapEnd) * 0.5f;
+                Vector3 mid = (from + to) * 0.5f;
+                outward = Mathf.Abs(mid.x) > Mathf.Abs(mid.z) ? new Vector3(Mathf.Sign(mid.x), 0f, 0f) : new Vector3(0f, 0f, Mathf.Sign(mid.z));
+                along = dir;
+
+                // Kanatlar: menteşe kapı aralığının iki ucunda; her kanat aralığın yarısı.
+                Transform left = CreateGateDoor(parent, fencePrefab, gapStart, dir, "GateLeft");
+                Transform right = CreateGateDoor(parent, fencePrefab, gapEnd, -dir, "GateRight");
+
+                // Kapalı kapının engeli (bölge açılınca kalkar).
+                GameObject blockerGo = new GameObject("GateBlocker");
+                blockerGo.transform.SetParent(locked, false);
+                blockerGo.transform.localPosition = gateCenter;
+                NavObstacle blocker = blockerGo.AddComponent<NavObstacle>();
+                BuilderUtil.SetVector2(blocker, "size", Mathf.Abs(dir.x) > 0.5f
+                    ? new Vector2(MapLayout.GateWidth, MapLayout.FenceThickness)
+                    : new Vector2(MapLayout.FenceThickness, MapLayout.GateWidth));
+
+                FenceGate gate = parent.gameObject.AddComponent<FenceGate>();
+                BuilderUtil.SetField(gate, "config", config);
+                BuilderUtil.SetField(gate, "area", area);
+                BuilderUtil.SetField(gate, "leftHinge", left);
+                BuilderUtil.SetField(gate, "rightHinge", right);
+                BuilderUtil.SetField(gate, "blocker", blocker);
+                BuilderUtil.SetFloat(gate, "leftOpenAngle", OpenAngle(dir, outward));
+                BuilderUtil.SetFloat(gate, "rightOpenAngle", OpenAngle(-dir, outward));
+            }
+        }
+
+        // Kanadın dışarı doğru açılması için Y dönüş açısı (+ ya da -).
+        private static float OpenAngle(Vector3 doorDir, Vector3 outward)
+        {
+            Vector3 rotated = Quaternion.Euler(0f, MapLayout.GateOpenAngle, 0f) * doorDir;
+            return Vector3.Dot(rotated, outward) > 0f ? MapLayout.GateOpenAngle : -MapLayout.GateOpenAngle;
+        }
+
+        private static Transform CreateGateDoor(Transform parent, GameObject fencePrefab, Vector3 hinge, Vector3 dir, string name)
+        {
+            Transform pivot = new GameObject(name).transform;
+            pivot.SetParent(parent, false);
+            pivot.localPosition = hinge;
+            GameObject piece = (GameObject)PrefabUtility.InstantiatePrefab(fencePrefab);
+            piece.transform.SetParent(pivot, false);
+            float half = MapLayout.GateWidth * 0.5f;
+            piece.transform.localPosition = dir * (half * 0.5f);
+            piece.transform.localRotation = Quaternion.Euler(0f, Quaternion.LookRotation(dir).eulerAngles.y - 90f, 0f);
+            piece.transform.localScale = new Vector3(half / ModelCatalog.Fence.Size, 1f, 1f);
+            return pivot;
         }
 
         private static void FenceLine(Transform parent, GameObject fencePrefab, Vector3 from, Vector3 to)
         {
             float length = Vector3.Distance(from, to);
+            if (length < 0.2f) return;
             int count = Mathf.Max(1, Mathf.RoundToInt(length / ModelCatalog.Fence.Size));
             float yaw = Quaternion.LookRotation(to - from).eulerAngles.y - 90f; // çit modeli X yönünde uzanır
             for (int i = 0; i < count; i++)
@@ -809,7 +958,17 @@ namespace KayipAda.EditorTools
                 piece.transform.SetParent(parent, false);
                 piece.transform.localPosition = Vector3.Lerp(from, to, (i + 0.5f) / count);
                 piece.transform.localRotation = Quaternion.Euler(0f, yaw, 0f);
+                piece.transform.localScale = new Vector3(length / count / ModelCatalog.Fence.Size, 1f, 1f);
             }
+
+            // Çizginin tamamı tek ince engel (eksene hizalı).
+            GameObject wall = new GameObject("Wall");
+            wall.transform.SetParent(parent, false);
+            wall.transform.localPosition = (from + to) * 0.5f;
+            Vector3 d = to - from;
+            BuilderUtil.SetVector2(wall.AddComponent<NavObstacle>(), "size", Mathf.Abs(d.x) > Mathf.Abs(d.z)
+                ? new Vector2(Mathf.Abs(d.x) + MapLayout.FenceThickness, MapLayout.FenceThickness)
+                : new Vector2(MapLayout.FenceThickness, Mathf.Abs(d.z) + MapLayout.FenceThickness));
         }
 
         // Bina da bir açılabilir alandır: kapalıyken silik zemin (üstünde açma karesi), açılınca bina zıplayarak belirir.
@@ -882,6 +1041,8 @@ namespace KayipAda.EditorTools
 
         // ---------------------------------------------------------------- Tersane: kızaktaki gemi ve final töreni
 
+        // Gemi kumsalda, kıyıya paralel ve burnu hafifçe denize dönük; ahşap kızağın (altlık + raylar) üstünde yatay
+        // durur. Aşamalarda parçaları tek tek gelir (ShipParts). Teslim alanı geminin kara tarafında, hemen yanında.
         private static void CreateShipyard(Prefabs p, IslandShape island, GameConfig config, CameraFollow follow, List<Vector3> reserved)
         {
             ShipConfig shipConfig = BuilderUtil.Load<ShipConfig>(ShipConfigPath);
@@ -905,124 +1066,123 @@ namespace KayipAda.EditorTools
             Place(p.Decor["Anchor"], root, start + new Vector3(-2.4f, 0f, -0.6f), 20f);
             Place(p.Decor["BucketFish"], root, start + new Vector3(-1.6f, 0f, -1.6f), 0f);
 
-            // Geminin yeri: iskelenin doğusunda, ortası kıyıdan ShipInland metre içeride (pruva suya uzanır).
-            float shipZ = start.z;
-            for (int i = 0; i < 200; i++)
-            {
-                if (island.SignedDistance(new Vector2(MapLayout.ShipX, shipZ)) <= -MapLayout.ShipInland) break;
-                shipZ -= 0.1f;
-            }
+            // Kıyının bu noktadaki deniz yönü (ada şeklinin eğiminden) ve geminin yeri: kıyıdan ShipInland içeride.
+            Vector2 probe = new Vector2(MapLayout.ShipX, start.z);
+            Vector3 seaDir = SeaDirection(island, probe);
+            Vector3 center = new Vector3(probe.x, 0f, probe.y);
+            for (int i = 0; i < 300 && island.SignedDistance(new Vector2(center.x, center.z)) > -MapLayout.ShipInland; i++) center -= seaDir * 0.1f;
+
+            // Kıyıya paralel yön (doğuya bakan), burnu biraz denize dönük.
+            Vector3 tangent = Vector3.Cross(Vector3.up, seaDir);
+            if (tangent.x < 0f) tangent = -tangent;
+            Vector3 bowDir = (tangent * Mathf.Cos(MapLayout.ShipBowTilt * Mathf.Deg2Rad) + seaDir * Mathf.Sin(MapLayout.ShipBowTilt * Mathf.Deg2Rad)).normalized;
+            Vector3 slideDir = Vector3.Cross(Vector3.up, bowDir);
+            if (Vector3.Dot(slideDir, seaDir) < 0f) slideDir = -slideDir;
+            Vector3 sailDir = (seaDir + bowDir * 0.6f).normalized;
+
             GameObject shipRoot = new GameObject("Ship");
             shipRoot.transform.SetParent(root, false);
-            shipRoot.transform.position = new Vector3(MapLayout.ShipX, 0f, shipZ);
+            shipRoot.transform.position = center + Vector3.up * MapLayout.ShipCradleHeight;
 
+            // Model: önce kökün kendi uzayında boyu +Z'ye (burun +Z), sonra parçalara ayrılır, sonra döndürülür.
             Transform hull = new GameObject("Hull").transform;
             hull.SetParent(shipRoot.transform, false);
             GameObject model = PrefabFactory.CreateModel(ModelCatalog.Ship, hull);
             OrientShip(model, hull, shipRoot.transform);
-            Bounds sb = PrefabFactory.WorldBounds(model);
-
+            BowToPositiveZ(model, hull, shipRoot.transform);
+            Material partMaterial = model.GetComponentInChildren<Renderer>().sharedMaterial;
             Material reveal = ArtGenerator.GetMaterial("M_ShipReveal", "KayipAda/BuildReveal", m =>
             {
                 m.SetTexture("_BaseMap", BuilderUtil.Load<Texture2D>(BuilderUtil.ThirdParty + "/Quaternius_Pirate/Textures/Atlas_Pirate.png"));
                 m.SetColor("_BaseColor", Color.white);
             });
-            foreach (Renderer r in model.GetComponentsInChildren<Renderer>(true))
-            {
-                Material[] mats = r.sharedMaterials;
-                for (int i = 0; i < mats.Length; i++) mats[i] = reveal;
-                r.sharedMaterials = mats;
-            }
+            Material wood = ArtGenerator.GetLit("M_ShipWood", null, MapLayout.ShipWoodColor);
+            Material plank = ArtGenerator.GetLit("M_ShipPlank", null, MapLayout.ShipPlankColor);
+            ShipParts.Result parts = ShipParts.Split(model, shipRoot.transform, reveal, partMaterial, wood,
+                                                     BuilderUtil.ThirdParty + "/Quaternius_Pirate/Textures/Atlas_Pirate.png");
+            Bounds sb = ShipBounds(shipRoot.transform); // kökün uzayında (henüz dönmedi)
 
-            // Kızak: geminin altında iki kütük rayı, denize doğru uzanır.
-            GameObject slipway = new GameObject("Slipway");
-            slipway.transform.SetParent(root, false);
-            float railStart = sb.min.z - 0.5f, railEnd = sb.max.z + 4f;
-            for (int side = -1; side <= 1; side += 2)
-            {
-                for (float z = railStart; z < railEnd; z += 2.4f)
-                {
-                    Vector2 flat = new Vector2(sb.center.x + side * sb.extents.x * 0.35f, z + 1.2f);
-                    float sd = island.SignedDistance(flat);
-                    float y = sd > 0f ? -sd * 0.35f : 0.02f;
-                    GameObject log = Place(p.Decor[ModelCatalog.DockPole.Key], slipway.transform, new Vector3(flat.x, y, flat.y), 0f);
-                    Bounds lb = PrefabFactory.WorldBounds(log);
-                    if (lb.size.x > lb.size.z) log.transform.rotation = Quaternion.Euler(0f, 90f, 0f);
-                }
-            }
-            BuilderUtil.MarkStatic(slipway);
-
-            // Gemi karadayken karakterler içinden geçmesin (tören başlayınca kapanır).
-            NavObstacle obstacle = shipRoot.AddComponent<NavObstacle>();
-            BuilderUtil.SetVector2(obstacle, "size", new Vector2(sb.size.x + 0.4f, sb.size.z + 0.4f));
-
-            // Erzak: güvertede beliren variller ve sandıklar.
+            // Erzak: güvertede beliren fıçılar ve sandıklar + en uzun direğin tepesinde korsan bayrağı.
             Transform supplies = new GameObject("Supplies").transform;
             supplies.SetParent(shipRoot.transform, false);
-            float deckY = sb.min.y + sb.size.y * 0.4f;
             string[] supplyKeys = { "Barrel", "Chest", "Barrel", "Crate", "Barrel", "Chest" };
             for (int i = 0; i < supplyKeys.Length; i++)
             {
-                float along = (i / (supplyKeys.Length - 1f) - 0.5f) * sb.size.z * 0.45f;
-                Vector3 world = new Vector3(sb.center.x + (i % 2 == 0 ? -0.4f : 0.4f), deckY, sb.center.z + along);
-                GameObject item = Place(p.Decor[supplyKeys[i]], supplies, world, i * 50f);
+                float along = (i / (supplyKeys.Length - 1f) - 0.5f) * sb.size.z * 0.5f;
+                Vector3 local = new Vector3((i % 2 == 0 ? -0.45f : 0.45f), parts.DeckY + 0.05f, sb.center.z + along);
+                GameObject item = Place(p.Decor[supplyKeys[i]], supplies, shipRoot.transform.TransformPoint(local), i * 50f);
                 item.transform.localScale = Vector3.one * 0.8f;
             }
+            GameObject flag = Place(p.Decor[ModelCatalog.ShipFlag.Key], supplies, shipRoot.transform.TransformPoint(parts.TopOfTallestMast), 90f);
+            flag.name = "Flag";
 
-            // İnşa iskelesi: deniz tarafında ve pruvada direkler (gemi bitince kaybolur).
-            GameObject scaffolding = new GameObject("Scaffolding");
-            scaffolding.transform.SetParent(shipRoot.transform, false);
-            Vector3[] poles =
+            // Engeller: dönük gövdeyi boyunca birkaç kare ile kapat (eksene hizalı dikdörtgenler).
+            List<NavObstacle> blocks = new List<NavObstacle>();
+            int blockCount = MapLayout.ShipBlockCount;
+            for (int i = 0; i < blockCount; i++)
             {
-                new Vector3(sb.max.x + 0.6f, 0.02f, sb.center.z - sb.extents.z * 0.5f),
-                new Vector3(sb.max.x + 0.6f, 0.02f, sb.center.z + sb.extents.z * 0.5f),
-                new Vector3(sb.min.x - 0.6f, 0.02f, sb.center.z + sb.extents.z * 0.5f)
-            };
-            for (int k = 0; k < poles.Length; k++) Place(p.Decor[ModelCatalog.DockPole.Key], scaffolding.transform, poles[k], k * 40f);
+                GameObject block = new GameObject("Block " + i);
+                block.transform.SetParent(shipRoot.transform, false);
+                block.transform.localPosition = new Vector3(sb.center.x, 0f, sb.min.z + sb.size.z * (i + 0.5f) / blockCount);
+                NavObstacle o = block.AddComponent<NavObstacle>();
+                float side = Mathf.Max(sb.size.x, sb.size.z / blockCount) + 0.3f;
+                BuilderUtil.SetVector2(o, "size", new Vector2(side, side));
+                blocks.Add(o);
+            }
+
+            // Döndür: burun bowDir yönüne.
+            shipRoot.transform.rotation = Quaternion.LookRotation(bowDir);
+            Vector3 shipCenter = shipRoot.transform.TransformPoint(sb.center);
+            float halfWidth = sb.size.x * 0.5f;
+
+            CreateCradle(root, shipCenter, bowDir, slideDir, sb.size.z, sb.size.x, wood, plank);
+            GameObject scaffolding = CreateScaffolding(p, root, shipCenter, bowDir, slideDir, sb.size.z, halfWidth);
 
             Transform target = new GameObject("DeliveryTarget").transform;
             target.SetParent(shipRoot.transform, false);
-            target.position = new Vector3(sb.center.x, sb.min.y + sb.size.y * 0.45f, sb.center.z);
+            target.localPosition = new Vector3(sb.center.x, parts.DeckY, sb.center.z);
 
-            // Teslim alanı (geminin kara tarafında): mavi halka ve "Gövde (2/5) Kalas: 12/40" göstergesi.
+            // Teslim alanı: geminin kara tarafında, hemen yanında; üstünde kutusuz aşama göstergesi.
             GameObject delivery = new GameObject("ShipDelivery");
             delivery.transform.SetParent(root, false);
-            delivery.transform.position = shipRoot.transform.position + MapLayout.DeliveryFromShip;
+            delivery.transform.position = new Vector3(shipCenter.x, 0f, shipCenter.z) - slideDir * (halfWidth + MapLayout.DeliveryGap);
             CapsuleCollider trigger = delivery.AddComponent<CapsuleCollider>();
             trigger.isTrigger = true;
             trigger.radius = 1.4f;
             trigger.height = 3f;
             trigger.center = new Vector3(0f, 1.5f, 0f);
             ProgressRing ring = CreateFlatRing(delivery.transform, new Color(0.45f, 0.85f, 1f));
-            CreateDeliveryMarker(delivery.transform, shipRoot.transform.position, config);
-            TMPro.TextMeshPro label = UiFactory.CreateWorldLabel("Progress", delivery.transform, new Vector3(0f, 4.6f, 0f), "", 4.2f, Color.white);
+            CreateDeliveryMarker(delivery.transform, shipCenter, config);
+            ShipProgressView view = CreateShipProgressView(delivery.transform);
             ShipDelivery shipDelivery = delivery.AddComponent<ShipDelivery>();
 
             ShipBuilder builder = shipRoot.AddComponent<ShipBuilder>();
             BuilderUtil.SetField(builder, "ship", shipConfig);
             BuilderUtil.SetField(builder, "config", config);
-            BuilderUtil.SetField(builder, "shipModel", hull);
-            BuilderUtil.SetField(builder, "suppliesRoot", supplies);
+            BuilderUtil.SetField(builder, "shipModel", shipRoot.transform);
+            BuilderUtil.SetArray(builder, "hullRenderers", parts.HullRenderers.ToArray());
+            BuilderUtil.SetArray(builder, "stagePieces", new Object[] { parts.Keel, null, parts.Masts, parts.Sails, supplies });
+            BuilderUtil.SetEnumArray(builder, "stageStyles", new[] { 0, 3, 1, 2, 3 }); // Drop, Pop, Rise, Unfurl, Pop
             BuilderUtil.SetField(builder, "scaffolding", scaffolding);
-            BuilderUtil.SetField(builder, "progressLabel", label);
+            BuilderUtil.SetField(builder, "progressView", view);
             BuilderUtil.SetField(builder, "progressRing", ring);
             BuilderUtil.SetField(builder, "deliveryTarget", target);
             BuilderUtil.SetField(builder, "delivery", shipDelivery);
             BuilderUtil.SetField(shipDelivery, "config", config);
             BuilderUtil.SetField(shipDelivery, "builder", builder);
             Reserve(reserved, start, 4.5f);
-            Reserve(reserved, shipRoot.transform.position, Mathf.Max(sb.extents.x, sb.extents.z) + 1.5f);
-            Reserve(reserved, delivery.transform.position, 2.2f);
+            Reserve(reserved, shipCenter, sb.size.z * 0.5f + 1.5f);
+            Reserve(reserved, delivery.transform.position, 2.4f);
 
-            // Final töreni: işçiler teslim alanının çevresinde toplanır, gemi denize (+Z) kayar.
+            // Final töreni: oyuncu ve işçiler teslim alanının kara tarafında toplanır.
             Transform gatherRoot = new GameObject("GatherPoints").transform;
             gatherRoot.SetParent(root, false);
             List<Object> gatherPoints = new List<Object>();
-            for (int i = 0; i < 4; i++)
+            for (int i = 0; i < 5; i++)
             {
                 Transform t = new GameObject("Gather " + i).transform;
                 t.SetParent(gatherRoot, false);
-                t.position = delivery.transform.position + new Vector3(-1.6f + i * 1.1f, 0f, -2.2f);
+                t.position = delivery.transform.position - slideDir * 2f + bowDir * (-2.2f + i * 1.1f);
                 gatherPoints.Add(t);
             }
 
@@ -1031,11 +1191,171 @@ namespace KayipAda.EditorTools
             BuilderUtil.SetField(ceremony, "ship", shipConfig);
             BuilderUtil.SetField(ceremony, "builder", builder);
             BuilderUtil.SetField(ceremony, "shipRoot", shipRoot.transform);
-            BuilderUtil.SetField(ceremony, "shipObstacle", obstacle);
-            BuilderUtil.SetVector3(ceremony, "slideDirection", Vector3.forward);
+            BuilderUtil.SetArray(ceremony, "shipObstacles", blocks.ToArray());
+            BuilderUtil.SetVector3(ceremony, "slideDirection", slideDir);
+            BuilderUtil.SetVector3(ceremony, "sailDirection", sailDir);
             BuilderUtil.SetArray(ceremony, "gatherPoints", gatherPoints.ToArray());
             BuilderUtil.SetField(ceremony, "cameraFollow", follow);
-            BuilderUtil.SetField(ceremony, "escapePanel", UiBuilder.CreateEscapePanel());
+            BuilderUtil.SetField(ceremony, "escapePanel", UiBuilder.CreateEscapePanel(config));
+        }
+
+        // Kıyının deniz yönü: ada şeklinin bu noktadaki eğimi (işaretli uzaklığın arttığı yön).
+        private static Vector3 SeaDirection(IslandShape island, Vector2 p)
+        {
+            const float e = 0.5f;
+            float dx = island.SignedDistance(p + Vector2.right * e) - island.SignedDistance(p - Vector2.right * e);
+            float dz = island.SignedDistance(p + Vector2.up * e) - island.SignedDistance(p - Vector2.up * e);
+            Vector3 d = new Vector3(dx, 0f, dz);
+            return d.sqrMagnitude > 0.0001f ? d.normalized : Vector3.forward;
+        }
+
+        private static Bounds ShipBounds(Transform shipRoot)
+        {
+            Bounds b = new Bounds();
+            bool first = true;
+            foreach (Renderer r in shipRoot.GetComponentsInChildren<Renderer>(true))
+            {
+                MeshFilter mf = r.GetComponent<MeshFilter>();
+                if (mf == null || mf.sharedMesh == null) continue;
+                Matrix4x4 m = shipRoot.worldToLocalMatrix * r.transform.localToWorldMatrix;
+                Bounds mb = mf.sharedMesh.bounds;
+                for (int i = 0; i < 8; i++)
+                {
+                    Vector3 c = mb.center + Vector3.Scale(mb.extents, new Vector3((i & 1) == 0 ? -1 : 1, (i & 2) == 0 ? -1 : 1, (i & 4) == 0 ? -1 : 1));
+                    Vector3 w = m.MultiplyPoint3x4(c);
+                    if (first) { b = new Bounds(w, Vector3.zero); first = false; }
+                    else b.Encapsulate(w);
+                }
+            }
+            return b;
+        }
+
+        // Burun (sivri uç) +Z'de olsun: iki ucun güverte altındaki genişliği karşılaştırılır, dar olan burundur.
+        private static void BowToPositiveZ(GameObject model, Transform hull, Transform shipRoot)
+        {
+            List<Vector3> points = PrefabFactory.WorldVertices(model);
+            if (points.Count == 0) return;
+            float minZ = float.MaxValue, maxZ = float.MinValue, minY = float.MaxValue, maxY = float.MinValue;
+            foreach (Vector3 w in points)
+            {
+                Vector3 v = shipRoot.InverseTransformPoint(w);
+                minZ = Mathf.Min(minZ, v.z); maxZ = Mathf.Max(maxZ, v.z); minY = Mathf.Min(minY, v.y); maxY = Mathf.Max(maxY, v.y);
+            }
+            float deck = minY + (maxY - minY) * MapLayout.ShipDeckFraction;
+            float end = (maxZ - minZ) * 0.15f;
+            float frontWidth = 0f, backWidth = 0f;
+            foreach (Vector3 w in points)
+            {
+                Vector3 v = shipRoot.InverseTransformPoint(w);
+                if (v.y > deck) continue;
+                if (v.z > maxZ - end) frontWidth = Mathf.Max(frontWidth, Mathf.Abs(v.x));
+                if (v.z < minZ + end) backWidth = Mathf.Max(backWidth, Mathf.Abs(v.x));
+            }
+            if (frontWidth > backWidth) hull.RotateAround(shipRoot.position, Vector3.up, 180f);
+        }
+
+        // Ahşap kızak: geminin altında boyuna altlık tahtaları + denize uzanan kayma rayları (geminin yanından).
+        private static void CreateCradle(Transform parent, Vector3 shipCenter, Vector3 bowDir, Vector3 slideDir, float length, float width,
+                                         Material wood, Material plank)
+        {
+            Transform cradle = new GameObject("Cradle").transform;
+            cradle.SetParent(parent, false);
+            Quaternion along = Quaternion.LookRotation(bowDir);
+            Quaternion across = Quaternion.LookRotation(slideDir);
+            Vector3 ground = new Vector3(shipCenter.x, 0f, shipCenter.z);
+            // Altlık: gemi boyunca iki kalın tahta.
+            for (int s = -1; s <= 1; s += 2)
+                WoodBox(cradle, "Bed", ground + slideDir * (s * width * 0.22f) + Vector3.up * (MapLayout.ShipCradleHeight * 0.5f),
+                        along, new Vector3(0.5f, MapLayout.ShipCradleHeight, length * 0.85f), plank);
+            // Raylar: karadan denize, geminin altından geçer (kayma yolu).
+            int rails = MapLayout.ShipRailCount;
+            for (int i = 0; i < rails; i++)
+            {
+                float k = (i + 0.5f) / rails - 0.5f;
+                Vector3 c = ground + bowDir * (k * length * 0.8f) + slideDir * (MapLayout.ShipRailLength * 0.5f - width * 0.6f) + Vector3.up * 0.08f;
+                WoodBox(cradle, "Rail", c, across, new Vector3(0.32f, 0.16f, MapLayout.ShipRailLength), wood);
+            }
+            BuilderUtil.MarkStatic(cradle.gameObject);
+        }
+
+        private static void WoodBox(Transform parent, string name, Vector3 position, Quaternion rotation, Vector3 size, Material material)
+        {
+            GameObject go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            Object.DestroyImmediate(go.GetComponent<Collider>());
+            go.name = name;
+            go.transform.SetParent(parent, false);
+            go.transform.SetPositionAndRotation(position, rotation);
+            go.transform.localScale = size;
+            go.GetComponent<Renderer>().sharedMaterial = material;
+        }
+
+        // İnşa iskelesi: geminin kara tarafında direkler ve üstlerinde yatay tahtalar (gemi bitince kaybolur).
+        private static GameObject CreateScaffolding(Prefabs p, Transform parent, Vector3 shipCenter, Vector3 bowDir, Vector3 slideDir,
+                                                    float length, float halfWidth)
+        {
+            GameObject scaffolding = new GameObject("Scaffolding");
+            scaffolding.transform.SetParent(parent, false);
+            Vector3 ground = new Vector3(shipCenter.x, 0f, shipCenter.z);
+            Material plank = ArtGenerator.GetLit("M_ShipPlank", null, MapLayout.ShipPlankColor);
+            float[] spots = { -0.32f, 0.32f };
+            foreach (float s in spots)
+            {
+                Vector3 c = ground + bowDir * (s * length) - slideDir * (halfWidth + 0.5f);
+                Material wood = ArtGenerator.GetLit("M_ShipWood", null, MapLayout.ShipWoodColor);
+                Quaternion along = Quaternion.LookRotation(bowDir);
+                for (int k = -1; k <= 1; k += 2)
+                    WoodBox(scaffolding.transform, "Post", c + bowDir * (k * 0.9f) + Vector3.up * 1.1f, along, new Vector3(0.18f, 2.2f, 0.18f), wood);
+                WoodBox(scaffolding.transform, "Plank", c + Vector3.up * 1.6f, along, new Vector3(0.7f, 0.12f, 2.4f), plank);
+                WoodBox(scaffolding.transform, "Brace", c + Vector3.up * 0.9f, along * Quaternion.Euler(35f, 0f, 0f), new Vector3(0.12f, 0.12f, 2.2f), wood);
+            }
+            return scaffolding;
+        }
+
+        // Teslim alanının üstündeki kutusuz gösterge: başlık + 2 satır (ikon, "12/30", ince dolum çubuğu).
+        private static ShipProgressView CreateShipProgressView(Transform parent)
+        {
+            Canvas canvas = UiFactory.CreateWorldCanvas("ProgressView", parent, new Vector3(0f, 4.2f, 0f), Quaternion.identity, new Vector2(420f, 260f));
+            canvas.gameObject.AddComponent<Billboard>();
+            TMPro.TextMeshProUGUI title = UiFactory.CreateUIText("Title", canvas.transform, "OMURGA 1/5", 58f, UiFactory.Gold);
+            UiFactory.Size(title, new Vector2(0f, 95f), new Vector2(420f, 70f));
+            List<ShipProgressView.Row> rows = new List<ShipProgressView.Row>();
+            for (int i = 0; i < 2; i++)
+            {
+                GameObject row = new GameObject("Row " + i, typeof(RectTransform));
+                row.transform.SetParent(canvas.transform, false);
+                ((RectTransform)row.transform).anchoredPosition = new Vector2(0f, 20f - i * 82f);
+                ((RectTransform)row.transform).sizeDelta = new Vector2(400f, 76f);
+                Image icon = UiFactory.CreateImage("Icon", row.transform, null, Color.white);
+                UiFactory.Size(icon, new Vector2(-150f, 0f), new Vector2(72f, 72f));
+                icon.preserveAspect = true;
+                TMPro.TextMeshProUGUI count = UiFactory.CreateUIText("Count", row.transform, "0/40", 48f, Color.white);
+                count.alignment = TMPro.TextAlignmentOptions.Left;
+                UiFactory.Size(count, new Vector2(30f, 12f), new Vector2(280f, 56f));
+                Image barBack = UiFactory.CreateImage("BarBack", row.transform, ArtGenerator.LoadSprite(ArtGenerator.RoundedRectPath), new Color(0.12f, 0.07f, 0.03f, 0.55f));
+                barBack.type = Image.Type.Sliced;
+                UiFactory.Size(barBack, new Vector2(30f, -26f), new Vector2(280f, 14f));
+                Image fill = UiFactory.CreateImage("Fill", row.transform, ArtGenerator.LoadSprite(ArtGenerator.SquarePath), new Color(0.55f, 0.9f, 0.35f));
+                fill.type = Image.Type.Filled;
+                fill.fillMethod = Image.FillMethod.Horizontal;
+                UiFactory.Size(fill, new Vector2(30f, -26f), new Vector2(272f, 8f));
+                rows.Add(new ShipProgressView.Row { Root = row, Icon = icon, Count = count, Fill = fill });
+            }
+            ShipProgressView view = canvas.gameObject.AddComponent<ShipProgressView>();
+            BuilderUtil.SetField(view, "title", title);
+            SerializedObject so = new SerializedObject(view);
+            SerializedProperty list = so.FindProperty("rows");
+            list.arraySize = rows.Count;
+            for (int i = 0; i < rows.Count; i++)
+            {
+                SerializedProperty r = list.GetArrayElementAtIndex(i);
+                r.FindPropertyRelative("Root").objectReferenceValue = rows[i].Root;
+                r.FindPropertyRelative("Icon").objectReferenceValue = rows[i].Icon;
+                r.FindPropertyRelative("Count").objectReferenceValue = rows[i].Count;
+                r.FindPropertyRelative("Fill").objectReferenceValue = rows[i].Fill;
+            }
+            so.ApplyModifiedPropertiesWithoutUndo();
+            UiFactory.AddFader(canvas.gameObject);
+            return view;
         }
 
         // Gemi teslim alanı uzaktan görünsün: yerde nabız atan parlak daire, gemiyi gösteren oklar ve üstte
@@ -1077,24 +1397,14 @@ namespace KayipAda.EditorTools
             BuilderUtil.SetField(marker, "groundMark", glow);
         }
 
-        // Gemi modeli yan yatık ya da yan dönük gelebiliyor: direkleri yukarı, boyunu Z eksenine (denize) çevirir,
-        // gemiyi köke ortalar ve tabanını kızağın üstüne oturtur.
+        // Gemi modeli Blender'dan "Z yukarı" gelir ve modelin kendi dönüşü CreateModel'de sıfırlanır: önce dosyadaki
+        // duruşu geri ver (X ekseninde -90°, direkler yukarı), sonra boyunu kökün Z eksenine çevir, gemiyi köke ortala
+        // ve tabanını kızağın üstüne oturt.
         private static void OrientShip(GameObject model, Transform hull, Transform shipRoot)
         {
+            hull.localRotation = Quaternion.Euler(-90f, 0f, 0f);
             Bounds sb = PrefabFactory.WorldBounds(model);
-            Quaternion yaw = sb.size.x > sb.size.z ? Quaternion.Euler(0f, 90f, 0f) : Quaternion.identity;
-            hull.localRotation = yaw;
-            sb = PrefabFactory.WorldBounds(model);
-            if (sb.size.x > sb.size.y)
-            {
-                // Model pivotu omurgadadır, görsel merkez direklere doğru kayar: o tarafı yukarı çevir.
-                float side = sb.center.x - model.transform.position.x;
-                hull.localRotation = yaw * Quaternion.Euler(0f, 0f, side >= 0f ? 90f : -90f);
-                sb = PrefabFactory.WorldBounds(model);
-                if (sb.center.y < model.transform.position.y) hull.localRotation = yaw * Quaternion.Euler(0f, 0f, side >= 0f ? -90f : 90f);
-                sb = PrefabFactory.WorldBounds(model);
-            }
-            if (sb.size.x > sb.size.z) hull.localRotation = Quaternion.Euler(0f, 90f, 0f) * hull.localRotation; // boyu denize
+            if (sb.size.x > sb.size.z) hull.localRotation = Quaternion.Euler(0f, 90f, 0f) * hull.localRotation; // boyu Z'ye
             sb = PrefabFactory.WorldBounds(model);
             hull.position -= new Vector3(sb.center.x - shipRoot.position.x, sb.min.y - shipRoot.position.y - 0.05f, sb.center.z - shipRoot.position.z);
         }
@@ -1264,6 +1574,9 @@ namespace KayipAda.EditorTools
                 GameObject go = Place(prefab, parent, new Vector3(pos.x, 0f, pos.y), (float)random.NextDouble() * 360f);
                 go.transform.localScale = Vector3.one * (0.85f + (float)random.NextDouble() * 0.3f);
                 if (key == "DecorPalm") VaryTree(go, random); // dik palmiye + hafif rastgele eğim
+                // Büyük süsler (palmiye gövdesi, büyük kaya) geçilmez; küçük otlar, çiçekler, çakıllar geçilebilir.
+                if (key == "DecorPalm" || key == "BigRock")
+                    BuilderUtil.SetVector2(go.AddComponent<NavObstacle>(), "size", key == "DecorPalm" ? new Vector2(0.6f, 0.6f) : new Vector2(1.1f, 1.1f));
                 placed.Add(new Vector3(pos.x, pos.y, radius));
                 done++;
             }

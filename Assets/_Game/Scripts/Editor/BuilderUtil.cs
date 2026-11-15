@@ -71,6 +71,16 @@ namespace KayipAda.EditorTools
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 
+        // enum dizisi (değerler enum sırası olarak).
+        public static void SetEnumArray(Object target, string fieldName, int[] values)
+        {
+            SerializedProperty property = FindProperty(target, fieldName, out SerializedObject so);
+            if (property == null) return;
+            property.arraySize = values.Length;
+            for (int i = 0; i < values.Length; i++) property.GetArrayElementAtIndex(i).enumValueIndex = values[i];
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
         public static void SetFloat(Object target, string fieldName, float value)
         {
             SerializedProperty property = FindProperty(target, fieldName, out SerializedObject so);

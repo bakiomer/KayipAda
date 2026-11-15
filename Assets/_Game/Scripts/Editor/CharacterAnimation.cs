@@ -36,7 +36,11 @@ namespace KayipAda.EditorTools
         {
             BuilderUtil.EnsureFolder(Folder);
             AnimatorController existing = BuilderUtil.Load<AnimatorController>(BaseControllerPath);
-            if (existing != null) return existing;
+            if (existing != null)
+            {
+                EnsureCheer(existing, sourceFbx);
+                return existing;
+            }
 
             AnimationClip idle = FindClip(sourceFbx, "Idle");
             AnimationClip walk = FindClip(sourceFbx, "Walk");
@@ -56,8 +60,31 @@ namespace KayipAda.EditorTools
             tree.AddChild(idle, 0f);
             tree.AddChild(walk, WalkThreshold);
             tree.AddChild(run, 1f);
+            EnsureCheer(controller, sourceFbx);
             EditorUtility.SetDirty(controller);
             return controller;
+        }
+
+        // Sevinç (final töreni): "Cheer" açıkken "Yes" klibi döngüde çalar. Eski denetleyiciye de eklenir.
+        private static void EnsureCheer(AnimatorController controller, string sourceFbx)
+        {
+            foreach (AnimatorControllerParameter p in controller.parameters) if (p.name == "Cheer") return;
+            AnimationClip cheer = FindClip(sourceFbx, "Yes") ?? FindClip(sourceFbx, "Wave");
+            if (cheer == null) return;
+            controller.AddParameter("Cheer", AnimatorControllerParameterType.Bool);
+            AnimatorStateMachine sm = controller.layers[0].stateMachine;
+            AnimatorState move = sm.defaultState;
+            AnimatorState cheerState = sm.AddState("Cheer");
+            cheerState.motion = cheer;
+            AnimatorStateTransition to = move.AddTransition(cheerState);
+            to.AddCondition(AnimatorConditionMode.If, 0f, "Cheer");
+            to.duration = 0.15f;
+            to.hasExitTime = false;
+            AnimatorStateTransition back = cheerState.AddTransition(move);
+            back.AddCondition(AnimatorConditionMode.IfNot, 0f, "Cheer");
+            back.duration = 0.15f;
+            back.hasExitTime = false;
+            EditorUtility.SetDirty(controller);
         }
 
         // Bu karakterin kendi klipleriyle ortak denetleyici.

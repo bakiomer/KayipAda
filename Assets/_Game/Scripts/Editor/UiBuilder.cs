@@ -146,59 +146,142 @@ namespace KayipAda.EditorTools
             return menu;
         }
 
+        // Üstten kayarak gelen geniş kutlama bandı ("OMURGA TAMAMLANDI!" + açılan yeni hedef).
         public static CelebrationBanner CreateCelebrationBanner()
         {
             GameObject holder = new GameObject("CelebrationBanner", typeof(RectTransform));
             holder.transform.SetParent(Safe, false);
             UiFactory.Stretch((RectTransform)holder.transform);
 
-            Image card = UiFactory.CreateImage("Root", holder.transform, ArtGenerator.LoadSprite(ArtGenerator.RoundedRectPath), new Color(0.08f, 0.1f, 0.16f, 0.82f));
-            card.type = Image.Type.Sliced;
-            UiFactory.Size(card, new Vector2(0f, 420f), new Vector2(940f, 260f));
-            TextMeshProUGUI title = UiFactory.CreateUIText("Title", card.transform, "Aşama tamamlandı!", 72f, UiFactory.Gold);
-            UiFactory.Size(title, new Vector2(0f, 45f), new Vector2(900f, 110f));
-            TextMeshProUGUI subtitle = UiFactory.CreateUIText("Subtitle", card.transform, "", 42f, Color.white);
+            Image band = UiFactory.CreateImage("Root", holder.transform, ArtGenerator.LoadSprite(ArtGenerator.SquarePath), new Color(0.6f, 0.17f, 0.1f, 0.94f));
+            Anchor(band.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -210f), new Vector2(0f, 230f));
+            Image stripeTop = UiFactory.CreateImage("StripeTop", band.transform, ArtGenerator.LoadSprite(ArtGenerator.SquarePath), UiFactory.Gold);
+            Anchor(stripeTop.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), Vector2.zero, new Vector2(0f, 10f));
+            Image stripeBottom = UiFactory.CreateImage("StripeBottom", band.transform, ArtGenerator.LoadSprite(ArtGenerator.SquarePath), UiFactory.Gold);
+            Anchor(stripeBottom.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), Vector2.zero, new Vector2(0f, 10f));
+            TextMeshProUGUI title = UiFactory.CreateUIText("Title", band.transform, "OMURGA TAMAMLANDI!", 86f, UiFactory.Gold);
+            title.enableAutoSizing = true;
+            title.fontSizeMin = 50f;
+            title.fontSizeMax = 86f;
+            UiFactory.Size(title, new Vector2(0f, 30f), new Vector2(1000f, 120f));
+            TextMeshProUGUI subtitle = UiFactory.CreateUIText("Subtitle", band.transform, "", 44f, Color.white);
             subtitle.textWrappingMode = TextWrappingModes.Normal;
-            UiFactory.Size(subtitle, new Vector2(0f, -62f), new Vector2(880f, 90f));
+            UiFactory.Size(subtitle, new Vector2(0f, -58f), new Vector2(980f, 70f));
 
             CelebrationBanner banner = holder.AddComponent<CelebrationBanner>();
-            BuilderUtil.SetField(banner, "root", card.gameObject);
+            BuilderUtil.SetField(banner, "root", band.gameObject);
             BuilderUtil.SetField(banner, "title", title);
             BuilderUtil.SetField(banner, "subtitle", subtitle);
             return banner;
         }
 
-        public static EscapePanel CreateEscapePanel() => CreateEscapePanel(Safe);
+        // Ekranın ortasında esneyerek gelen büyük "AÇILDI!" yazısı.
+        public static BurstText CreateBurstText(GameConfig config)
+        {
+            GameObject holder = new GameObject("BurstText", typeof(RectTransform));
+            holder.transform.SetParent(Safe, false);
+            UiFactory.Stretch((RectTransform)holder.transform);
+            RectTransform root = (RectTransform)new GameObject("Root", typeof(RectTransform)).transform;
+            root.SetParent(holder.transform, false);
+            root.anchoredPosition = new Vector2(0f, 260f);
+            root.sizeDelta = new Vector2(1000f, 320f);
+            TextMeshProUGUI title = UiFactory.CreateUIText("Title", root, "AÇILDI!", 170f, UiFactory.Gold);
+            UiFactory.Size(title, new Vector2(0f, 40f), new Vector2(1000f, 220f));
+            TextMeshProUGUI subtitle = UiFactory.CreateUIText("Subtitle", root, "", 60f, Color.white);
+            UiFactory.Size(subtitle, new Vector2(0f, -100f), new Vector2(1000f, 90f));
+            BurstText burst = holder.AddComponent<BurstText>();
+            BuilderUtil.SetField(burst, "config", config);
+            BuilderUtil.SetField(burst, "root", root);
+            BuilderUtil.SetField(burst, "title", title);
+            BuilderUtil.SetField(burst, "subtitle", subtitle);
+            return burst;
+        }
 
-        private static EscapePanel CreateEscapePanel(Transform safe)
+        // Sağ üstte küçük ayar (dişli) butonu: titreşim ve ses aç/kapa.
+        public static SettingsPanel CreateSettings()
+        {
+            GameObject holder = new GameObject("Settings", typeof(RectTransform));
+            holder.transform.SetParent(Safe, false);
+            UiFactory.Stretch((RectTransform)holder.transform);
+            Button toggle = CreateButton("SettingsButton", holder.transform, "AYAR", Vector2.zero, Vector2.zero, new Color(0.18f, 0.22f, 0.3f, 0.9f), 30f);
+            Anchor((RectTransform)toggle.transform, Vector2.one, Vector2.one, Vector2.one, new Vector2(-24f, -24f), new Vector2(130f, 74f));
+
+            Image panel = UiFactory.CreateImage("Panel", holder.transform, ArtGenerator.LoadSprite(ArtGenerator.RoundedRectPath), PanelColor);
+            panel.type = Image.Type.Sliced;
+            panel.raycastTarget = true;
+            Anchor(panel.rectTransform, Vector2.one, Vector2.one, Vector2.one, new Vector2(-24f, -110f), new Vector2(420f, 220f));
+            Button vibration = CreateButton("Vibration", panel.transform, "Titreşim: AÇIK", new Vector2(0f, 50f), new Vector2(380f, 80f), Green, 34f);
+            Button sound = CreateButton("Sound", panel.transform, "Ses: AÇIK", new Vector2(0f, -50f), new Vector2(380f, 80f), Green, 34f);
+
+            SettingsPanel settings = holder.AddComponent<SettingsPanel>();
+            BuilderUtil.SetField(settings, "toggleButton", toggle);
+            BuilderUtil.SetField(settings, "panel", panel.gameObject);
+            BuilderUtil.SetField(settings, "vibrationButton", vibration);
+            BuilderUtil.SetField(settings, "soundButton", sound);
+            return settings;
+        }
+
+        // Ekranı kaplayan konfeti katmanı: arayüzün en üstünde (kaçış ekranının da önünde).
+        public static ConfettiOverlay CreateConfettiOverlay()
+        {
+            GameObject go = new GameObject("ConfettiOverlay", typeof(RectTransform));
+            go.transform.SetParent(Safe, false);
+            go.transform.SetAsLastSibling();
+            UiFactory.Stretch((RectTransform)go.transform);
+            ConfettiOverlay overlay = go.AddComponent<ConfettiOverlay>();
+            BuilderUtil.SetField(overlay, "pieceSprite", ArtGenerator.LoadSprite(ArtGenerator.SquarePath));
+            return overlay;
+        }
+
+        public static EscapePanel CreateEscapePanel(GameConfig config)
         {
             GameObject holder = new GameObject("EscapePanel", typeof(RectTransform));
-            holder.transform.SetParent(safe, false);
+            holder.transform.SetParent(Safe, false);
             UiFactory.Stretch((RectTransform)holder.transform);
 
             GameObject root = new GameObject("Root", typeof(RectTransform));
             root.transform.SetParent(holder.transform, false);
             UiFactory.Stretch((RectTransform)root.transform);
-            Image bg = UiFactory.CreateImage("Background", root.transform, null, new Color(0.05f, 0.18f, 0.32f, 0.88f));
+            Image bg = UiFactory.CreateImage("Background", root.transform, null, new Color(0.05f, 0.18f, 0.32f, 0.62f));
             bg.raycastTarget = true;
             UiFactory.Stretch(bg.rectTransform);
 
-            TextMeshProUGUI title = UiFactory.CreateUIText("Title", root.transform, "KAÇTIN!", 150f, UiFactory.Gold);
-            UiFactory.Size(title, new Vector2(0f, 520f), new Vector2(1000f, 220f));
-            TextMeshProUGUI sub = UiFactory.CreateUIText("Subtitle", root.transform, "Kaptan adadan kurtuldu!", 50f, Color.white);
-            UiFactory.Size(sub, new Vector2(0f, 360f), new Vector2(1000f, 90f));
+            TextMeshProUGUI title = UiFactory.CreateUIText("Title", root.transform, "KAÇTIN!", 170f, UiFactory.Gold);
+            UiFactory.Size(title, new Vector2(0f, 560f), new Vector2(1000f, 240f));
+            TextMeshProUGUI sub = UiFactory.CreateUIText("Subtitle", root.transform, "Kaptan adadan kurtuldu!", 54f, Color.white);
+            UiFactory.Size(sub, new Vector2(0f, 400f), new Vector2(1000f, 90f));
+
+            // 3 yıldız: arkada koyu boş yıldız, önde dolan altın yıldız.
+            List<Object> stars = new List<Object>();
+            for (int i = 0; i < 3; i++)
+            {
+                Vector2 pos = new Vector2((i - 1) * 230f, i == 1 ? 210f : 180f);
+                float size = i == 1 ? 210f : 170f;
+                Image empty = UiFactory.CreateImage("StarBack " + i, root.transform, ArtGenerator.LoadSprite(ArtGenerator.StarPath), new Color(0f, 0f, 0f, 0.35f));
+                UiFactory.Size(empty, pos, new Vector2(size, size));
+                Image star = UiFactory.CreateImage("Star " + i, root.transform, ArtGenerator.LoadSprite(ArtGenerator.StarPath), UiFactory.Gold);
+                UiFactory.Size(star, pos, new Vector2(size, size));
+                stars.Add(star);
+            }
+
             TextMeshProUGUI time = UiFactory.CreateUIText("Time", root.transform, "Süre: 0 dk", 56f, Color.white);
-            UiFactory.Size(time, new Vector2(0f, 160f), new Vector2(1000f, 90f));
-            TextMeshProUGUI xp = UiFactory.CreateUIText("Xp", root.transform, "+100 Kaptanlık XP", 56f, new Color(0.6f, 1f, 0.6f));
-            UiFactory.Size(xp, new Vector2(0f, 0f), new Vector2(1000f, 170f));
+            UiFactory.Size(time, new Vector2(0f, 20f), new Vector2(1000f, 80f));
+            TextMeshProUGUI xp = UiFactory.CreateUIText("Xp", root.transform, "+0 Kaptanlık XP", 56f, new Color(0.6f, 1f, 0.6f));
+            UiFactory.Size(xp, new Vector2(0f, -80f), new Vector2(1000f, 80f));
+            TextMeshProUGUI coins = UiFactory.CreateUIText("Coins", root.transform, "Kazanılan para: 0", 56f, UiFactory.Gold);
+            UiFactory.Size(coins, new Vector2(0f, -170f), new Vector2(1000f, 80f));
             TextMeshProUGUI soon = UiFactory.CreateUIText("Soon", root.transform, "Yeni adalar yakında!", 50f, new Color(0.7f, 0.85f, 1f));
-            UiFactory.Size(soon, new Vector2(0f, -200f), new Vector2(1000f, 90f));
-            Button replay = CreateButton("Replay", root.transform, "TEKRAR OYNA", new Vector2(0f, -420f), new Vector2(600f, 150f), Green, 60f);
+            UiFactory.Size(soon, new Vector2(0f, -290f), new Vector2(1000f, 90f));
+            Button replay = CreateButton("Replay", root.transform, "TEKRAR OYNA", new Vector2(0f, -470f), new Vector2(620f, 160f), Green, 66f);
 
             EscapePanel panel = holder.AddComponent<EscapePanel>();
+            BuilderUtil.SetField(panel, "config", config);
             BuilderUtil.SetField(panel, "root", root);
+            BuilderUtil.SetField(panel, "title", title.rectTransform);
+            BuilderUtil.SetArray(panel, "stars", stars.ToArray());
             BuilderUtil.SetField(panel, "timeLabel", time);
             BuilderUtil.SetField(panel, "xpLabel", xp);
+            BuilderUtil.SetField(panel, "coinLabel", coins);
             BuilderUtil.SetField(panel, "replayButton", replay);
             return panel;
         }

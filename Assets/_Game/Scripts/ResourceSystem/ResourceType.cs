@@ -25,6 +25,9 @@ namespace KayipAda
         [field: Tooltip("Bu kaynağın dünyadaki modeli (ResourceItem bileşenli prefab).")]
         [field: SerializeField] public ResourceItem ItemPrefab { get; private set; }
 
+        [field: Tooltip("Arayüz ikonu (bina giriş/çıkış dairesi, gemi göstergesi). Sahne kurma komutu üretir.")]
+        [field: SerializeField] public Sprite Icon { get; private set; }
+
         // Yeni bir parça oluşturur (kaynak noktası ve binalar kullanır).
         public ResourceItem Spawn(Vector3 position)
         {
@@ -47,6 +50,11 @@ namespace KayipAda
         public void EditorSetPrefab(ResourceItem prefab)
         {
             ItemPrefab = prefab;
+        }
+
+        public void EditorSetIcon(Sprite icon)
+        {
+            Icon = icon;
         }
 #endif
     }

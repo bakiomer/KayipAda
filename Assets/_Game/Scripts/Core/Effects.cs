@@ -26,6 +26,12 @@ namespace KayipAda
         [SerializeField] private ParticleSystem splashPrefab;
         [Tooltip("Final törenindeki havai fişek.")]
         [SerializeField] private ParticleSystem fireworkPrefab;
+        [Tooltip("Gemi parçası yerine oturunca kalkan toz bulutu (tek seferlik).")]
+        [SerializeField] private ParticleSystem puffPrefab;
+        [Tooltip("Gemi aşaması bitince altın ışık patlaması.")]
+        [SerializeField] private ParticleSystem goldBurstPrefab;
+        [Tooltip("Final töreninde ekranı kaplayan konfeti (kameranın önünde).")]
+        [SerializeField] private ParticleSystem screenConfettiPrefab;
         [Tooltip("'+5' yazılarının rengi.")]
         [SerializeField] private Color coinTextColor = new Color(1f, 0.85f, 0.2f);
 
@@ -48,7 +54,32 @@ namespace KayipAda
 
         public void Splash(Vector3 position) => PlayOnce(splashPrefab, position, 3f);
 
-        public void Firework(Vector3 position) => PlayOnce(fireworkPrefab, position, 3f);
+        // Havai fişek: yerden yükselen, iz bırakan roket gökyüzünde renkli patlar.
+        public void Firework(Vector3 position) => PlayOnce(fireworkPrefab, position, 5f);
+
+        public void Dust(Vector3 position) => PlayOnce(puffPrefab, position, 2f);
+
+        public void GoldBurst(Vector3 position) => PlayOnce(goldBurstPrefab, position, 3f);
+
+        // Ekranı kaplayan konfeti: kameranın önüne yapışık, verilen süre boyunca yağar.
+        public void ScreenConfetti(float seconds)
+        {
+            // Önce arayüz katmanı (her şeyin önünde, her zaman görünür); yoksa kameraya bağlı parçacık.
+            if (ConfettiOverlay.Instance != null)
+            {
+                ConfettiOverlay.Instance.Play(seconds);
+                return;
+            }
+            Camera cam = Camera.main;
+            if (screenConfettiPrefab == null || cam == null) return;
+            ParticleSystem ps = Instantiate(screenConfettiPrefab, cam.transform);
+            ps.transform.localPosition = new Vector3(0f, 3f, 8f);
+            ps.transform.localRotation = Quaternion.identity;
+            ParticleSystem.MainModule main = ps.main;
+            main.duration = Mathf.Max(0.5f, seconds);
+            ps.Play();
+            Destroy(ps.gameObject, seconds + main.startLifetime.constantMax + 0.5f);
+        }
 
         private void PlayOnce(ParticleSystem prefab, Vector3 position, float life)
         {
@@ -104,10 +135,30 @@ namespace KayipAda
         public void ShowText(Vector3 position, string text, Color color)
         {
             if (floatingTextPrefab == null) return;
+            float near = config.FloatingTextMergeDistance;
+
+            // Aynı yazı yakında hâlâ görünüyorsa yenisini açma, onu baştan oynat.
+            foreach (FloatingText active in texts)
+            {
+                if (active.IsBusy && active.Text == text && (active.Anchor - position).sqrMagnitude < near * near)
+                {
+                    active.Restart();
+                    return;
+                }
+            }
+
+            // Farklı yazı: yakındaki eski yazılar yukarı kayar, yenisi alttan çıkar.
             FloatingText free = null;
             foreach (FloatingText candidate in texts)
             {
-                if (!candidate.IsBusy) { free = candidate; break; }
+                if (candidate.IsBusy)
+                {
+                    if ((candidate.Anchor - position).sqrMagnitude < near * near) candidate.Bump(config.FloatingTextStackGap);
+                }
+                else if (free == null)
+                {
+                    free = candidate;
+                }
             }
             if (free == null)
             {

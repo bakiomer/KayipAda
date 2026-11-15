@@ -1,10 +1,11 @@
 # Kayıp Ada — Oyun Tasarımı ve Kod Kuralları
 
 > **Yön: 3D low-poly** (2D kutulardan geçildi; 2D son hali `main` dalında "2D son durum" kaydında).
-> **Şu anki durum:** Savunma (son gece, toplar, iskeletler) çıkarıldı; yerine lif → halat / yelken bezi zinciri ve
-> 5 aşamalı gemi + suya indirme töreni geldi. Görsel düzeltme turu (dik palmiyeler, kütük, font, etiket kutuları, yumuşak
-> renkler, kıvrımlı yollar, 45° kamera) ve Test Menüsü eklendi. 15/15 test geçiyor (ekran görüntüleri `Docs/Screenshots/L_*`).
-> Kullanıcının elle denemesi bekleniyor (iş `3d` dalında). Gece çalışması raporu: `Docs/GeceRaporu.md`.
+> **Şu anki durum:** Oyuncu geri bildirim turu yapıldı: kutusuz yazılar + Lilita tabanlı Türkçe font, bölge tabelaları,
+> giriş/çıkış ikonları, gemi kıyıya paralel kızakta ve 5 aşamada parça parça gelir, kutlamalar (AÇILDI!, üst band,
+> yavaşlama + kamera), ~20 sn sinematik final töreni, yıldızlı kaçış ekranı, çitli bölgeler + kapı, çarpışma ve NavMesh,
+> keten tarlası / meyve çalısı, yeni sesler + müzik. 17/17 test geçiyor (ekran görüntüleri `Docs/Screenshots`,
+> önce/sonra `Docs/Screenshots/Karsilastirma`). Kullanıcının elle denemesi bekleniyor (iş `3d` dalında).
 
 ## Proje
 - **Motor:** Unity 6 (6000.6), **URP 3D** (Universal Renderer, mobil ayarlı `Assets/_Game/Settings/URP_Mobile`)
@@ -33,9 +34,9 @@ Oyuncu bir adaya düşmüş bir kazazede kaptandır. Amaç: adadan kaçmak için
 |---|---|---|
 | Odun (sahil palmiyeleri) | Bıçkıhane (2 → 1) | Kalas |
 | Taş (Kayalık) | Taş Atölyesi (2 → 1) | Tuğla |
-| Lif (Palmiye Koyu palmiyeleri) | Halat Atölyesi (3 → 1) | Halat |
+| Lif (Palmiye Koyu keten tarlası) | Halat Atölyesi (3 → 1) | Halat |
 | Lif | Dokuma Tezgahı (4 → 1) | Yelken Bezi |
-| Meyve (Meyve Bahçesi) | — | (erzak) |
+| Meyve (Meyve Bahçesi çalıları) | — | (erzak) |
 
 ### Gemi (5 aşama, her biri bir sonraki hedefi açar)
 | Aşama | Malzeme | Bitince açılan kare |
@@ -62,10 +63,13 @@ suya kayar, su sıçrar, havai fişekler patlar, kamera uzaklaşan gemiyi takip 
 - **Yumuşak gölgeler:** tek kaskad, yumuşak ama ucuz (Low). Küçük süslerin gölgesi kapalı; karakterlerin altında ayrıca yumuşak yuvarlak gölge.
 - **Mat malzemeler:** URP **Simple Lit**, parlama yok. Malzemeler **paylaşımlı** (`Art/Materials`), model başına kopya yok.
 - **His:** her etkileşimde küçük bir hareket + ses (zıplama, sallanma, kavisli uçuş, konfeti). Harici animasyon paketi yok, `Tween` kullanılır.
-- **Yazılar:** font **Paytone One** (Google Fonts, SIL OFL 1.1 — ticari kullanım serbest; `Art/Fonts/PaytoneOne-Regular.ttf`
-  + `OFL.txt`; Türkçe harflerin hepsi var). TMP font asset'i `Art/Fonts/PaytoneOne SDF.asset` (komut yoksa üretir).
-  Kalın koyu kenar çizgisi + hafif gölge (`Art/Materials/TMP_Outline`). Dünyadaki yazılar (`UiFactory.CreateWorldLabel`)
-  kameraya dönük durur ve arkalarında yarı saydam, yuvarlak köşeli koyu kutu vardır (`LabelBackground`).
+- **Yazılar:** font **Kayip Display** = Google Fonts **Lilita One** (SIL OFL 1.1) + eklenen Türkçe harfler (İ Ğ ğ Ş ş;
+  Lilita'da yoktu, fontun kendi harf/işaretlerinden birleştirildi; OFL gereği ad değişti). `Art/Fonts/KayipDisplay-Regular.ttf`,
+  `OFL.txt`, `BENIOKU.txt`. TMP font asset'i `Art/Fonts/KayipDisplay SDF.asset` (komut yoksa üretir). Krem dolgu, kalın koyu
+  kahverengi kenar, hafif alt gölge.
+  Dünyadaki yazılarda **kutu yok**; kameraya dönük durur, uzaktayken ve ekran kenarına yaklaşınca yumuşakça kaybolur
+  (`LabelFader`). Bölge adları ahşap tabelalarda; bina giriş/çıkışında yazı yerine yerde büyük kaynak ikonu + ok.
+  Uçan yazılar üst üste binmez (aynı yazı tazelenir, farklılar yukarı kayar).
 - Hangi nesne için hangi model seçildiği: **`Docs/Modeller.md`** (komut her çalıştığında yeniden yazılır).
 
 ## Plan (6 adım)
@@ -112,10 +116,12 @@ Assets/_Game/
   Animation/         Character.controller (Idle/Walk/Run karışımı) + karakter başına override
   Art/Generated/     Kodla üretilen: ada zemini modeli ve dokusu, su ağı, kıyı uzaklık dokusu, arayüz dokuları
   Art/Materials/     Paylaşımlı malzemeler (komut üretir)
-  Art/Fonts/         Oyun fontu (Paytone One, OFL) + lisansı + TMP font asset'i
+  Art/Fonts/         Oyun fontu (Kayip Display = Lilita One + Türkçe, OFL) + lisansı + açıklama + TMP font asset'i
+  Audio/Generated/   Kodla üretilen sesler (pop, vuuş)
   Settings/          URP_Mobile (+ Renderer), PostProcess (bloom, renk, vignette)
   Scenes/            Prototype.unity (sahne kurma komutu üretir — elle düzenleme kaybolur)
-  ThirdParty/        Quaternius_Pirate (+ Textures/Atlas_Pirate.png), Kenny_Pirate, Kenny_Nature, Kenny_Survival, Audio
+  ThirdParty/        Quaternius_Pirate (+ Textures/Atlas_Pirate.png), Kenny_Pirate, Kenny_Nature, Kenny_Survival,
+                     Audio (Impact, Interface, RPG, Jingles = Kenney Music Jingles CC0)
 Docs/Modeller.md     Model ve ses seçim tablosu (proje kökünde)
 Docs/Denge.md        Fiyat/hız denge tablosu (ilk kaçış ~33 dk)
 Docs/GeceRaporu.md   Gece çalışmasının raporu
@@ -127,7 +133,7 @@ _BatchCopy/          Batchmode testleri için projenin kopyası (Git'e girmez)
 ```
 GameConfig.asset     Genel sayılar: hız, kapasite, kamera, yığın sallanması, efekt, ses, açma hızı...
 ResourceTypes/       Wood 5, Stone 8, Fruit 4, Plank 14, Brick 22, Fiber 3, Rope 14, Cloth 20 (ad, renk, fiyat, model prefab'ı)
-NodeTypes/           Tree, Rock, FruitBush, FiberPalm (stok, toplama aralığı, yeniden dolma süresi, vuruş sesi)
+NodeTypes/           Tree, Rock, FruitBush, FiberPalm (= keten tarlası; dosya adı eski) (stok, toplama aralığı, yeniden dolma süresi, vuruş sesi)
 Areas/               Rocky 150, Orchard 600, Sawmill 250, StoneWorkshop 800, HireLumberjack 400, HireCarrier 600,
                      Cove 500, RopeWorkshop 700, Loom 900, HireFiber 500,
                      ShipStage1-4 (karesi yok: gemi aşaması bitince kod açar; sonraki hedefin karesi bunu bekler)
@@ -153,7 +159,13 @@ SoundLibrary.asset   Hangi olayda hangi ses (Docs/Modeller.md'de liste; komut sa
 | `FloatingText` | Core | Yükselip kaybolan dünya yazısı |
 | `ProgressRing` | Core | Dairesel dolan halka (bina üstü, açma karesi kenarı) |
 | `Billboard` | Core | Nesneyi kameraya döndürür (yazılar, halkalar) |
-| `LabelBackground` | Core | Dünya yazısının arkasındaki yarı saydam yuvarlak kutu; yazı değişince boyutlanır |
+| `LabelFader` | Core | Dünyadaki yazı/işaretleri uzaklığa ve ekran kenarına göre yumuşakça gösterir/gizler |
+| `Haptics` | Core | Telefon titreşimi (kutlamalar); ayarlardan kapatılır (PlayerPrefs) |
+| `Sway` | Core | Bitkilerin rüzgârda sallanması (keten tarlası) |
+| `FenceGate` | Areas | Bölge çitinin kapısı: kapalıyken geçilmez, bölge açılınca kanatlar dışa açılır |
+| `IslandNavMesh` | Navigation | İşçilerin NavMesh'i (ada zemini − engeller); engel değişince arka planda yeniden kurulur |
+| `ConfettiOverlay` | UI | Ekranı kaplayan konfeti (final ve kaçış ekranı), arayüzün en üstünde |
+| `BurstText` / `SettingsPanel` | UI | Ekran ortasında esneyen "AÇILDI!" yazısı; sağ üstte "AYAR" (titreşim/ses) |
 | `IslandShape` | Core | Adanın organik kıyı şekli (elips + dalgalar). `SignedDistance`, `Contains`, `ClampInside`. Zemin/su/doku da bundan üretilir |
 | `AppSettings` | Core | 60 FPS hedefi, ekran kararmasın |
 | `AudioManager` | Audio | Tek ses yöneticisi: `AudioManager.Play(SoundId.X)`. Üst üste çalınca perde yükselir; ortam dalga sesi (yoksa üretir); ses yoksa hata vermez |
@@ -177,16 +189,17 @@ SoundLibrary.asset   Hangi olayda hangi ses (Docs/Modeller.md'de liste; komut sa
 | `WorkerMover` / `WorkerSpawner` | Workers | XZ'de yol bularak yürüme; görev tutulunca gizli örnekten işçi çıkarma (zıplayarak) |
 | `NavObstacle` / `Pathfinder` | Navigation | XZ dikdörtgen engeller (bina gövdesi, ağaç gövdesi, çadır, tezgah); köşelerden en kısa yol, denize düşen köşeler atlanır |
 | `VirtualJoystick` / `CurrencyUI` / `SafeArea` | UI | Joystick; üstteki para paneli (sayarak artar, artışta zıplar); çentikli ekran güvenli alanı |
-| `EscapePanel` | UI | Kaçış ekranı: süre, kaptanlık XP'si, "Yeni adalar yakında", "Tekrar oyna" |
+| `EscapePanel` | UI | Kaçış ekranı: zıplayan başlık, süreye göre 3 yıldız, sayarak artan XP ve para, konfeti, nabız atan "Tekrar oyna". Test modunda süre sayılmaz |
 | `ProgressionGuide` | Core | Sonraki hedef: en ucuz açılabilir karenin üstünde zıplayan ok + halkası nabız atar; ekran dışındaysa kenarda ok. Kare kalmadıysa gemi |
 | `ScreenshotUtil` | Core | Test/kontrol için 1080x1920 PNG ekran görüntüsü (arayüz dahil) |
 | `UpgradeType` / `UpgradeManager` | Upgrades | Geliştirme ayarı; seviyeleri tek yerde tutar. `Multiplier(stat)` (hızlar), `Extra(stat, temel)` (kapasite), kaptanlık bonusu dahil |
 | `UpgradeStation` / `UpgradePanel` / `UpgradeRow` | Upgrades | Kamptaki tezgah; üstüne gelince alttan panel açılır (açıkken oyuncu yürümez, `PlayerController.InputBlocked`); satırlar seviye noktaları, fiyat, "MAKS" |
 | `ShipConfig` | Ship | ScriptableObject: 5 aşama (malzeme, `UnlockOnComplete` kilidi, kutlama yazısı), tören süreleri |
-| `ShipBuilder` / `ShipDelivery` | Ship | Kızaktaki gemi inşası (malzeme geldikçe aşağıdan yukarı belirir, erzakta sandıklar çıkar, 3D "Gövde (2/5) Kalas: 12/40" göstergesi); aşama bitince kilit açar + kutlama; teslim alanı (oyuncu + Taşıyıcı işçiler) |
+| `ShipBuilder` / `ShipDelivery` | Ship | Gemi inşası: her aşamanın parçaları tek tek gelir (omurga+kaburgalar düşer, gövde aşağıdan kapanır, direkler yükselir, yelkenler açılır, erzak+bayrak zıplar; toz+kıvılcım). Aşama bitince yavaşlama, kamera gemiye, altın ışık, üst band, müzik, titreşim, kilit açma; teslim alanı (oyuncu + Taşıyıcı) |
+| `ShipProgressView` | Ship | Teslim alanı üstündeki kutusuz gösterge: aşama adı + malzeme ikonu + "12/30" + ince çubuk |
 | `DeliveryMarker` | Ship | Gemi teslim alanında zıplayan ok + nabız atan yer işareti (yerde gemiyi gösteren oklar da var) |
 | `DevCommands` / `DevMenu` | DevTools | Test Menüsü komutları ve sol üstteki "TEST" butonlu oyun içi menü. **Sadece Editor ve Development Build**; satış sürümünde menü kendini siler, komutlar çalışmaz |
-| `LaunchCeremony` | Ship | Final töreni: işçileri toplar (`Worker.Gather`), gemiyi kızaktan suya kaydırır, sıçrama + havai fişek, kamera gemiyi takip eder, kaçış ekranı |
+| `LaunchCeremony` | Ship | ~20 sn final: toplanma + sevinç (Cheer), kamera gemi çevresinde döner, yana kayma + büyük sıçrama, zafer müziği, iz bırakan havai fişekler, ekranı kaplayan konfeti, gemi burnunu denize çevirip uzaklaşır (kamera arkadan), kaçış ekranı |
 | `CelebrationBanner` | UI | Ekranın ortasında kısa kutlama yazısı ("Gövde tamamlandı!" + açılan yeni hedef) |
 | `SaveData` / `SaveManager` | Save | JSON kayıt (persistentDataPath/kayipada_save.json): para, alanlar, geliştirmeler, gemi; 10 sn'de bir, arka planda ve kapanırken; kaptanlık XP kalıcı (seviye başına %3, en fazla 10) |
 
@@ -197,6 +210,8 @@ SoundLibrary.asset   Hangi olayda hangi ses (Docs/Modeller.md'de liste; komut sa
 | `ProjectSetup3D` | URP_Mobile oluşturur/ayarlar (MSAA 2x, yumuşak ucuz gölge, HDR kapalı, ek ışık yok), Graphics + tüm Quality'ye atar, Linear renk, TMP kaynakları |
 | `ThirdPartyImportProcessor` | ThirdParty içe aktarma ayarları: kamera/ışık yok, karakterlerde Generic rig + animasyonlar ayrılır ve döngüye alınır, renk dokuları keskin, sesler mono. Ayar değişince `Version` artırılır |
 | `ModelCatalog` | **Hangi nesne → hangi model + hedef boyut** (tek yer). Modeli değiştirmek için burası |
+| `ShipParts` | Gemi modelini gövde / direkler / yelkenler olarak böler (renk atlasına göre), omurga+kaburgaları kodla üretir |
+| `IconGenerator` | Kaynak ikonlarını kodla çizer (`Art/Generated/Icon_*.png`) |
 | `PrefabFactory` | Prefab üretimi: model ölçeklenir, tabanı yere oturur, malzemeler paylaşımlı olanlarla değişir; karakter, kaynak, nokta, bina, Pazar, açma karesi, kamp, süs, efekt |
 | `CharacterAnimation` | Animator Controller (Speed ile Idle/Walk/Run) + karakter başına override |
 | `ArtGenerator` | Ada zemini modeli/dokusu (kum, çimen, yollar, bölge tonları), su ağı, kıyı uzaklık dokusu, arayüz dokuları, malzemeler |
@@ -221,6 +236,8 @@ SoundLibrary.asset   Hangi olayda hangi ses (Docs/Modeller.md'de liste; komut sa
   Her İşçiden 1 Tane, Sırttaki Yığını Seçili Malzemeyle Doldur, Gemi Aşamasını Tamamla, Final Törenine Atla,
   Oyun Hızı x1/x2/x5, Kaydı Sil ve Yeniden Başlat. Sayılar `GameConfig` > "Test Menüsü".
 - Satış sürümü: Build Settings'te **Development Build kapalı** olmalı; o zaman menü hiç görünmez.
+- Menü sol üstten kayan dar yan paneldir (ekranın ortasını kapatmaz). Test komutu kullanılınca ya da Hızlı Test Modu açıkken
+  oyun süresi sayılmaz (kaçış ekranında "test modu").
 
 ## Sahne Kurma Komutu
 Sahne elle kurulmaz. **Tools > Kayıp Ada > Prototip Sahnesini Kur**:
@@ -238,7 +255,7 @@ Sahne elle kurulmaz. **Tools > Kayıp Ada > Prototip Sahnesini Kur**:
         ┌──── KAYALIK ────┐   yol   ┌─ MEYVE BAH. ─┐  DOKUMA      z 6..15 (çitli, başta kapalı)
         │ kaya  TAŞ ATÖLY.│    |    │ ağaç   ağaç  │  HALAT
         └──────[kare]─────┘    |    └────[kare]────┘             z 4.4
-               palmiye    palmiye    palmiye    [PALMİYE KOYU]   z -6..2 (lif palmiyeleri)
+               palmiye    palmiye    palmiye    [PALMİYE KOYU]   z -6..2 (keten tarlası)
   KAMP  [oduncu kare]      oyuncu      [taşıyıcı kare]           z -6
             PAZAR                    BIÇKIHANE                   z -12
 ```
@@ -246,7 +263,11 @@ Sahne elle kurulmaz. **Tools > Kayıp Ada > Prototip Sahnesini Kur**:
 - Kareler: Kayalık 150, Bıçkıhane 250 (baştan); Taş Atölyesi 800 (Kayalık sonrası); Oduncu 400, Taşıyıcı 600 (sırayla);
   Palmiye Koyu 500 (Omurga sonrası), Halat Atölyesi 700 (Gövde sonrası), Dokuma Tezgahı 900 + Lifçi 500 (Direk sonrası),
   Meyve Bahçesi 600 (Yelken sonrası).
-- Gemi iskelenin doğusunda kumsalda, kızağın üstünde; gemi karadayken `NavObstacle` ile içinden geçilmez, törende kapanır.
+- Gemi iskelenin doğusunda kumsalda, **kıyıya paralel** (burnu 20° denize dönük), ahşap kızağın (altlık + denize uzanan
+  raylar) üstünde; teslim alanı geminin kara tarafında. Gövde 5 engel karesiyle kapalı, törende kalkar; gemi yana kayıp suya iner.
+- Bölgeler çitle tamamen çevrili; kapı açma karesine bakan kenarda (Kayalık/Bahçe güney, Koy batı). Kapalıyken kapı geçilmez.
+- Çarpışma: binalar, ağaç/kaya gövdeleri, büyük süs palmiyesi ve kayalar, çitler, tabelalar, gemi `NavObstacle`; otlar,
+  çiçekler, çakıllar, keten tarlası geçilebilir. Oyuncu engele çarpınca yanından kayar; işçiler NavMesh ile dolaşır.
 - Bina düzeni (kök = binanın önü): gövde arkada (z +0.9), giriş solda-önde, çıkış sağda-önde (z -1.5), halka üstte.
 
 ### Yerleşim kuralları

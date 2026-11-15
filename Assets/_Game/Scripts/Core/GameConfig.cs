@@ -117,6 +117,12 @@ namespace KayipAda
         [field: Tooltip("Açılan nesnelerin zıplayarak belirme süresi (saniye).")]
         [field: SerializeField, Min(0.01f)] public float PopInDuration { get; private set; } = 0.45f;
 
+        [field: Tooltip("Bölge açılınca çit kapısının açılma süresi (saniye).")]
+        [field: SerializeField, Min(0.05f)] public float GateOpenDuration { get; private set; } = 0.8f;
+
+        [field: Tooltip("Ekranın ortasındaki \"AÇILDI!\" yazısının toplam süresi (saniye).")]
+        [field: SerializeField, Min(0.2f)] public float BurstTextDuration { get; private set; } = 1.8f;
+
         [field: Tooltip("Açılan nesneler arasındaki sıra gecikmesi (saniye).")]
         [field: SerializeField, Min(0f)] public float PopInStagger { get; private set; } = 0.04f;
 
@@ -125,6 +131,12 @@ namespace KayipAda
 
         [field: Tooltip("Uçan '+5' yazısının ömrü (saniye).")]
         [field: SerializeField, Min(0.1f)] public float FloatingTextDuration { get; private set; } = 0.9f;
+
+        [field: Tooltip("Bu uzaklıktaki (metre) aynı uçan yazı yeniden açılmaz, eskisi baştan oynar; farklı yazılar üst üste kayar.")]
+        [field: SerializeField, Min(0f)] public float FloatingTextMergeDistance { get; private set; } = 2.5f;
+
+        [field: Tooltip("Yeni bir uçan yazı gelince eskilerin yukarı kayma mesafesi (metre).")]
+        [field: SerializeField, Min(0f)] public float FloatingTextStackGap { get; private set; } = 0.7f;
 
         [field: Header("Yönlendirme (sonraki hedef)")]
         [field: Tooltip("Sonraki açma karesinin üstündeki okun yüksekliği (metre).")]
@@ -148,6 +160,17 @@ namespace KayipAda
 
         [field: Tooltip("İlk kaçışta kazanılan kaptanlık XP'si.")]
         [field: SerializeField, Min(0)] public int EscapeXp { get; private set; } = 100;
+
+        [field: Tooltip("Kaçış ekranı: bu süreden (saniye) kısa sürede kaçan 3 yıldız, TwoStarSeconds'tan kısa 2 yıldız, değilse 1 yıldız alır.")]
+        [field: SerializeField, Min(1f)] public float ThreeStarSeconds { get; private set; } = 2100f;
+        [field: SerializeField, Min(1f)] public float TwoStarSeconds { get; private set; } = 3000f;
+
+        [field: Tooltip("Kaçış ekranı animasyonu: yıldızlar arası bekleme, XP/para sayma süresi, buton nabzı, konfeti süresi.")]
+        [field: SerializeField, Min(0f)] public float StarDelay { get; private set; } = 0.35f;
+        [field: SerializeField, Min(0.1f)] public float CountUpDuration { get; private set; } = 1.2f;
+        [field: SerializeField, Min(0f)] public float PulseSpeed { get; private set; } = 5f;
+        [field: SerializeField, Min(0f)] public float PulseAmount { get; private set; } = 0.06f;
+        [field: SerializeField, Min(0f)] public float EscapeConfettiDuration { get; private set; } = 20f;
 
         [field: Tooltip("Bir kaptanlık seviyesi için gereken XP.")]
         [field: SerializeField, Min(1)] public int XpPerCaptainLevel { get; private set; } = 100;
@@ -180,6 +203,12 @@ namespace KayipAda
         [field: SerializeField, Range(0f, 1f)] public float SfxVolume { get; private set; } = 0.8f;
         [field: SerializeField, Range(0f, 1f)] public float AmbientVolume { get; private set; } = 0.25f;
 
+        [field: Tooltip("Arka plandaki kuş cıvıltılarının ses seviyesi.")]
+        [field: SerializeField, Range(0f, 1f)] public float BirdVolume { get; private set; } = 0.12f;
+
+        [field: Tooltip("Müziğin (final töreni) ses seviyesi.")]
+        [field: SerializeField, Range(0f, 1f)] public float MusicVolume { get; private set; } = 0.9f;
+
         [field: Tooltip("Oyuncu kaç metrede bir adım sesi çıkarır.")]
         [field: SerializeField, Min(0.1f)] public float FootstepDistance { get; private set; } = 1.6f;
 
@@ -191,6 +220,24 @@ namespace KayipAda
 
         [field: Tooltip("Perdenin en fazla ne kadar yükselebileceği.")]
         [field: SerializeField, Min(0f)] public float PitchComboMax { get; private set; } = 0.35f;
+
+        [field: Header("Bitkiler")]
+        [field: Tooltip("Keten/saz bitkilerinin rüzgârda sallanma açısı (derece) ve hızı.")]
+        [field: SerializeField, Min(0f)] public float SwayAngle { get; private set; } = 5f;
+        [field: SerializeField, Min(0f)] public float SwaySpeed { get; private set; } = 1.8f;
+
+        [field: Header("Dünyadaki yazılar")]
+        [field: Tooltip("Bu uzaklığa (metre) kadar yazılar tam görünür.")]
+        [field: SerializeField, Min(0f)] public float LabelFadeNear { get; private set; } = 9f;
+
+        [field: Tooltip("Bu uzaklıktan sonra yazılar tamamen kaybolur.")]
+        [field: SerializeField, Min(0f)] public float LabelFadeFar { get; private set; } = 15f;
+
+        [field: Tooltip("Ekran kenarına bu kadar (ekranın oranı) yaklaşınca yazı kaybolmaya başlar.")]
+        [field: SerializeField, Range(0.01f, 0.4f)] public float LabelEdgeFade { get; private set; } = 0.12f;
+
+        [field: Tooltip("Yazıların belirme/kaybolma hızı (saniyede).")]
+        [field: SerializeField, Min(0.1f)] public float LabelFadeSpeed { get; private set; } = 3f;
 
         [field: Header("Test Menüsü (sadece Editor ve geliştirme sürümü)")]
         [field: Tooltip("Test Menüsü'ndeki \"+Para\" butonunun verdiği para.")]

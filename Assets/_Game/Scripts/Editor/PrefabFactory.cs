@@ -505,37 +505,187 @@ namespace KayipAda.EditorTools
             return Save(root, Folder + "/FX/Sparkle.prefab");
         }
 
-        // Havai fişek: renkli kıvılcımlar her yöne açılır, yavaşça düşüp söner.
+        // Havai fişek: yerden yükselen, iz bırakan roket; tepede (ölünce) çok renkli, iz bırakan parçacıklarla patlar.
         public static GameObject BuildFirework()
         {
-            ParticleSystem ps = NewParticles("Firework", "M_Particle", ArtGenerator.SoftCirclePath, out GameObject root);
-            ParticleSystem.MainModule main = ps.main;
-            main.duration = 0.3f;
+            ParticleSystem rocket = NewParticles("Firework", "M_Particle", ArtGenerator.SoftCirclePath, out GameObject root);
+            ParticleSystem.MainModule main = rocket.main;
+            main.duration = 0.2f;
             main.loop = false;
             main.playOnAwake = true;
-            main.startLifetime = new ParticleSystem.MinMaxCurve(1.1f, 1.7f);
-            main.startSpeed = new ParticleSystem.MinMaxCurve(5f, 8f);
-            main.startSize = new ParticleSystem.MinMaxCurve(0.2f, 0.4f);
+            main.startLifetime = new ParticleSystem.MinMaxCurve(1.0f, 1.3f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(10f, 12f);
+            main.startSize = 0.35f;
+            main.startColor = new Color(1f, 0.9f, 0.6f);
+            main.gravityModifier = 0.6f;
+            main.maxParticles = 2;
+            ParticleSystem.EmissionModule emission = rocket.emission;
+            emission.rateOverTime = 0f;
+            emission.SetBursts(new[] { new ParticleSystem.Burst(0f, 1) });
+            ParticleSystem.ShapeModule shape = rocket.shape;
+            shape.shapeType = ParticleSystemShapeType.Cone;
+            shape.angle = 8f;
+            shape.radius = 0.1f;
+            shape.rotation = new Vector3(-90f, 0f, 0f);
+            AddTrails(rocket, 0.35f, 0.12f);
+
+            // Patlama: ölen roketin yerinde çok renkli parçacıklar, her biri iz bırakır.
+            ParticleSystem burst = NewParticles("Burst", "M_Particle", ArtGenerator.SoftCirclePath, out GameObject burstGo);
+            burstGo.transform.SetParent(root.transform, false);
+            ParticleSystem.MainModule b = burst.main;
+            b.duration = 0.2f;
+            b.loop = false;
+            b.startLifetime = new ParticleSystem.MinMaxCurve(1.2f, 1.8f);
+            b.startSpeed = new ParticleSystem.MinMaxCurve(5f, 9f);
+            b.startSize = new ParticleSystem.MinMaxCurve(0.22f, 0.38f);
             Gradient colors = new Gradient();
             colors.SetKeys(new[]
             {
-                new GradientColorKey(new Color(1f, 0.9f, 0.3f), 0f), new GradientColorKey(new Color(1f, 0.35f, 0.5f), 0.33f),
-                new GradientColorKey(new Color(0.4f, 0.8f, 1f), 0.66f), new GradientColorKey(new Color(0.6f, 1f, 0.5f), 1f)
+                new GradientColorKey(new Color(1f, 0.85f, 0.25f), 0f), new GradientColorKey(new Color(1f, 0.3f, 0.45f), 0.25f),
+                new GradientColorKey(new Color(0.4f, 0.75f, 1f), 0.5f), new GradientColorKey(new Color(0.55f, 1f, 0.45f), 0.75f),
+                new GradientColorKey(new Color(0.85f, 0.45f, 1f), 1f)
             }, new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(1f, 1f) });
-            main.startColor = new ParticleSystem.MinMaxGradient(colors) { mode = ParticleSystemGradientMode.RandomColor };
-            main.gravityModifier = 0.35f;
-            main.maxParticles = 70;
+            b.startColor = new ParticleSystem.MinMaxGradient(colors) { mode = ParticleSystemGradientMode.RandomColor };
+            b.gravityModifier = 0.45f;
+            b.maxParticles = 80;
+            ParticleSystem.EmissionModule be = burst.emission;
+            be.rateOverTime = 0f;
+            be.SetBursts(new[] { new ParticleSystem.Burst(0f, 70) });
+            ParticleSystem.ShapeModule bs = burst.shape;
+            bs.shapeType = ParticleSystemShapeType.Sphere;
+            bs.radius = 0.15f;
+            ParticleSystem.LimitVelocityOverLifetimeModule drag = burst.limitVelocityOverLifetime;
+            drag.enabled = true;
+            drag.drag = 1.2f;
+            AddTrails(burst, 0.5f, 0.6f);
+            FadeOut(burst);
+
+            ParticleSystem.SubEmittersModule sub = rocket.subEmitters;
+            sub.enabled = true;
+            sub.AddSubEmitter(burst, ParticleSystemSubEmitterType.Death, ParticleSystemSubEmitterProperties.InheritNothing);
+            return Save(root, Folder + "/FX/Firework.prefab");
+        }
+
+        // Parçacıkların arkasında incelen iz.
+        private static void AddTrails(ParticleSystem ps, float lifetime, float widthOverTrail)
+        {
+            ParticleSystem.TrailModule trails = ps.trails;
+            trails.enabled = true;
+            trails.lifetime = lifetime;
+            trails.dieWithParticles = true;
+            trails.inheritParticleColor = true;
+            trails.widthOverTrail = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0f, 1f, 1f, widthOverTrail));
+            ParticleSystemRenderer r = ps.GetComponent<ParticleSystemRenderer>();
+            r.trailMaterial = r.sharedMaterial;
+        }
+
+        // Gemi parçası yerine oturunca kalkan kum/toz bulutu.
+        public static GameObject BuildPuff()
+        {
+            ParticleSystem ps = NewParticles("Puff", "M_Particle", ArtGenerator.SoftCirclePath, out GameObject root);
+            ParticleSystem.MainModule main = ps.main;
+            main.duration = 0.2f;
+            main.loop = false;
+            main.playOnAwake = true;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.5f, 0.8f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(1f, 2.4f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.45f, 0.85f);
+            main.startColor = new Color(0.93f, 0.85f, 0.68f, 0.85f);
+            main.maxParticles = 16;
             ParticleSystem.EmissionModule emission = ps.emission;
             emission.rateOverTime = 0f;
-            emission.SetBursts(new[] { new ParticleSystem.Burst(0f, 60) });
+            emission.SetBursts(new[] { new ParticleSystem.Burst(0f, 12) });
             ParticleSystem.ShapeModule shape = ps.shape;
             shape.shapeType = ParticleSystemShapeType.Sphere;
-            shape.radius = 0.2f;
+            shape.radius = 0.4f;
             ParticleSystem.SizeOverLifetimeModule size = ps.sizeOverLifetime;
             size.enabled = true;
-            size.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0f, 1f, 1f, 0.3f));
+            size.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0f, 0.6f, 1f, 1.4f));
             FadeOut(ps);
-            return Save(root, Folder + "/FX/Firework.prefab");
+            return Save(root, Folder + "/FX/Puff.prefab");
+        }
+
+        // Gemi aşaması bitince altın ışık patlaması: büyüyüp sönen parlak halka + dışa saçılan ışık çizgileri.
+        public static GameObject BuildGoldBurst()
+        {
+            ParticleSystem glow = NewParticles("GoldBurst", "M_Particle", ArtGenerator.SoftCirclePath, out GameObject root);
+            ParticleSystem.MainModule main = glow.main;
+            main.duration = 0.2f;
+            main.loop = false;
+            main.playOnAwake = true;
+            main.startLifetime = 0.9f;
+            main.startSpeed = 0f;
+            main.startSize = 7f;
+            main.startColor = new Color(1f, 0.85f, 0.35f, 0.75f);
+            main.maxParticles = 2;
+            ParticleSystem.EmissionModule emission = glow.emission;
+            emission.rateOverTime = 0f;
+            emission.SetBursts(new[] { new ParticleSystem.Burst(0f, 1) });
+            ParticleSystem.SizeOverLifetimeModule size = glow.sizeOverLifetime;
+            size.enabled = true;
+            size.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.EaseInOut(0f, 0.3f, 1f, 1.4f));
+            FadeOut(glow);
+
+            ParticleSystem rays = NewParticles("Rays", "M_Particle", ArtGenerator.SoftCirclePath, out GameObject raysGo);
+            raysGo.transform.SetParent(root.transform, false);
+            ParticleSystem.MainModule r = rays.main;
+            r.duration = 0.2f;
+            r.loop = false;
+            r.playOnAwake = true;
+            r.startLifetime = new ParticleSystem.MinMaxCurve(0.6f, 1f);
+            r.startSpeed = new ParticleSystem.MinMaxCurve(7f, 12f);
+            r.startSize = new ParticleSystem.MinMaxCurve(0.25f, 0.45f);
+            r.startColor = new Color(1f, 0.9f, 0.45f);
+            r.maxParticles = 40;
+            ParticleSystem.EmissionModule re = rays.emission;
+            re.rateOverTime = 0f;
+            re.SetBursts(new[] { new ParticleSystem.Burst(0f, 36) });
+            ParticleSystem.ShapeModule rs = rays.shape;
+            rs.shapeType = ParticleSystemShapeType.Sphere;
+            rs.radius = 0.5f;
+            ParticleSystemRenderer rr = raysGo.GetComponent<ParticleSystemRenderer>();
+            rr.renderMode = ParticleSystemRenderMode.Stretch;
+            rr.velocityScale = 0.12f;
+            rr.lengthScale = 2f;
+            FadeOut(rays);
+            return Save(root, Folder + "/FX/GoldBurst.prefab");
+        }
+
+        // Ekranı kaplayan konfeti: kameraya bağlı, geniş bir alandan sürekli yağar (süreyi Effects ayarlar).
+        public static GameObject BuildScreenConfetti()
+        {
+            ParticleSystem ps = NewParticles("ScreenConfetti", "M_Confetti", ArtGenerator.SquarePath, out GameObject root);
+            ParticleSystem.MainModule main = ps.main;
+            main.duration = 8f;
+            main.loop = false;
+            main.playOnAwake = false;
+            main.simulationSpace = ParticleSystemSimulationSpace.Local;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(2.5f, 3.5f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(0.1f, 0.6f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.22f, 0.38f);
+            main.startRotation = new ParticleSystem.MinMaxCurve(0f, Mathf.PI * 2f);
+            main.gravityModifier = 0.35f;
+            main.maxParticles = 260;
+            Gradient colors = new Gradient();
+            colors.SetKeys(new[]
+            {
+                new GradientColorKey(new Color(1f, 0.85f, 0.2f), 0f), new GradientColorKey(new Color(1f, 0.35f, 0.45f), 0.33f),
+                new GradientColorKey(new Color(0.35f, 0.75f, 1f), 0.66f), new GradientColorKey(new Color(0.45f, 0.95f, 0.45f), 1f)
+            }, new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(1f, 1f) });
+            main.startColor = new ParticleSystem.MinMaxGradient(colors) { mode = ParticleSystemGradientMode.RandomColor };
+            ParticleSystem.EmissionModule emission = ps.emission;
+            emission.rateOverTime = 90f;
+            ParticleSystem.ShapeModule shape = ps.shape;
+            shape.shapeType = ParticleSystemShapeType.Box;
+            shape.scale = new Vector3(9f, 0.3f, 2f); // kameranın önünde, görüşün üst kenarı boyunca
+            ParticleSystem.RotationOverLifetimeModule rot = ps.rotationOverLifetime;
+            rot.enabled = true;
+            rot.z = new ParticleSystem.MinMaxCurve(-5f, 5f);
+            ParticleSystem.NoiseModule noise = ps.noise;
+            noise.enabled = true;
+            noise.strength = 0.6f;
+            noise.frequency = 0.4f;
+            return Save(root, Folder + "/FX/ScreenConfetti.prefab");
         }
 
         // Su sıçraması: beyaz-mavi damlalar yukarı fışkırıp düşer.
@@ -576,6 +726,148 @@ namespace KayipAda.EditorTools
             r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             root.AddComponent<ResourceItem>();
             return Save(root, Folder + "/Items/Rope.prefab").GetComponent<ResourceItem>();
+        }
+
+        // ================================================================ Meyve, meyve çalısı, keten tarlası
+
+        // Kodla üretilen alçak poligonlu meyve: kırmızı/turuncu yuvarlak + yeşil yaprak + kahverengi sap. Taban y=0.
+        public static GameObject CreateFruitModel(Transform parent, float size, bool orange)
+        {
+            GameObject model = new GameObject("Model");
+            model.transform.SetParent(parent, false);
+            Mesh sphere = ArtGenerator.BuildFruitMesh();
+            Color body = orange ? new Color(1f, 0.55f, 0.12f) : new Color(0.88f, 0.16f, 0.12f);
+            GameObject ball = new GameObject("Body");
+            ball.transform.SetParent(model.transform, false);
+            ball.transform.localPosition = new Vector3(0f, size * 0.5f, 0f);
+            ball.transform.localScale = new Vector3(size, size * 0.92f, size);
+            ball.AddComponent<MeshFilter>().sharedMesh = sphere;
+            ball.AddComponent<MeshRenderer>().sharedMaterial = ArtGenerator.GetLit(orange ? "M_FruitOrange" : "M_FruitRed", null, body);
+            Box(model.transform, "Stem", new Vector3(0f, size * 0.98f, 0f), new Vector3(size * 0.08f, size * 0.22f, size * 0.08f),
+                Quaternion.identity, ArtGenerator.GetLit("M_FruitStem", null, new Color(0.45f, 0.28f, 0.12f)));
+            Box(model.transform, "Leaf", new Vector3(size * 0.14f, size * 1.02f, 0f), new Vector3(size * 0.32f, size * 0.05f, size * 0.16f),
+                Quaternion.Euler(0f, 0f, 25f), ArtGenerator.GetLit("M_FruitLeaf", null, new Color(0.3f, 0.7f, 0.25f)));
+            BuilderUtil.SetShadows(model, false);
+            return model;
+        }
+
+        private static void Box(Transform parent, string name, Vector3 pos, Vector3 size, Quaternion rot, Material material)
+        {
+            GameObject go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            Object.DestroyImmediate(go.GetComponent<Collider>());
+            go.name = name;
+            go.transform.SetParent(parent, false);
+            go.transform.localPosition = pos;
+            go.transform.localRotation = rot;
+            go.transform.localScale = size;
+            go.GetComponent<Renderer>().sharedMaterial = material;
+        }
+
+        public static ResourceItem BuildFruitItem()
+        {
+            GameObject root = new GameObject("Fruit");
+            CreateFruitModel(root.transform, 0.42f, false);
+            root.AddComponent<ResourceItem>();
+            return Save(root, Folder + "/Items/Fruit.prefab").GetComponent<ResourceItem>();
+        }
+
+        // Taşınan kaynağın rengi tek renge boyanır (sırttaki yığında kolay ayırt edilsin: gri taş, turuncu tuğla, krem bez).
+        public static ResourceItem BuildTintedItem(ModelSpec spec, Color tint)
+        {
+            GameObject root = new GameObject(spec.Key);
+            GameObject model = CreateModel(spec, root.transform);
+            Material m = ArtGenerator.GetLit("M_Item_" + spec.Key, null, tint);
+            foreach (Renderer r in model.GetComponentsInChildren<Renderer>(true))
+            {
+                Material[] mats = r.sharedMaterials;
+                for (int i = 0; i < mats.Length; i++) mats[i] = m;
+                r.sharedMaterials = mats;
+            }
+            root.AddComponent<ResourceItem>();
+            return Save(root, Folder + "/Items/" + spec.Key + ".prefab").GetComponent<ResourceItem>();
+        }
+
+        // Meyve çalısı: yeşil çalı + üstünde belirgin kırmızı/turuncu meyveler. Toplandıkça meyveler tek tek
+        // kaybolur, dolarken tek tek belirir; çalı küçülmez.
+        public static GameObject BuildFruitBush(ResourceNodeType nodeType, GameConfig config)
+        {
+            ModelSpec spec = ModelCatalog.FruitTree;
+            GameObject root = new GameObject(spec.Key);
+            Transform visual = new GameObject("Visual").transform;
+            visual.SetParent(root.transform, false);
+            GameObject bush = CreateModel(spec, visual);
+            Bounds b = WorldBounds(bush);
+            List<Transform> fruits = new List<Transform>();
+            int count = ModelCatalog.FruitsPerBush;
+            for (int i = 0; i < count; i++)
+            {
+                float angle = i * Mathf.PI * 2f / count + (i % 2) * 0.35f;
+                float height = Mathf.Lerp(0.42f, 0.82f, (i * 37 % 10) / 10f);
+                Transform holder = new GameObject("Fruit " + i).transform;
+                holder.SetParent(visual, false);
+                holder.position = new Vector3(b.center.x + Mathf.Cos(angle) * b.extents.x * 0.92f, b.min.y + b.size.y * height,
+                                              b.center.z + Mathf.Sin(angle) * b.extents.z * 0.92f);
+                CreateFruitModel(holder, 0.32f, i % 3 == 1);
+                fruits.Add(holder);
+            }
+            return FinishNode(root, visual, spec, nodeType, config, 1.7f, new Vector2(1.0f, 1.0f), 1.25f, new Color(0.9f, 0.25f, 0.15f),
+                              null, false, false, fruits.ToArray(), "Nodes/" + spec.Key);
+        }
+
+        // Keten/saz tarlası: alçak, sarımsı-yeşil bitki kümeleri (rüzgârda sallanır). Toplandıkça boyu kısalır,
+        // tükenince kısa anızlık kalır, yeniden uzar. İçinden yürünebilir (engel yok).
+        public static GameObject BuildFlaxField(ResourceNodeType nodeType, GameConfig config)
+        {
+            ModelSpec spec = ModelCatalog.FlaxClump;
+            GameObject root = new GameObject("Node_FlaxField");
+            Transform visual = new GameObject("Visual").transform;
+            visual.SetParent(root.transform, false);
+            Material flax = ArtGenerator.GetLit("M_Flax", null, ModelCatalog.FlaxColor);
+            System.Random random = new System.Random(17);
+            int clumps = ModelCatalog.FlaxClumps;
+            for (int i = 0; i < clumps; i++)
+            {
+                float a = i * 2.39996f; // altın açı: kümeler düzgün dağılır
+                float r = ModelCatalog.FlaxRadius * Mathf.Sqrt((i + 0.5f) / clumps);
+                Transform holder = new GameObject("Clump " + i).transform;
+                holder.SetParent(visual, false);
+                holder.localPosition = new Vector3(Mathf.Cos(a) * r, 0f, Mathf.Sin(a) * r);
+                holder.localRotation = Quaternion.Euler(0f, (float)random.NextDouble() * 360f, 0f);
+                holder.localScale = Vector3.one * (0.85f + (float)random.NextDouble() * 0.3f);
+                GameObject model = CreateModel(spec, holder);
+                foreach (Renderer rend in model.GetComponentsInChildren<Renderer>(true))
+                {
+                    Material[] mats = rend.sharedMaterials;
+                    for (int k = 0; k < mats.Length; k++) mats[k] = flax;
+                    rend.sharedMaterials = mats;
+                }
+                Sway sway = holder.gameObject.AddComponent<Sway>();
+                BuilderUtil.SetField(sway, "config", config);
+            }
+            return FinishNode(root, visual, spec, nodeType, config, 1.7f, Vector2.zero, 1.2f, new Color(0.9f, 0.82f, 0.4f),
+                              null, true, true, new Transform[0], "Nodes/Node_FlaxField");
+        }
+
+        // Kaynak noktasının ortak kısmı: trigger, (varsa) gövde engeli, vuruş parçacıkları, ResourceNode ayarları.
+        private static GameObject FinishNode(GameObject root, Transform visual, ModelSpec spec, ResourceNodeType nodeType, GameConfig config,
+                                             float zoneRadius, Vector2 trunkSize, float standRadius, Color chipColor, GameObject remnantGo,
+                                             bool shrinks, bool heightOnly, Transform[] stockVisuals, string path)
+        {
+            AddRoundTrigger(root, zoneRadius);
+            if (trunkSize != Vector2.zero) BuilderUtil.SetVector2(root.AddComponent<NavObstacle>(), "size", trunkSize);
+            ParticleSystem chips = CreateHitChips(root.transform, Mathf.Min(spec.Size * 0.6f, 1.6f), chipColor);
+            ResourceNode node = root.AddComponent<ResourceNode>();
+            BuilderUtil.SetField(node, "remnant", remnantGo);
+            BuilderUtil.SetField(node, "hitEffect", chips);
+            BuilderUtil.SetField(node, "config", config);
+            BuilderUtil.SetField(node, "nodeType", nodeType);
+            BuilderUtil.SetField(node, "visual", visual);
+            BuilderUtil.SetFloat(node, "standRadius", standRadius);
+            BuilderUtil.SetFloat(node, "spawnHeight", Mathf.Min(spec.Size * 0.5f, 1.2f));
+            BuilderUtil.SetBool(node, "shrinks", shrinks);
+            BuilderUtil.SetBool(node, "shrinkHeightOnly", heightOnly);
+            BuilderUtil.SetArray(node, "stockVisuals", stockVisuals);
+            return Save(root, Folder + "/" + path + ".prefab");
         }
 
         // ================================================================ Kaynak noktaları
@@ -702,12 +994,12 @@ namespace KayipAda.EditorTools
                 fx = Instance(workFxPrefab, root.transform, bodyPos + Vector3.up * (spec.Size * 0.7f)).GetComponent<ParticleSystem>();
             }
 
-            ItemPile inputPile = CreateSlot("Input", root.transform, new Vector3(-1.4f, 0f, -1.5f), "Giriş: " + type.Input.DisplayName, config);
+            ItemPile inputPile = CreateSlot("Input", root.transform, new Vector3(-1.4f, 0f, -1.5f), type.Input, true, config);
             BuildingInput input = inputPile.transform.parent.gameObject.AddComponent<BuildingInput>();
             BuilderUtil.SetField(input, "config", config);
             BuilderUtil.SetField(input, "building", building);
 
-            ItemPile outputPile = CreateSlot("Output", root.transform, new Vector3(1.4f, 0f, -1.5f), "Çıkış: " + type.Output.DisplayName, config);
+            ItemPile outputPile = CreateSlot("Output", root.transform, new Vector3(1.4f, 0f, -1.5f), type.Output, false, config);
             BuildingOutput output = outputPile.transform.parent.gameObject.AddComponent<BuildingOutput>();
             BuilderUtil.SetField(output, "config", config);
             BuilderUtil.SetField(output, "building", building);
@@ -723,16 +1015,29 @@ namespace KayipAda.EditorTools
             return Save(root, Folder + "/Buildings/" + spec.Key + ".prefab");
         }
 
-        // Giriş/çıkış alanı: yerde yarı saydam kare + yazı + trigger; içinde yerdeki yığın.
-        private static ItemPile CreateSlot(string name, Transform parent, Vector3 localPos, string label, GameConfig config)
+        // Giriş/çıkış alanı: yerde daire + büyük kaynak ikonu + ok (giriş: binaya doğru, çıkış: binadan dışarı);
+        // trigger; içinde yerdeki yığın. Yazı yok: ikon her dilde ve uzaktan okunur.
+        private static ItemPile CreateSlot(string name, Transform parent, Vector3 localPos, ResourceType resource, bool isInput, GameConfig config)
         {
             GameObject slot = new GameObject(name);
             slot.transform.SetParent(parent, false);
             slot.transform.localPosition = localPos;
-            AddGroundDecal("Decal", slot.transform, Vector3.zero, new Vector2(1.6f, 1.6f), new Color(1f, 1f, 1f, 0.45f));
             AddBoxTrigger(slot, new Vector3(0f, 1f, 0f), new Vector3(1.6f, 2f, 1.6f));
 
-            UiFactory.CreateWorldLabel("Label", slot.transform, new Vector3(0f, 0.3f, -1.05f), label, 2.4f, Color.white);
+            Canvas canvas = UiFactory.CreateWorldCanvas("Marker", slot.transform, new Vector3(0f, 0.035f, 0f),
+                                                        Quaternion.Euler(90f, 0f, 0f), new Vector2(170f, 170f));
+            Color tint = isInput ? new Color(0.55f, 0.85f, 1f) : new Color(1f, 0.85f, 0.35f);
+            Image back = UiFactory.CreateImage("Back", canvas.transform, ArtGenerator.LoadSprite(ArtGenerator.CirclePath), new Color(1f, 1f, 1f, 0.35f));
+            UiFactory.Stretch(back.rectTransform);
+            Image ring = UiFactory.CreateImage("Ring", canvas.transform, ArtGenerator.LoadSprite(ArtGenerator.RingPath), tint);
+            UiFactory.Stretch(ring.rectTransform);
+            Image icon = UiFactory.CreateImage("Icon", canvas.transform, resource != null ? resource.Icon : null, Color.white);
+            UiFactory.Size(icon, new Vector2(0f, -12f), new Vector2(104f, 104f));
+            icon.preserveAspect = true;
+            // Ok: giriş = binaya doğru (yukarı), çıkış = binadan dışarı (aşağı).
+            Image arrow = UiFactory.CreateImage("Arrow", canvas.transform, ArtGenerator.LoadSprite(ArtGenerator.ArrowPath), tint);
+            UiFactory.Size(arrow, new Vector2(0f, 62f), new Vector2(46f, 46f));
+            arrow.rectTransform.localRotation = Quaternion.Euler(0f, 0f, isInput ? 0f : 180f);
 
             GameObject pileGo = new GameObject("Pile");
             pileGo.transform.SetParent(slot.transform, false);
