@@ -1,38 +1,5 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &-5081718784158462880
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: -4928797666820298242}
-  m_Layer: 0
-  m_Name: Body
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &-4928797666820298242
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: -5081718784158462880}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 8847506145741732345}
-  - {fileID: 1793488549601221290}
-  m_Father: {fileID: 2171716743908809051}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &3549191984318316841
 GameObject:
   m_ObjectHideFlags: 0
@@ -152,7 +119,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: -4928797666820298242}
+  m_Father: {fileID: 8103218414737277229}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &5084696181718089784
 GameObject:
@@ -188,7 +155,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: -4928797666820298242}
+  - {fileID: 8103218414737277229}
   - {fileID: 3355899748533055800}
   - {fileID: 7020517660430454048}
   m_Father: {fileID: 0}
@@ -271,7 +238,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: KayipAda::KayipAda.CharacterVisual
   config: {fileID: 11400000, guid: 1146e9de02183b3479a7be35060f6c07, type: 2}
   animator: {fileID: 3181946115427181443}
-  model: {fileID: -4928797666820298242}
+  model: {fileID: 8103218414737277229}
   stack: {fileID: 585468263965560207}
   dust: {fileID: 8549310618199674555}
   footsteps: 0
@@ -293,6 +260,39 @@ MonoBehaviour:
   m_EditorClassIdentifier: KayipAda::KayipAda.WorkerMover
   clearance: 0.45
   coastMargin: 1.2
+--- !u!1 &5913148217679762624
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8103218414737277229}
+  m_Layer: 0
+  m_Name: Body
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8103218414737277229
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5913148217679762624}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 8847506145741732345}
+  - {fileID: 1793488549601221290}
+  m_Father: {fileID: 2171716743908809051}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &8967610478785558166
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -366,7 +366,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: -4928797666820298242}
+    m_TransformParent: {fileID: 8103218414737277229}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: cc9fa723c5f554e458e70738e604054d, type: 3}
       propertyPath: m_LocalScale.x
