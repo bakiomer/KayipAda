@@ -22,8 +22,10 @@ namespace KayipAda
         [SerializeField] private FloatingText floatingTextPrefab;
         [Tooltip("Küçük parlama (geliştirme, gemi teslimi).")]
         [SerializeField] private ParticleSystem sparklePrefab;
-        [Tooltip("Gülle patlaması.")]
-        [SerializeField] private ParticleSystem explosionPrefab;
+        [Tooltip("Gemi suya inince su sıçraması.")]
+        [SerializeField] private ParticleSystem splashPrefab;
+        [Tooltip("Final törenindeki havai fişek.")]
+        [SerializeField] private ParticleSystem fireworkPrefab;
         [Tooltip("'+5' yazılarının rengi.")]
         [SerializeField] private Color coinTextColor = new Color(1f, 0.85f, 0.2f);
 
@@ -44,13 +46,16 @@ namespace KayipAda
             Destroy(ps.gameObject, 3f);
         }
 
-        // Gülle patlaması.
-        public void Explosion(Vector3 position)
+        public void Splash(Vector3 position) => PlayOnce(splashPrefab, position, 3f);
+
+        public void Firework(Vector3 position) => PlayOnce(fireworkPrefab, position, 3f);
+
+        private void PlayOnce(ParticleSystem prefab, Vector3 position, float life)
         {
-            if (explosionPrefab == null) return;
-            ParticleSystem ps = Instantiate(explosionPrefab, position, Quaternion.identity);
+            if (prefab == null) return;
+            ParticleSystem ps = Instantiate(prefab, position, Quaternion.identity);
             ps.Play();
-            Destroy(ps.gameObject, 3f);
+            Destroy(ps.gameObject, life);
         }
 
         public void Confetti(Vector3 position)

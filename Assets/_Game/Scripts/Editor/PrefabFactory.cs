@@ -63,6 +63,7 @@ namespace KayipAda.EditorTools
             {
                 model = (GameObject)PrefabUtility.InstantiatePrefab(source);
                 ApplySharedMaterials(model, spec.Pack);
+                if (spec.Upright) BakeSkinned(model, spec.Key);
             }
 
             model.name = "Model";
@@ -70,6 +71,7 @@ namespace KayipAda.EditorTools
             model.transform.localPosition = Vector3.zero;
             model.transform.localRotation = Quaternion.identity;
             Normalize(model, spec);
+            if (spec.Upright) Straighten(model, spec);
             BuilderUtil.SetShadows(model, spec.CastShadows);
             return model;
         }
@@ -85,6 +87,109 @@ namespace KayipAda.EditorTools
             Vector3 origin = model.transform.parent != null ? model.transform.parent.position : Vector3.zero;
             Vector3 offset = new Vector3(spec.CenterXZ ? b.center.x - origin.x : 0f, b.min.y - origin.y, spec.CenterXZ ? b.center.z - origin.z : 0f);
             model.transform.position -= offset;
+        }
+
+        // İskeletli (skinned) modeli sabit meshe çevirir: Quaternius palmiyesi iskeletli geliyor ve editörde
+        // ölçülen duruşu ekranda çizilenden farklı. Sabit mesh hem doğru ölçülür hem de telefonda daha ucuz çizilir.
+        // Mesh, Art/Generated/Baked_<ad>.asset olarak kaydedilir.
+        private static void BakeSkinned(GameObject model, string key)
+        {
+            SkinnedMeshRenderer[] skinned = model.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            if (skinned.Length == 0) return;
+            PrefabUtility.UnpackPrefabInstance(model, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
+            for (int i = 0; i < skinned.Length; i++)
+            {
+                SkinnedMeshRenderer smr = skinned[i];
+                Mesh baked = new Mesh { name = "Baked_" + key + "_" + i };
+                smr.BakeMesh(baked, true);
+                baked.RecalculateBounds();
+                string path = ArtGenerator.GeneratedFolder + "/Baked_" + key + (i > 0 ? "_" + i : "") + ".asset";
+                baked = BuilderUtil.SaveAsset(baked, path);
+
+                GameObject go = new GameObject(smr.name + "_Static");
+                go.transform.SetParent(model.transform, false);
+                go.transform.SetPositionAndRotation(smr.transform.position, smr.transform.rotation);
+                go.transform.localScale = Vector3.one;
+                Vector3 lossy = go.transform.lossyScale; // model ölçeği zaten pişmiş meshte: dünyada 1 olsun
+                go.transform.localScale = new Vector3(1f / lossy.x, 1f / lossy.y, 1f / lossy.z);
+                go.AddComponent<MeshFilter>().sharedMesh = baked;
+                go.AddComponent<MeshRenderer>().sharedMaterials = smr.sharedMaterials;
+                Object.DestroyImmediate(smr);
+            }
+            // Kemikler ve animasyon artık gereksiz.
+            foreach (Animator animator in model.GetComponentsInChildren<Animator>(true)) Object.DestroyImmediate(animator);
+        }
+
+        // Eğri gövdeli modeli (palmiye) dikleştirir: gövde dibinin ortası ile tepenin (yaprakların) ortası aynı
+        // dikey çizgiye gelir. Sonra boyu yeniden ölçeklenir, gövde dibi köke oturur ve biraz zemine gömülür
+        // (havada duruyormuş gibi görünmesin, gölge gövdeyle hizalı olsun).
+        private static void Straighten(GameObject model, ModelSpec spec)
+        {
+            List<Vector3> points = WorldVertices(model);
+            if (points.Count == 0) return;
+
+            float minY = float.MaxValue, maxY = float.MinValue;
+            foreach (Vector3 v in points) { minY = Mathf.Min(minY, v.y); maxY = Mathf.Max(maxY, v.y); }
+            float h = maxY - minY;
+            // Tepe: en üstteki noktaların ortası (yapraklar). Gövde dibi: tepeye yatayda en uzak noktalar (eğri gövdenin
+            // ucu). En alttaki noktalar kullanılmaz: sarkan yaprak uçları gövde dibinden daha aşağı iniyor.
+            Vector3 topPoint = Centroid(points, v => v.y > maxY - h * 0.3f);
+            Vector2 topXZ = new Vector2(topPoint.x, topPoint.z);
+            float farthest = 0f;
+            foreach (Vector3 v in points) farthest = Mathf.Max(farthest, Vector2.Distance(new Vector2(v.x, v.z), topXZ));
+            Vector3 basePoint = Centroid(points, v => v.y < topPoint.y &&
+                                                       Vector2.Distance(new Vector2(v.x, v.z), topXZ) > farthest * 0.9f);
+            if (Vector3.Angle(topPoint - basePoint, Vector3.up) < 3f) return; // zaten dik
+
+            Transform t = model.transform;
+            Vector3 baseLocal = t.InverseTransformPoint(basePoint);
+            Quaternion fix = Quaternion.FromToRotation(topPoint - basePoint, Vector3.up);
+            t.rotation = fix * t.rotation;
+            t.position = basePoint + fix * (t.position - basePoint);
+
+            Bounds b = WorldBounds(model);
+            if (b.size.y > 0.0001f) t.localScale *= spec.Size / b.size.y;
+            b = WorldBounds(model);
+            Vector3 root = t.parent != null ? t.parent.position : Vector3.zero;
+            Vector3 trunk = t.TransformPoint(baseLocal);
+            t.position -= new Vector3(trunk.x - root.x, trunk.y - root.y + UprightSink, trunk.z - root.z);
+        }
+
+        // Modelin tüm köşe noktaları dünya koordinatında (normal ve iskeletli/skinned meshler; gizli nesnelerde de).
+        public static List<Vector3> WorldVertices(GameObject root)
+        {
+            List<Vector3> points = new List<Vector3>();
+            foreach (MeshFilter mf in root.GetComponentsInChildren<MeshFilter>(true))
+            {
+                if (mf.sharedMesh == null) continue;
+                Matrix4x4 m = mf.transform.localToWorldMatrix;
+                foreach (Vector3 v in mf.sharedMesh.vertices) points.Add(m.MultiplyPoint3x4(v));
+            }
+            foreach (SkinnedMeshRenderer smr in root.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+            {
+                if (smr.sharedMesh == null) continue;
+                Mesh baked = new Mesh();
+                smr.BakeMesh(baked, true); // ölçek dahil, renderer'ın yerel uzayında
+                Matrix4x4 m = Matrix4x4.TRS(smr.transform.position, smr.transform.rotation, Vector3.one);
+                foreach (Vector3 v in baked.vertices) points.Add(m.MultiplyPoint3x4(v));
+                Object.DestroyImmediate(baked);
+            }
+            return points;
+        }
+
+        private const float UprightSink = 0.06f; // gövde dibi zemine bu kadar gömülür (metre)
+
+        private static Vector3 Centroid(List<Vector3> points, System.Func<Vector3, bool> filter)
+        {
+            Vector3 sum = Vector3.zero;
+            int n = 0;
+            foreach (Vector3 v in points)
+            {
+                if (!filter(v)) continue;
+                sum += v;
+                n++;
+            }
+            return n > 0 ? sum / n : Vector3.zero;
         }
 
         public static Bounds WorldBounds(GameObject go)
@@ -205,16 +310,24 @@ namespace KayipAda.EditorTools
         // Yere yatık yarı saydam işaret (bina giriş/çıkış alanı, Pazar alanı, kapalı bina zemini).
         public static GameObject AddGroundDecal(string name, Transform parent, Vector3 localPos, Vector2 size, Color color)
         {
+            return AddGroundDecal(name, parent, localPos, size, color, ArtGenerator.RoundedRectPath, 0f);
+        }
+
+        // Yere yatık, istenen dokuyla (daire, ok) yarı saydam işaret. yaw: dokunun yukarısının baktığı yön (derece).
+        public static GameObject AddGroundDecal(string name, Transform parent, Vector3 localPos, Vector2 size, Color color,
+                                                string texturePath, float yaw)
+        {
             GameObject quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
             Object.DestroyImmediate(quad.GetComponent<Collider>());
             quad.name = name;
             quad.transform.SetParent(parent, false);
             quad.transform.localPosition = localPos + Vector3.up * 0.025f;
-            quad.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            quad.transform.localRotation = Quaternion.Euler(90f, yaw, 0f);
             quad.transform.localScale = new Vector3(size.x, size.y, 1f);
             Renderer r = quad.GetComponent<Renderer>();
-            string key = "M_Decal_" + ColorUtility.ToHtmlStringRGBA(color);
-            r.sharedMaterial = Cached(key, () => ArtGenerator.GetTransparent(key, ArtGenerator.LoadSprite(ArtGenerator.RoundedRectPath)?.texture, color));
+            string shape = texturePath == ArtGenerator.RoundedRectPath ? "" : System.IO.Path.GetFileNameWithoutExtension(texturePath) + "_";
+            string key = "M_Decal_" + shape + ColorUtility.ToHtmlStringRGBA(color);
+            r.sharedMaterial = Cached(key, () => ArtGenerator.GetTransparent(key, ArtGenerator.LoadSprite(texturePath)?.texture, color));
             r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             r.receiveShadows = false;
             return quad;
@@ -337,26 +450,6 @@ namespace KayipAda.EditorTools
             return Save(root, Folder + "/Enemies/" + spec.Key + ".prefab");
         }
 
-        // Son gecenin iskelet korsanı: görünüş + Enemy bileşeni (yürür, saldırır, ölür).
-        public static GameObject BuildSkeletonEnemy(ModelSpec spec, RuntimeAnimatorController controller)
-        {
-            GameObject root = new GameObject(spec.Key);
-            Transform body = new GameObject("Body").transform;
-            body.SetParent(root.transform, false);
-            GameObject model = CreateModel(spec, body);
-            Animator animator = model.GetComponent<Animator>();
-            if (animator == null) animator = model.AddComponent<Animator>();
-            animator.runtimeAnimatorController = controller;
-            animator.applyRootMotion = false;
-            animator.cullingMode = AnimatorCullingMode.CullUpdateTransforms;
-            AddBlobShadow(root.transform, 1.2f);
-
-            Enemy enemy = root.AddComponent<Enemy>();
-            BuilderUtil.SetField(enemy, "animator", animator);
-            BuilderUtil.SetField(enemy, "body", body);
-            return Save(root, Folder + "/Enemies/" + spec.Key + ".prefab");
-        }
-
         // Geliştirme tezgahı: model + oyuncu üstüne gelince paneli açan alan (panel sahnede bağlanır).
         public static GameObject BuildUpgradeStation(GameConfig config)
         {
@@ -374,54 +467,12 @@ namespace KayipAda.EditorTools
             fx.SetParent(root.transform, false);
             fx.localPosition = new Vector3(0f, 1.4f, 1.6f);
 
-            TMPro.TextMeshPro label = UiFactory.CreateWorldText("Label", root.transform, new Vector3(0f, 3f, 1.6f), "GELİŞTİR", 5f,
-                                                                new Color(0.55f, 0.9f, 1f));
-            label.gameObject.AddComponent<Billboard>();
+            UiFactory.CreateWorldLabel("Label", root.transform, new Vector3(0f, 3f, 1.6f), "GELİŞTİR", 5f, new Color(0.55f, 0.9f, 1f));
 
             UpgradeStation station = root.AddComponent<UpgradeStation>();
             BuilderUtil.SetField(station, "config", config);
             BuilderUtil.SetField(station, "effectPoint", fx);
             return Save(root, Folder + "/World/UpgradeStation.prefab");
-        }
-
-        // Savunma topu: dönen top modeli + önünde taş doldurma alanı + üstte gülle göstergesi.
-        public static GameObject BuildCannon(ShipConfig ship, GameConfig config, GameObject ballPrefab)
-        {
-            GameObject root = new GameObject("CannonTower");
-            AddGroundDecal("Base", root.transform, Vector3.zero, new Vector2(2.2f, 2.2f), new Color(0.3f, 0.25f, 0.2f, 0.35f));
-
-            Transform barrel = new GameObject("Barrel").transform;
-            barrel.SetParent(root.transform, false);
-            CreateModel(FindDecor("Cannon"), barrel);
-            BuilderUtil.SetVector2(root.AddComponent<NavObstacle>(), "size", new Vector2(1.4f, 1.4f));
-
-            Transform muzzle = new GameObject("Muzzle").transform;
-            muzzle.SetParent(barrel, false);
-            muzzle.localPosition = new Vector3(0f, 0.9f, 0.9f);
-
-            TMPro.TextMeshPro ammo = UiFactory.CreateWorldText("Ammo", root.transform, new Vector3(0f, 2.4f, 0f), "Gülle 0/10", 4f, Color.white);
-            ammo.gameObject.AddComponent<Billboard>();
-
-            Cannon cannon = root.AddComponent<Cannon>();
-            BuilderUtil.SetField(cannon, "ship", ship);
-            BuilderUtil.SetField(cannon, "barrel", barrel);
-            BuilderUtil.SetField(cannon, "muzzle", muzzle);
-            BuilderUtil.SetField(cannon, "ballPrefab", ballPrefab);
-            BuilderUtil.SetField(cannon, "ammoLabel", ammo);
-
-            // Doldurma alanı: topun önünde (kameraya bakan tarafta).
-            GameObject loader = new GameObject("Loader");
-            loader.transform.SetParent(root.transform, false);
-            loader.transform.localPosition = new Vector3(0f, 0f, -1.9f);
-            AddRoundTrigger(loader, 1.1f);
-            AddGroundDecal("Decal", loader.transform, Vector3.zero, new Vector2(1.6f, 1.6f), new Color(0.75f, 0.75f, 0.8f, 0.5f));
-            TMPro.TextMeshPro text = UiFactory.CreateWorldText("Label", loader.transform, new Vector3(0f, 0.05f, -1.05f), "Taş → Gülle", 2.4f, Color.white);
-            text.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
-            CannonLoader cl = loader.AddComponent<CannonLoader>();
-            BuilderUtil.SetField(cl, "config", config);
-            BuilderUtil.SetField(cl, "ship", ship);
-            BuilderUtil.SetField(cl, "cannon", cannon);
-            return Save(root, Folder + "/World/CannonTower.prefab");
         }
 
         private static ModelSpec FindDecor(string key)
@@ -454,39 +505,85 @@ namespace KayipAda.EditorTools
             return Save(root, Folder + "/FX/Sparkle.prefab");
         }
 
-        // Gülle patlaması: turuncu parlama + gri duman.
-        public static GameObject BuildExplosion()
+        // Havai fişek: renkli kıvılcımlar her yöne açılır, yavaşça düşüp söner.
+        public static GameObject BuildFirework()
         {
-            ParticleSystem ps = NewParticles("Explosion", "M_Particle", ArtGenerator.SoftCirclePath, out GameObject root);
+            ParticleSystem ps = NewParticles("Firework", "M_Particle", ArtGenerator.SoftCirclePath, out GameObject root);
+            ParticleSystem.MainModule main = ps.main;
+            main.duration = 0.3f;
+            main.loop = false;
+            main.playOnAwake = true;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(1.1f, 1.7f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(5f, 8f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.2f, 0.4f);
+            Gradient colors = new Gradient();
+            colors.SetKeys(new[]
+            {
+                new GradientColorKey(new Color(1f, 0.9f, 0.3f), 0f), new GradientColorKey(new Color(1f, 0.35f, 0.5f), 0.33f),
+                new GradientColorKey(new Color(0.4f, 0.8f, 1f), 0.66f), new GradientColorKey(new Color(0.6f, 1f, 0.5f), 1f)
+            }, new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(1f, 1f) });
+            main.startColor = new ParticleSystem.MinMaxGradient(colors) { mode = ParticleSystemGradientMode.RandomColor };
+            main.gravityModifier = 0.35f;
+            main.maxParticles = 70;
+            ParticleSystem.EmissionModule emission = ps.emission;
+            emission.rateOverTime = 0f;
+            emission.SetBursts(new[] { new ParticleSystem.Burst(0f, 60) });
+            ParticleSystem.ShapeModule shape = ps.shape;
+            shape.shapeType = ParticleSystemShapeType.Sphere;
+            shape.radius = 0.2f;
+            ParticleSystem.SizeOverLifetimeModule size = ps.sizeOverLifetime;
+            size.enabled = true;
+            size.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0f, 1f, 1f, 0.3f));
+            FadeOut(ps);
+            return Save(root, Folder + "/FX/Firework.prefab");
+        }
+
+        // Su sıçraması: beyaz-mavi damlalar yukarı fışkırıp düşer.
+        public static GameObject BuildSplash()
+        {
+            ParticleSystem ps = NewParticles("Splash", "M_Particle", ArtGenerator.SoftCirclePath, out GameObject root);
             ParticleSystem.MainModule main = ps.main;
             main.duration = 0.4f;
             main.loop = false;
             main.playOnAwake = true;
-            main.startLifetime = new ParticleSystem.MinMaxCurve(0.4f, 0.9f);
-            main.startSpeed = new ParticleSystem.MinMaxCurve(2f, 6f);
-            main.startSize = new ParticleSystem.MinMaxCurve(0.5f, 1.2f);
-            main.startColor = new ParticleSystem.MinMaxGradient(new Color(1f, 0.55f, 0.15f), new Color(0.55f, 0.5f, 0.45f, 0.8f));
-            main.gravityModifier = -0.1f;
-            main.maxParticles = 40;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.7f, 1.2f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(3f, 6.5f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.3f, 0.7f);
+            main.startColor = new ParticleSystem.MinMaxGradient(new Color(1f, 1f, 1f, 0.9f), new Color(0.6f, 0.85f, 1f, 0.8f));
+            main.gravityModifier = 1.4f;
+            main.maxParticles = 60;
             ParticleSystem.EmissionModule emission = ps.emission;
             emission.rateOverTime = 0f;
-            emission.SetBursts(new[] { new ParticleSystem.Burst(0f, 30) });
+            emission.SetBursts(new[] { new ParticleSystem.Burst(0f, 50) });
             ParticleSystem.ShapeModule shape = ps.shape;
-            shape.shapeType = ParticleSystemShapeType.Hemisphere;
-            shape.radius = 0.4f;
+            shape.shapeType = ParticleSystemShapeType.Cone;
+            shape.angle = 30f;
+            shape.radius = 1.2f;
             shape.rotation = new Vector3(-90f, 0f, 0f);
-            ParticleSystem.SizeOverLifetimeModule size = ps.sizeOverLifetime;
-            size.enabled = true;
-            size.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0f, 0.7f, 1f, 1.6f));
             FadeOut(ps);
-            return Save(root, Folder + "/FX/Explosion.prefab");
+            return Save(root, Folder + "/FX/Splash.prefab");
+        }
+
+        // Halat: kodla üretilen halka modeli + ResourceItem.
+        public static ResourceItem BuildRopeItem()
+        {
+            GameObject root = new GameObject("Rope");
+            GameObject model = new GameObject("Model");
+            model.transform.SetParent(root.transform, false);
+            model.AddComponent<MeshFilter>().sharedMesh = ArtGenerator.BuildRopeMesh();
+            MeshRenderer r = model.AddComponent<MeshRenderer>();
+            r.sharedMaterial = Cached("M_Rope", () => ArtGenerator.GetLit("M_Rope", null, new Color(0.74f, 0.55f, 0.32f)));
+            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            root.AddComponent<ResourceItem>();
+            return Save(root, Folder + "/Items/Rope.prefab").GetComponent<ResourceItem>();
         }
 
         // ================================================================ Kaynak noktaları
 
         public static GameObject BuildNode(ModelSpec spec, ResourceNodeType nodeType, GameConfig config,
                                            float zoneRadius, Vector2 trunkSize, float standRadius,
-                                           ModelSpec fruit = null, int fruitCount = 0, Color? chipColor = null)
+                                           ModelSpec fruit = null, int fruitCount = 0, Color? chipColor = null,
+                                           ModelSpec remnant = null)
         {
             GameObject root = new GameObject(spec.Key);
             Transform visual = new GameObject("Visual").transform;
@@ -514,7 +611,18 @@ namespace KayipAda.EditorTools
             BuilderUtil.SetVector2(root.AddComponent<NavObstacle>(), "size", trunkSize);
             ParticleSystem chips = CreateHitChips(root.transform, Mathf.Min(spec.Size * 0.6f, 2.2f), chipColor ?? new Color(0.45f, 0.75f, 0.25f));
 
+            // Tükenince yerinde kalan parça (kütük / kırık taşlar); başta gizli.
+            GameObject remnantGo = null;
+            if (remnant != null)
+            {
+                remnantGo = new GameObject("Remnant");
+                remnantGo.transform.SetParent(root.transform, false);
+                CreateModel(remnant, remnantGo.transform);
+                remnantGo.SetActive(false);
+            }
+
             ResourceNode node = root.AddComponent<ResourceNode>();
+            BuilderUtil.SetField(node, "remnant", remnantGo);
             BuilderUtil.SetField(node, "hitEffect", chips);
             BuilderUtil.SetField(node, "config", config);
             BuilderUtil.SetField(node, "nodeType", nodeType);
@@ -586,9 +694,7 @@ namespace KayipAda.EditorTools
             spawn.localPosition = bodyPos + Vector3.up * 1.2f;
 
             ProgressRing ring = CreateBuildingRing(root.transform, bodyPos + Vector3.up * (spec.Size + 1.3f)); // adın üstünde
-            TMPro.TextMeshPro title = UiFactory.CreateWorldText("Title", root.transform, bodyPos + Vector3.up * (spec.Size + 0.2f),
-                                                                 type.DisplayName, 4.5f, Color.white);
-            title.gameObject.AddComponent<Billboard>();
+            UiFactory.CreateWorldLabel("Title", root.transform, bodyPos + Vector3.up * (spec.Size + 0.2f), type.DisplayName, 4.5f, Color.white);
 
             ParticleSystem fx = null;
             if (workFxPrefab != null)
@@ -626,8 +732,7 @@ namespace KayipAda.EditorTools
             AddGroundDecal("Decal", slot.transform, Vector3.zero, new Vector2(1.6f, 1.6f), new Color(1f, 1f, 1f, 0.45f));
             AddBoxTrigger(slot, new Vector3(0f, 1f, 0f), new Vector3(1.6f, 2f, 1.6f));
 
-            TMPro.TextMeshPro text = UiFactory.CreateWorldText("Label", slot.transform, new Vector3(0f, 0.05f, -1.05f), label, 2.4f, Color.white);
-            text.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            UiFactory.CreateWorldLabel("Label", slot.transform, new Vector3(0f, 0.3f, -1.05f), label, 2.4f, Color.white);
 
             GameObject pileGo = new GameObject("Pile");
             pileGo.transform.SetParent(slot.transform, false);
@@ -693,8 +798,7 @@ namespace KayipAda.EditorTools
             drop.SetParent(root.transform, false);
             drop.localPosition = new Vector3(0f, 1.1f, 1.8f);
 
-            TMPro.TextMeshPro label = UiFactory.CreateWorldText("Label", root.transform, new Vector3(0f, 3.9f, 2.2f), "PAZAR", 7f, UiFactory.Gold);
-            label.gameObject.AddComponent<Billboard>();
+            UiFactory.CreateWorldLabel("Label", root.transform, new Vector3(0f, 3.9f, 2.2f), "PAZAR", 7f, UiFactory.Gold);
 
             Market market = root.AddComponent<Market>();
             BuilderUtil.SetField(market, "config", config);
@@ -719,11 +823,16 @@ namespace KayipAda.EditorTools
             UiFactory.Size(fill, new Vector2(0f, -45f), new Vector2(225f, 225f));
             MakeRadial(fill);
 
+            // Para ikonu + fiyat yan yana, birlikte ortalı (fiyat büyük ve belirgin).
             Image coin = UiFactory.CreateImage("CoinIcon", c, ArtGenerator.LoadSprite(ArtGenerator.CoinIconPath), Color.white);
-            UiFactory.Size(coin, new Vector2(-52f, -45f), new Vector2(50f, 50f));
-            TMPro.TextMeshProUGUI price = UiFactory.CreateUIText("Price", c, "100", 60f, Color.white);
-            UiFactory.Size(price, new Vector2(20f, -45f), new Vector2(150f, 80f));
-            TMPro.TextMeshProUGUI title = UiFactory.CreateUIText("Name", c, "Alan", 40f, Color.white);
+            UiFactory.Size(coin, new Vector2(-62f, -45f), new Vector2(78f, 78f));
+            TMPro.TextMeshProUGUI price = UiFactory.CreateUIText("Price", c, "100", 86f, Color.white);
+            price.alignment = TMPro.TextAlignmentOptions.Left;
+            price.enableAutoSizing = true;
+            price.fontSizeMin = 50f;
+            price.fontSizeMax = 86f;
+            UiFactory.Size(price, new Vector2(48f, -45f), new Vector2(140f, 100f));
+            TMPro.TextMeshProUGUI title = UiFactory.CreateUIText("Name", c, "Alan", 44f, Color.white);
             UiFactory.Size(title, new Vector2(0f, 125f), new Vector2(400f, 60f));
 
             ProgressRing ring = canvas.gameObject.AddComponent<ProgressRing>();
@@ -751,8 +860,7 @@ namespace KayipAda.EditorTools
             fire.localPosition = new Vector3(2f, 0f, -0.9f);
             CreateModel(ModelCatalog.Campfire, fire);
 
-            TMPro.TextMeshPro label = UiFactory.CreateWorldText("Label", root.transform, new Vector3(0f, 3.4f, 0f), "KAMP", 5f, Color.white);
-            label.gameObject.AddComponent<Billboard>();
+            UiFactory.CreateWorldLabel("Label", root.transform, new Vector3(0f, 3.4f, 0f), "KAMP", 5f, Color.white);
             return Save(root, Folder + "/World/Camp.prefab");
         }
 

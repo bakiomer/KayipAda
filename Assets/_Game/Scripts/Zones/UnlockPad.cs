@@ -19,6 +19,7 @@ namespace KayipAda
         [SerializeField] private ProgressRing ring;
 
         public AreaDefinition Area => area;
+        public AreaDefinition RequiredArea => requiredArea;
 
         [Tooltip("Sonraki hedef olunca nabız gibi büyüyüp küçülen görsel (halka).")]
         [SerializeField] private Transform pulseVisual;

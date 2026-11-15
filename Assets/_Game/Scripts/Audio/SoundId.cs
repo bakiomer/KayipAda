@@ -1,28 +1,28 @@
 // SoundId.cs
 // Oyundaki ses türleri. Her türün sesleri SoundLibrary ayar dosyasında seçilir.
-// Yeni bir ses türü eklenince buraya ve SoundLibrary'ye (sahne kurma komutu) eklenir.
+// Sayılar SABİTTİR (ses kütüphanesi dosyası bunları sayı olarak saklar): yeni tür eklerken yeni bir sayı ver,
+// silinen bir türün sayısını tekrar kullanma.
 
 namespace KayipAda
 {
     public enum SoundId
     {
-        Collect,   // kaynak sırta eklendi
-        Chop,      // ağaca/kayaya vurma (toplama anı)
-        Sell,      // pazarda satış
-        Coin,      // açma karesine para akışı
-        Unlock,    // alan/bina/işçi açıldı
-        Button,    // arayüz tuşu
-        Footstep,  // adım
-        Drop,      // bina girişine bırakma
-        Produce,   // bina ürün çıkardı
-        Upgrade,   // geliştirme satın alındı
-        Build,     // gemiye malzeme teslim edildi
-        CannonFire,// top ateşlendi
-        Explosion, // gülle patladı
-        EnemyDie,  // düşman öldü
-        ShipHit,   // gemi hasar aldı
-        NightStart,// son gece başladı
-        Victory,   // kaçış
-        Mine       // kayaya vurma
+        Collect = 0,        // kaynak sırta eklendi
+        Chop = 1,           // ağaca vurma
+        Sell = 2,           // pazarda satış
+        Coin = 3,           // açma karesine para akışı
+        Unlock = 4,         // alan/bina/işçi açıldı
+        Button = 5,         // arayüz tuşu
+        Footstep = 6,       // adım
+        Drop = 7,           // bina girişine bırakma
+        Produce = 8,        // bina ürün çıkardı
+        Upgrade = 9,        // geliştirme satın alındı
+        Build = 10,         // gemiye malzeme teslim edildi
+        // 11-15: eski savunma sesleri (kaldırıldı, sayıları tekrar kullanma)
+        Victory = 16,       // kaçış
+        Mine = 17,          // kayaya vurma
+        StageComplete = 18, // gemi aşaması tamamlandı
+        Splash = 19,        // gemi suya indi
+        Firework = 20       // havai fişek
     }
 }

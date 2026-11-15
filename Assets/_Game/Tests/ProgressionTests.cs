@@ -1,5 +1,6 @@
 // ProgressionTests.cs
-// Bölüm B ve C testleri: geliştirme satın alma, gemi aşamaları, son gece düşmanları, topun ateş etmesi, kaçış ekranı.
+// İlerleme testleri: geliştirme satın alma, lif → halat/yelken bezi zinciri, gemi aşamaları ve kilitleri,
+// suya indirme töreni ve kaçış ekranı, hızlı test modu.
 
 using System.Collections;
 using NUnit.Framework;
@@ -50,6 +51,82 @@ namespace KayipAda.Tests
             Assert.IsFalse(PlayerController.InputBlocked);
         }
 
+        [UnityTest]
+        public IEnumerator Ship_EachStageUnlocksNextTargetAndCelebrates()
+        {
+            ShipBuilder ship = ShipBuilder.Instance;
+            Assert.IsNotNull(ship, "Gemi yok");
+            Assert.AreEqual(5, ship.Config.Stages.Length, "Gemi 5 aşamalı olmalı");
+            Teleport(ship.Delivery.transform.position + Vector3.back * 2.5f);
+            yield return new WaitForSeconds(1f);
+            Shot("C_gemi_asama_0");
+
+            for (int i = 0; i < ship.Config.Stages.Length; i++)
+            {
+                ShipConfig.Stage stage = ship.Config.Stages[i];
+                yield return CompleteStage(ship);
+                Assert.AreEqual(i + 1, ship.StageIndex, stage.Name + " bitince aşama ilerlemedi");
+                if (stage.UnlockOnComplete != null)
+                {
+                    Assert.IsTrue(AreaManager.Instance.IsUnlocked(stage.UnlockOnComplete), stage.Name + " bitince sonraki hedef açılmadı");
+                    yield return null;
+                    bool padShown = false;
+                    foreach (UnlockPad pad in Object.FindObjectsByType<UnlockPad>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                    {
+                        if (pad.RequiredArea == stage.UnlockOnComplete && pad.IsAvailable) padShown = true;
+                    }
+                    Assert.IsTrue(padShown, stage.Name + " sonrası yeni hedefin karesi görünmüyor");
+                }
+                if (i < ship.Config.Stages.Length - 1)
+                {
+                    Assert.IsTrue(CelebrationBanner.Instance != null && CelebrationBanner.Instance.IsShown, "Aşama kutlaması görünmedi");
+                    yield return new WaitForSeconds(1.6f);
+                    Shot("C_gemi_asama_" + (i + 1));
+                }
+            }
+            Assert.IsTrue(ship.IsComplete);
+        }
+
+        [UnityTest]
+        public IEnumerator FiberChain_RopeAndClothAreProduced()
+        {
+            AreaDefinition cove = PadArea("Pad Cove");
+            AreaManager.Instance.Unlock(cove);
+            AreaManager.Instance.Unlock(PadArea("Pad RopeWorkshop"));
+            AreaManager.Instance.Unlock(PadArea("Pad Loom"));
+            yield return new WaitForSeconds(1f);
+
+            // Oyuncu koydaki palmiyeden lif toplar.
+            ResourceNode fiberPalm = null;
+            foreach (ResourceNode n in Object.FindObjectsByType<ResourceNode>(FindObjectsSortMode.None))
+            {
+                if (n.name.StartsWith("Node_FiberPalm")) fiberPalm = n;
+            }
+            Assert.IsNotNull(fiberPalm, "Lif palmiyesi yok (Palmiye Koyu açılmadı mı?)");
+            Teleport(fiberPalm.GetStandPoint(fiberPalm.transform.position + Vector3.back * 3f));
+            yield return WaitFor(() => PlayerStack.Count >= 4, 6f);
+            Assert.GreaterOrEqual(PlayerStack.Count, 4, "Palmiyeden lif toplanmadı");
+            Shot("B_lif_topluyor");
+
+            ProcessingBuilding rope = null, cloth = null;
+            foreach (ProcessingBuilding b in Object.FindObjectsByType<ProcessingBuilding>(FindObjectsSortMode.None))
+            {
+                if (b.Type.Output.Id == "rope") rope = b;
+                if (b.Type.Output.Id == "cloth") cloth = b;
+            }
+            Assert.IsNotNull(rope, "Halat Atölyesi yok");
+            Assert.IsNotNull(cloth, "Dokuma Tezgahı yok");
+            for (int i = 0; i < rope.Type.InputAmount * 2; i++) rope.InputPile.TryAdd(rope.Type.Input.Spawn(rope.transform.position + Vector3.up));
+            for (int i = 0; i < cloth.Type.InputAmount * 2; i++) cloth.InputPile.TryAdd(cloth.Type.Input.Spawn(cloth.transform.position + Vector3.up));
+            yield return WaitFor(() => rope.OutputPile.Count >= 1 && cloth.OutputPile.Count >= 1,
+                                 Mathf.Max(rope.Type.ProcessTime, cloth.Type.ProcessTime) * 2f + 3f);
+            Assert.GreaterOrEqual(rope.OutputPile.Count, 1, "Halat üretilmedi");
+            Assert.GreaterOrEqual(cloth.OutputPile.Count, 1, "Yelken bezi üretilmedi");
+            Teleport(rope.transform.position + new Vector3(-1.5f, 0f, -3.5f));
+            yield return new WaitForSeconds(1.5f);
+            Shot("B_halat_dokuma");
+        }
+
         // Geminin şu anki aşamasını, gereken malzemeleri teslim ederek bitirir.
         private static IEnumerator CompleteStage(ShipBuilder ship)
         {
@@ -64,80 +141,31 @@ namespace KayipAda.Tests
             yield return null;
         }
 
-        [UnityTest]
-        public IEnumerator Ship_StagesAdvance()
-        {
-            ShipBuilder ship = ShipBuilder.Instance;
-            Assert.IsNotNull(ship, "Gemi yok");
-            Assert.AreEqual(0, ship.StageIndex);
-            yield return CompleteStage(ship);
-            Assert.AreEqual(1, ship.StageIndex, "Omurga bitince aşama ilerlemedi");
-            Assert.IsTrue(AreaManager.Instance.IsUnlocked(ship.Config.KeelDoneArea), "Omurga bitince toplar açılmaya hazır olmalı");
-            yield return new WaitForSeconds(2f);
-            Teleport(ship.Delivery.transform.position + Vector3.back * 2f);
-            yield return new WaitForSeconds(1.5f);
-            Shot("C_gemi_omurga");
-
-            yield return CompleteStage(ship);
-            yield return new WaitForSeconds(3f);
-            Shot("C_gemi_govde");
-            Assert.AreEqual(2, ship.StageIndex);
-        }
-
         private static IEnumerator FinishShip(ShipBuilder ship)
         {
             while (!ship.IsComplete) yield return CompleteStage(ship);
         }
 
         [UnityTest]
-        public IEnumerator Night_EnemiesComeAndCannonFires()
+        public IEnumerator LaunchCeremony_ShipSlidesIntoSeaAndEscapeAppears()
         {
             ShipBuilder ship = ShipBuilder.Instance;
-            Teleport(ship.Delivery.transform.position + Vector3.back * 3f);
-            foreach (UnlockPad pad in Object.FindObjectsByType<UnlockPad>(FindObjectsInactive.Include, FindObjectsSortMode.None))
-            {
-                if (pad.name.StartsWith("Pad Cannon")) AreaManager.Instance.Unlock(pad.Area);
-            }
-            yield return FinishShip(ship);
-            Assert.IsTrue(ship.IsComplete, "Gemi bitmedi");
-
-            NightDefense night = NightDefense.Instance;
-            yield return WaitFor(() => Enemy.Alive.Count > 0, ship.Config.NightStartDelay + 6f);
-            Assert.Greater(Enemy.Alive.Count, 0, "Son gecede düşman gelmedi");
-            Assert.AreEqual(NightDefense.Phase.Night, night.State);
-
-            Cannon cannon = FindAny<Cannon>();
-            Assert.IsNotNull(cannon, "Top yok");
-            int ammo = cannon.Ammo;
-            Time.timeScale = 3f;
-            yield return WaitFor(() => cannon.Ammo < ammo, 40f);
-            Time.timeScale = 1f;
-            Assert.Less(cannon.Ammo, ammo, "Top ateş etmedi");
-            Shot("C_son_gece");
-            Vector3 dock = ship.Delivery.transform.position;
-            ScreenshotUtil.CaptureOverview(ShotPrefix + "_C_son_gece_genel", dock + new Vector3(0f, 26f, -16f), new Vector3(55f, 0f, 0f), 45f);
-        }
-
-        [UnityTest]
-        public IEnumerator Escape_ScreenAppearsAfterWaves()
-        {
-            ShipBuilder ship = ShipBuilder.Instance;
-            yield return FinishShip(ship);
-            NightDefense night = NightDefense.Instance;
+            LaunchCeremony ceremony = LaunchCeremony.Instance;
             EscapePanel escape = FindAny<EscapePanel>();
-            Assert.IsNotNull(escape);
+            Assert.IsNotNull(ceremony, "Tören yok");
+            Assert.IsNotNull(escape, "Kaçış ekranı yok");
+            AreaManager.Instance.Unlock(PadArea("Pad Lumberjack"));
+            yield return new WaitForSeconds(1f);
 
-            Time.timeScale = 4f;
-            float end = Time.time + 400f;
-            while (!escape.IsShown && Time.time < end)
-            {
-                // Testte toplar yerine düşmanları doğrudan yen.
-                for (int i = Enemy.Alive.Count - 1; i >= 0; i--) Enemy.Alive[i].Hit(1000);
-                yield return null;
-            }
-            Time.timeScale = 1f;
-            Assert.AreEqual(NightDefense.Phase.Won, night.State, "Dalgalar bitmedi");
+            Vector3 shipStart = ship.Model.position;
+            yield return FinishShip(ship);
+            Assert.IsTrue(ceremony.IsRunning, "Gemi bitince tören başlamadı");
+            yield return new WaitForSeconds(ship.Config.GatherTime + ship.Config.SlideDuration * 0.75f);
+            Shot("C_toren_suya_iniyor");
+            yield return WaitFor(() => escape.IsShown, ship.Config.SlideDuration + ship.Config.SailDuration + 5f);
             Assert.IsTrue(escape.IsShown, "Kaçış ekranı açılmadı");
+            Assert.Greater(Vector3.Distance(ship.Model.position, shipStart), ship.Config.SlideDistance * 0.9f, "Gemi suya kaymadı");
+            Assert.Less(ship.Model.position.y, shipStart.y, "Gemi suya inmedi");
             yield return new WaitForSeconds(0.8f);
             Shot("C_kacis_ekrani");
         }
@@ -148,6 +176,8 @@ namespace KayipAda.Tests
             GameConfig config = (GameConfig)typeof(AreaManager)
                 .GetField("config", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
                 .GetValue(AreaManager.Instance);
+            bool original = config.QuickTestMode; // kullanıcı modu açık bırakmış olabilir
+            config.EditorSetQuickTest(false);
             AreaDefinition rocky = PadArea("Pad Rocky");
             int normalPrice = AreaManager.Instance.PriceOf(rocky);
             ShipConfig.Requirement keel = ShipBuilder.Instance.Config.Stages[0].Requirements[0];
@@ -162,23 +192,8 @@ namespace KayipAda.Tests
                 config.EditorSetQuickTest(false);
             }
             Assert.AreEqual(normalPrice, AreaManager.Instance.PriceOf(rocky), "Kapatınca normal fiyata dönmedi");
+            config.EditorSetQuickTest(original);
             yield return null;
-        }
-
-        [UnityTest]
-        public IEnumerator Defeat_RetryKeepsProgress()
-        {
-            ShipBuilder ship = ShipBuilder.Instance;
-            yield return FinishShip(ship);
-            NightDefense night = NightDefense.Instance;
-            yield return WaitFor(() => night.State == NightDefense.Phase.Night, 10f);
-            night.DamageShip(100000f);
-            Assert.AreEqual(NightDefense.Phase.Lost, night.State, "Gemi batınca kaybedilmedi");
-            yield return new WaitForSeconds(0.6f);
-            Shot("C_tekrar_dene");
-            night.Retry();
-            Assert.AreEqual(NightDefense.Phase.Night, night.State, "Tekrar dene geceyi baştan başlatmadı");
-            Assert.IsTrue(ship.IsComplete, "Tekrar denede gemi ilerlemesi silindi");
         }
     }
 }

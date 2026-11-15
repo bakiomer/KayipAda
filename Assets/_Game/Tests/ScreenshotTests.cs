@@ -45,6 +45,12 @@ namespace KayipAda.Tests
             Teleport(new Vector3(0f, 0f, 18f));
             yield return new WaitForSeconds(1.5f);
             Shot("6_iskele");
+            Teleport(new Vector3(11f, 0f, -3.5f));
+            yield return new WaitForSeconds(1.5f);
+            Shot("6b_palmiye_koyu");
+            Teleport(new Vector3(10.5f, 0f, 7f));
+            yield return new WaitForSeconds(1.5f);
+            Shot("6c_halat_dokuma");
 
             ScreenshotUtil.CaptureOverview(ShotPrefix + "_7_yukaridan", new Vector3(0f, 95f, 3f), new Vector3(90f, 0f, 0f), 40f);
             ScreenshotUtil.CaptureOverview(ShotPrefix + "_8_egik", new Vector3(0f, 45f, -42f), new Vector3(42f, 0f, 0f), 45f);

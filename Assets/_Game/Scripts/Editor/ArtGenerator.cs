@@ -20,6 +20,7 @@ namespace KayipAda.EditorTools
         public const string RingPath = GeneratedFolder + "/Ring.png";
         public const string SoftCirclePath = GeneratedFolder + "/SoftCircle.png";
         public const string RoundedRectPath = GeneratedFolder + "/RoundedRect.png";
+        public const string LabelBoxPath = GeneratedFolder + "/LabelBox.png"; // dünya yazılarının arkasındaki kutu
         public const string PanelShadowPath = GeneratedFolder + "/PanelShadow.png";
         public const string CoinIconPath = GeneratedFolder + "/CoinIcon.png";
         public const string SquarePath = GeneratedFolder + "/Square.png";
@@ -28,6 +29,7 @@ namespace KayipAda.EditorTools
         public const string ShoreTexturePath = GeneratedFolder + "/ShoreDistance.png";
         public const string IslandMeshPath = GeneratedFolder + "/IslandMesh.asset";
         public const string WaterMeshPath = GeneratedFolder + "/WaterMesh.asset";
+        public const string RopeMeshPath = GeneratedFolder + "/RopeMesh.asset";
 
         public const float WaterLevel = -0.12f;
         public const float WaterSize = 150f;
@@ -52,6 +54,7 @@ namespace KayipAda.EditorTools
             MakeSprite(RoundedRectPath, 64, (x, y, s) => Mathf.Clamp01(0.5f - RoundedBox(x, y, s, 28f)), 30);
             MakeSprite(PanelShadowPath, 128, (x, y, s) => (1f - Mathf.SmoothStep(-14f, 16f, RoundedBox(x, y, s, 44f) + 14f)) * 0.55f, 56);
             MakeSprite(SquarePath, 16, (x, y, s) => 1f, 0);
+            MakeSprite(LabelBoxPath, 64, (x, y, s) => Mathf.Clamp01(0.5f - RoundedBox(x, y, s, 28f)), 30, 220f);
             MakeCoinIcon(CoinIconPath, 128);
             MakeSprite(ArrowPath, 128, ArrowAlpha, 0);
         }
@@ -87,7 +90,7 @@ namespace KayipAda.EditorTools
             return Vector2.Max(q, Vector2.zero).magnitude + Mathf.Min(Mathf.Max(q.x, q.y), 0f) - radius;
         }
 
-        private static void MakeSprite(string path, int size, System.Func<int, int, int, float> alpha, int border)
+        private static void MakeSprite(string path, int size, System.Func<int, int, int, float> alpha, int border, float pixelsPerUnit = 100f)
         {
             if (!System.IO.File.Exists(path))
             {
@@ -99,7 +102,7 @@ namespace KayipAda.EditorTools
                 tex.SetPixels(pixels);
                 BuilderUtil.WritePng(tex, path);
             }
-            ConfigureSprite(path, border);
+            ConfigureSprite(path, border, pixelsPerUnit);
         }
 
         private static void MakeCoinIcon(string path, int size)
@@ -131,7 +134,7 @@ namespace KayipAda.EditorTools
             ConfigureSprite(path, 0);
         }
 
-        private static void ConfigureSprite(string path, int border)
+        private static void ConfigureSprite(string path, int border, float pixelsPerUnit = 100f)
         {
             TextureImporter importer = (TextureImporter)AssetImporter.GetAtPath(path);
             if (importer == null) return;
@@ -143,6 +146,11 @@ namespace KayipAda.EditorTools
             importer.filterMode = FilterMode.Bilinear;
             importer.textureCompression = TextureImporterCompression.Uncompressed;
             importer.spriteBorder = new Vector4(border, border, border, border);
+            importer.spritePixelsPerUnit = pixelsPerUnit;
+            TextureImporterSettings settings = new TextureImporterSettings();
+            importer.ReadTextureSettings(settings);
+            settings.spriteMeshType = SpriteMeshType.FullRect; // dokuz parçalı (sliced) çizim için
+            importer.SetTextureSettings(settings);
             importer.SaveAndReimport();
         }
 
@@ -227,8 +235,12 @@ namespace KayipAda.EditorTools
             Rect rect = IslandTextureRect(island);
             Color wetSand = new Color(0.80f, 0.69f, 0.49f);
             Color sand = new Color(0.97f, 0.88f, 0.66f);
-            Color grassA = new Color(0.45f, 0.73f, 0.31f);
-            Color grassB = new Color(0.55f, 0.80f, 0.36f);
+            // Yumuşak, doğal çimen tonları; büyük açık-koyu lekeler ve küçük kuru (sarımsı) alanlar.
+            Color grassA = new Color(0.47f, 0.64f, 0.34f);
+            Color grassB = new Color(0.56f, 0.71f, 0.40f);
+            Color grassDark = new Color(0.39f, 0.56f, 0.30f);
+            Color grassLight = new Color(0.64f, 0.75f, 0.45f);
+            Color grassDry = new Color(0.70f, 0.72f, 0.45f);
             Color dirt = new Color(0.88f, 0.76f, 0.54f);
 
             Texture2D tex = new Texture2D(size, size, TextureFormat.RGB24, false);
@@ -249,15 +261,21 @@ namespace KayipAda.EditorTools
                     float edge = -(MapLayout.SandWidth + (n1 - 0.5f) * 2.4f);
                     float grass = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(edge + 0.5f, edge - 0.5f, sd));
                     Color grassColor = Color.Lerp(grassA, grassB, n2);
+                    float patch = Fbm(p * 0.09f + new Vector2(41f, -13f));
+                    grassColor = Color.Lerp(grassColor, grassDark, Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.45f, 0.25f, patch)) * 0.7f);
+                    grassColor = Color.Lerp(grassColor, grassLight, Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.55f, 0.75f, patch)) * 0.6f);
+                    float dry = Fbm(p * 0.21f + new Vector2(-7f, 29f));
+                    grassColor = Color.Lerp(grassColor, grassDry, Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.62f, 0.78f, dry)) * 0.45f);
                     grassColor = Color.Lerp(grassColor, MapLayout.RockyTint * (0.9f + 0.2f * n2), RegionWeight(p, MapLayout.RockyRect) * 0.75f);
                     grassColor = Color.Lerp(grassColor, MapLayout.OrchardTint * (0.92f + 0.16f * n2), RegionWeight(p, MapLayout.OrchardRect) * 0.6f);
 
                     Color c = Color.Lerp(sandColor, grassColor, grass);
 
                     // Yürüme yolları: açık renkli toprak, hafif dalgalı kenar.
-                    float dp = MapLayout.DistanceToPaths(p) + (n2 - 0.5f) * 0.35f;
-                    float halfWidth = MapLayout.PathWidth * 0.5f;
-                    float path = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(halfWidth + 0.2f, halfWidth - 0.2f, dp));
+                    // Yollar: kıvrımlı, genişliği hafifçe değişen, kenarı yumuşak geçişli.
+                    float dp = MapLayout.DistanceToPaths(p) + (n2 - 0.5f) * 0.4f;
+                    float halfWidth = MapLayout.PathWidth * 0.5f * (0.9f + 0.25f * n1);
+                    float path = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(halfWidth + 0.45f, halfWidth - 0.35f, dp));
                     c = Color.Lerp(c, dirt * (0.96f + 0.08f * n2), path * Mathf.Lerp(0.35f, 1f, grass));
 
                     // Su altındaki kum koyulaşır.
@@ -287,6 +305,46 @@ namespace KayipAda.EditorTools
             float dx = Mathf.Max(r.xMin - p.x, 0f, p.x - r.xMax);
             float dz = Mathf.Max(r.yMin - p.y, 0f, p.y - r.yMax);
             return 1f - Mathf.Clamp01(new Vector2(dx, dz).magnitude / 1.5f);
+        }
+
+        // ================================================================ Halat
+
+        // Low-poly halat halkası (simit): pakette halat modeli olmadığı için kodla üretilir. Taban y=0'da.
+        public static Mesh BuildRopeMesh()
+        {
+            const int ring = 14, tube = 6;
+            const float radius = 0.24f, thickness = 0.085f;
+            Vector3[] vertices = new Vector3[ring * tube];
+            int[] tris = new int[ring * tube * 6];
+            for (int i = 0; i < ring; i++)
+            {
+                float a = i * Mathf.PI * 2f / ring;
+                Vector3 center = new Vector3(Mathf.Cos(a) * radius, 0f, Mathf.Sin(a) * radius);
+                for (int j = 0; j < tube; j++)
+                {
+                    float b = j * Mathf.PI * 2f / tube;
+                    Vector3 outward = new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a));
+                    vertices[i * tube + j] = center + outward * (Mathf.Cos(b) * thickness) + Vector3.up * (Mathf.Sin(b) * thickness + thickness);
+                }
+            }
+            int t = 0;
+            for (int i = 0; i < ring; i++)
+            {
+                int ni = (i + 1) % ring;
+                for (int j = 0; j < tube; j++)
+                {
+                    int nj = (j + 1) % tube;
+                    int a0 = i * tube + j, a1 = ni * tube + j, b0 = i * tube + nj, b1 = ni * tube + nj;
+                    tris[t++] = a0; tris[t++] = b0; tris[t++] = a1;
+                    tris[t++] = a1; tris[t++] = b0; tris[t++] = b1;
+                }
+            }
+            Mesh mesh = new Mesh { name = "RopeMesh" };
+            mesh.vertices = vertices;
+            mesh.triangles = tris;
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            return BuilderUtil.SaveAsset(mesh, RopeMeshPath);
         }
 
         // ================================================================ Su

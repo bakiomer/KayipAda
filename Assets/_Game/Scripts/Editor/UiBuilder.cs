@@ -1,6 +1,6 @@
 // UiBuilder.cs
-// Sahne kurma komutunun ekran arayüzü parçaları: geliştirme paneli (alttan açılır), gece arayüzü
-// (gemi can çubuğu, büyük duyuru yazısı, "Tekrar dene" paneli) ve kaçış ekranı. Hepsi Canvas'ın içine kurulur.
+// Sahne kurma komutunun ekran arayüzü parçaları: geliştirme paneli (alttan açılır), "Aşama tamamlandı!"
+// kutlama yazısı ve kaçış ekranı. Hepsi Canvas'ın içine kurulur.
 
 using System.Collections.Generic;
 using TMPro;
@@ -10,16 +10,6 @@ using UnityEngine.UI;
 
 namespace KayipAda.EditorTools
 {
-    public class NightUi
-    {
-        public GameObject HealthBar;
-        public Image HealthFill;
-        public TMP_Text Banner;
-        public GameObject DefeatPanel;
-        public Button RetryButton;
-        public EscapePanel Escape;
-    }
-
     public static class UiBuilder
     {
         public static readonly Color PanelColor = new Color(0.10f, 0.13f, 0.19f, 0.96f);
@@ -136,59 +126,49 @@ namespace KayipAda.EditorTools
             return component;
         }
 
-        // ---------------------------------------------------------------- Gece arayüzü ve kaçış
+        // ---------------------------------------------------------------- Kutlama ve kaçış
 
-        public static NightUi CreateNightUi()
+        // Ekranın üst-ortasında yarı saydam kart: büyük altın başlık + beyaz alt yazı.
+        // Test Menüsü (sadece Editor ve geliştirme sürümü): sol üstte "TEST" butonu, butonlar oyunda kodla kurulur.
+        // Arayüzün en üstünde olsun diye SafeArea'nın son çocuğu.
+        public static DevMenu CreateDevMenu(GameConfig config, ResourceType[] resources)
         {
-            NightUi ui = new NightUi();
-            Transform safe = Safe;
-
-            // Gemi can çubuğu (para panelinin altında)
-            GameObject bar = new GameObject("ShipHealth", typeof(RectTransform));
-            bar.transform.SetParent(safe, false);
-            Anchor((RectTransform)bar.transform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -190f), new Vector2(620f, 64f));
-            Image back = UiFactory.CreateImage("Back", bar.transform, ArtGenerator.LoadSprite(ArtGenerator.RoundedRectPath), new Color(0f, 0f, 0f, 0.6f));
-            back.type = Image.Type.Sliced;
-            UiFactory.Stretch(back.rectTransform);
-            Image fill = UiFactory.CreateImage("Fill", bar.transform, ArtGenerator.LoadSprite(ArtGenerator.SquarePath), new Color(0.9f, 0.25f, 0.25f));
-            fill.type = Image.Type.Filled;
-            fill.fillMethod = Image.FillMethod.Horizontal;
-            fill.fillAmount = 1f;
-            UiFactory.Stretch(fill.rectTransform);
-            fill.rectTransform.offsetMin = new Vector2(10f, 10f);
-            fill.rectTransform.offsetMax = new Vector2(-10f, -10f);
-            TextMeshProUGUI barLabel = UiFactory.CreateUIText("Label", bar.transform, "GEMİ", 38f, Color.white);
-            UiFactory.Stretch(barLabel.rectTransform);
-            ui.HealthBar = bar;
-            ui.HealthFill = fill;
-
-            // Büyük duyuru yazısı
-            TextMeshProUGUI banner = UiFactory.CreateUIText("Banner", safe, "", 84f, UiFactory.Gold);
-            Anchor(banner.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 380f), new Vector2(1000f, 260f));
-            banner.textWrappingMode = TextWrappingModes.Normal;
-            ui.Banner = banner;
-
-            // Kaybetme paneli
-            GameObject defeat = new GameObject("DefeatPanel", typeof(RectTransform));
-            defeat.transform.SetParent(safe, false);
-            UiFactory.Stretch((RectTransform)defeat.transform);
-            Image dim = UiFactory.CreateImage("Dim", defeat.transform, null, new Color(0f, 0f, 0f, 0.6f));
-            dim.raycastTarget = true;
-            UiFactory.Stretch(dim.rectTransform);
-            Image card = UiFactory.CreateImage("Card", defeat.transform, ArtGenerator.LoadSprite(ArtGenerator.RoundedRectPath), PanelColor);
-            card.type = Image.Type.Sliced;
-            UiFactory.Size(card, Vector2.zero, new Vector2(860f, 620f));
-            TextMeshProUGUI title = UiFactory.CreateUIText("Title", card.transform, "Gemi ağır hasar aldı!", 60f, new Color(1f, 0.55f, 0.45f));
-            UiFactory.Size(title, new Vector2(0f, 180f), new Vector2(800f, 100f));
-            TextMeshProUGUI info = UiFactory.CreateUIText("Info", card.transform, "Merak etme, ilerlemen korunuyor.\nToplara taş taşı ve tekrar dene!", 38f, Color.white);
-            info.textWrappingMode = TextWrappingModes.Normal;
-            UiFactory.Size(info, new Vector2(0f, 30f), new Vector2(760f, 160f));
-            ui.RetryButton = CreateButton("Retry", card.transform, "TEKRAR DENE", new Vector2(0f, -180f), new Vector2(520f, 130f), Green, 54f);
-            ui.DefeatPanel = defeat;
-
-            ui.Escape = CreateEscapePanel(safe);
-            return ui;
+            GameObject go = new GameObject("DevMenu", typeof(RectTransform));
+            go.transform.SetParent(Safe, false);
+            go.transform.SetAsLastSibling();
+            UiFactory.Stretch((RectTransform)go.transform);
+            DevMenu menu = go.AddComponent<DevMenu>();
+            BuilderUtil.SetField(menu, "config", config);
+            BuilderUtil.SetArray(menu, "resources", resources);
+            BuilderUtil.SetField(menu, "font", UiFactory.Font);
+            BuilderUtil.SetField(menu, "fontMaterial", UiFactory.OutlineMaterial);
+            BuilderUtil.SetField(menu, "roundedSprite", ArtGenerator.LoadSprite(ArtGenerator.RoundedRectPath));
+            return menu;
         }
+
+        public static CelebrationBanner CreateCelebrationBanner()
+        {
+            GameObject holder = new GameObject("CelebrationBanner", typeof(RectTransform));
+            holder.transform.SetParent(Safe, false);
+            UiFactory.Stretch((RectTransform)holder.transform);
+
+            Image card = UiFactory.CreateImage("Root", holder.transform, ArtGenerator.LoadSprite(ArtGenerator.RoundedRectPath), new Color(0.08f, 0.1f, 0.16f, 0.82f));
+            card.type = Image.Type.Sliced;
+            UiFactory.Size(card, new Vector2(0f, 420f), new Vector2(940f, 260f));
+            TextMeshProUGUI title = UiFactory.CreateUIText("Title", card.transform, "Aşama tamamlandı!", 72f, UiFactory.Gold);
+            UiFactory.Size(title, new Vector2(0f, 45f), new Vector2(900f, 110f));
+            TextMeshProUGUI subtitle = UiFactory.CreateUIText("Subtitle", card.transform, "", 42f, Color.white);
+            subtitle.textWrappingMode = TextWrappingModes.Normal;
+            UiFactory.Size(subtitle, new Vector2(0f, -62f), new Vector2(880f, 90f));
+
+            CelebrationBanner banner = holder.AddComponent<CelebrationBanner>();
+            BuilderUtil.SetField(banner, "root", card.gameObject);
+            BuilderUtil.SetField(banner, "title", title);
+            BuilderUtil.SetField(banner, "subtitle", subtitle);
+            return banner;
+        }
+
+        public static EscapePanel CreateEscapePanel() => CreateEscapePanel(Safe);
 
         private static EscapePanel CreateEscapePanel(Transform safe)
         {

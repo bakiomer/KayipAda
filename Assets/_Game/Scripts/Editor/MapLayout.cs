@@ -12,6 +12,7 @@
 //  KAMP  [oduncu kare]      oyuncu      [taşıyıcı kare]    z -6
 //            PAZAR                    BIÇKIHANE           z -12
 
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace KayipAda.EditorTools
@@ -20,7 +21,7 @@ namespace KayipAda.EditorTools
     {
         // Ada (elips + kıyı dalgaları, IslandShape)
         public static readonly Vector2 IslandCenter = new Vector2(0f, 3f);
-        public static readonly Vector2 IslandRadius = new Vector2(17f, 22f);
+        public static readonly Vector2 IslandRadius = new Vector2(20f, 24f);
         public const float SandWidth = 3.4f;     // kıyıdan içeri kum şeridi
         public const float PathWidth = 1.7f;
 
@@ -37,23 +38,34 @@ namespace KayipAda.EditorTools
 
         // Kayalık (kuzeybatı) ve Meyve Bahçesi (kuzeydoğu): XZ dikdörtgenleri
         public static readonly Rect RockyRect = new Rect(-11f, 6f, 9f, 9f);
-        public static readonly Rect OrchardRect = new Rect(2f, 6f, 9f, 9f);
+        public static readonly Rect OrchardRect = new Rect(2f, 6f, 7.5f, 9f);
         public static readonly Vector3 RockyPad = new Vector3(-6.5f, 0f, 4.4f);
-        public static readonly Vector3 OrchardPad = new Vector3(6.5f, 0f, 4.4f);
+        public static readonly Vector3 OrchardPad = new Vector3(5.75f, 0f, 4.4f);
         public static readonly Vector3[] Rocks = { new Vector3(-9f, 0f, 8.4f), new Vector3(-4.3f, 0f, 8.4f), new Vector3(-9.3f, 0f, 12.6f) };
         public static readonly Vector3 Workshop = new Vector3(-5f, 0f, 12.6f);
-        public static readonly Vector3[] FruitTrees = { new Vector3(4.5f, 0f, 8.6f), new Vector3(9f, 0f, 8.6f), new Vector3(6.8f, 0f, 12.8f) };
+        public static readonly Vector3[] FruitTrees = { new Vector3(4f, 0f, 8.6f), new Vector3(8f, 0f, 8.6f), new Vector3(6f, 0f, 12.8f) };
+
+        // Palmiye Koyu (doğu): lif veren palmiyeler. Kuzeyinde Halat Atölyesi ve Dokuma Tezgahı.
+        public static readonly Rect CoveRect = new Rect(10.5f, -6f, 5f, 8f);
+        public static readonly Vector3 CovePad = new Vector3(9.2f, 0f, -2f);
+        public static readonly Vector3[] FiberPalms = { new Vector3(12f, 0f, -4.3f), new Vector3(14.3f, 0f, -1.6f), new Vector3(12f, 0f, 0.8f) };
+        public static readonly Vector3 RopeWorkshop = new Vector3(13.2f, 0f, 6f);
+        public static readonly Vector3 Loom = new Vector3(12.6f, 0f, 12f);
+        public static readonly Vector3 FiberWorkerPad = new Vector3(8.6f, 0f, 2.4f);
 
         // Kampın yanındaki geliştirme tezgahı
         public static readonly Vector3 UpgradeStation = new Vector3(-8f, 0f, -2.2f);
 
-        // Tersane (iskele başlangıcına göre): gemi denizde, teslim alanı ve toplar karada.
-        public static readonly Vector3 ShipOffset = new Vector3(7f, 0f, 7f);
-        public static readonly Vector3 DeliveryOffset = new Vector3(3.6f, 0f, -2f);
-        public static readonly Vector3[] CannonOffsets = { new Vector3(-5f, 0f, -3.5f), new Vector3(0.3f, 0f, -6.5f), new Vector3(7.2f, 0f, -5.5f) };
+        // Tersane: gemi iskelenin doğusunda kumsalda, kızağın üstünde; pruvası denize bakar.
+        public const float ShipX = 6.5f;
+        public const float ShipInland = 2.2f;   // geminin ortası kıyıdan bu kadar içeride
+        public static readonly Vector3 DeliveryFromShip = new Vector3(-3.8f, 0f, -1.2f);
         public static readonly Vector3 WreckOffset = new Vector3(-10f, 0f, 3f);
-        // Düşmanların çıktığı kıyı noktaları (ada şeklinin açısı, derece; 90 = kuzey ucu)
-        public static readonly float[] EnemySpawnAngles = { 28f, 45f, 135f, 152f };
+
+        // Ağaçların doğal çeşitliliği: en fazla eğim (derece), boy farkı (0.1 = ±%10), rastgele tohum.
+        public const float TreeTiltMax = 8f;
+        public const float TreeSizeJitter = 0.1f;
+        public const int TreeSeed = 4242;
 
         // Bina karesi binanın neresinde durur (binanın köküne göre)
         public static readonly Vector3 BuildingPadOffset = new Vector3(0f, 0f, -0.6f);
@@ -66,7 +78,9 @@ namespace KayipAda.EditorTools
             new[] { new Vector2(0f, -9f), new Vector2(-5f, -10f) },                                  // pazar
             new[] { new Vector2(0f, -9f), new Vector2(5f, -10.5f) },                                 // bıçkıhane
             new[] { new Vector2(0f, 4.4f), new Vector2(-6.5f, 4.4f), new Vector2(-6.5f, 10.5f) },    // kayalık
-            new[] { new Vector2(0f, 4.4f), new Vector2(6.5f, 4.4f), new Vector2(6.5f, 10.5f) },      // meyve bahçesi
+            new[] { new Vector2(0f, 4.4f), new Vector2(5.75f, 4.4f), new Vector2(5.75f, 10.5f) },    // meyve bahçesi
+            new[] { new Vector2(6.5f, -6.2f), new Vector2(9.2f, -2f) },                              // palmiye koyu
+            new[] { new Vector2(5.75f, 4.4f), new Vector2(9.9f, 3.3f), new Vector2(9.9f, 11.5f) },   // halat ve dokuma
             new[] { new Vector2(0f, -6f), new Vector2(-6.5f, -6.2f), new Vector2(-10f, -5.6f) },     // kamp
             new[] { new Vector2(0f, -6f), new Vector2(6.5f, -6.2f) }
         };
@@ -82,12 +96,81 @@ namespace KayipAda.EditorTools
             return new Vector3(coast.x, 0f, coast.y - 2.2f);
         }
 
-        // Yol çizgisine en yakın uzaklık (metre).
+        // Yolların kıvrımı: en fazla sapma (metre) ve dalga sıklığı (radyan/metre).
+        public const float PathWiggle = 0.45f;
+        public const float PathWiggleFrequency = 0.35f;
+
+        private static Vector2[][] curvedPaths;
+        private static Rect[] curvedBounds;
+
+        // Yolların yumuşatılmış, hafif kıvrımlı hali (cetvel gibi düz değil). Köşeler yuvarlanır, uzun düz
+        // parçalar hafifçe kıvrılır; parçaların uçları yerinde kalır (yollar birbirine bağlı kalır).
+        public static Vector2[][] CurvedPaths
+        {
+            get
+            {
+                if (curvedPaths == null)
+                {
+                    curvedPaths = BuildCurvedPaths();
+                    curvedBounds = new Rect[curvedPaths.Length];
+                    for (int k = 0; k < curvedPaths.Length; k++)
+                    {
+                        Vector2 min = curvedPaths[k][0], max = min;
+                        foreach (Vector2 v in curvedPaths[k]) { min = Vector2.Min(min, v); max = Vector2.Max(max, v); }
+                        curvedBounds[k] = Rect.MinMaxRect(min.x, min.y, max.x, max.y);
+                    }
+                }
+                return curvedPaths;
+            }
+        }
+
+        private static Vector2[][] BuildCurvedPaths()
+        {
+            Vector2[][] result = new Vector2[Paths.Length][];
+            for (int k = 0; k < Paths.Length; k++)
+            {
+                Vector2[] line = Paths[k];
+                List<Vector2> points = new List<Vector2>();
+                float travelled = 0f;
+                for (int i = 0; i < line.Length - 1; i++)
+                {
+                    Vector2 p0 = i > 0 ? line[i - 1] : line[i];
+                    Vector2 a = line[i], b = line[i + 1];
+                    Vector2 p3 = i + 2 < line.Length ? line[i + 2] : b;
+                    float length = Vector2.Distance(a, b);
+                    int steps = Mathf.Max(4, Mathf.CeilToInt(length / 0.5f));
+                    Vector2 normal = new Vector2(-(b - a).y, (b - a).x).normalized;
+                    for (int s = 0; s < steps; s++)
+                    {
+                        float t = s / (float)steps;
+                        float wiggle = Mathf.Sin(t * Mathf.PI) * Mathf.Sin((travelled + t * length) * PathWiggleFrequency + k * 1.7f);
+                        points.Add(CatmullRom(p0, a, b, p3, t) + normal * wiggle * PathWiggle);
+                    }
+                    travelled += length;
+                }
+                points.Add(line[line.Length - 1]);
+                result[k] = points.ToArray();
+            }
+            return result;
+        }
+
+        private static Vector2 CatmullRom(Vector2 p0, Vector2 p1, Vector2 p2, Vector2 p3, float t)
+        {
+            float t2 = t * t, t3 = t2 * t;
+            return 0.5f * (2f * p1 + (p2 - p0) * t + (2f * p0 - 5f * p1 + 4f * p2 - p3) * t2 + (3f * p1 - p0 - 3f * p2 + p3) * t3);
+        }
+
+        // Yol çizgisine (kıvrımlı hali) en yakın uzaklık (metre).
         public static float DistanceToPaths(Vector2 p)
         {
             float best = float.MaxValue;
-            foreach (Vector2[] line in Paths)
+            Vector2[][] lines = CurvedPaths;
+            for (int k = 0; k < lines.Length; k++)
             {
+                Vector2[] line = lines[k];
+                Rect box = curvedBounds[k];
+                float bx = Mathf.Max(box.xMin - p.x, 0f, p.x - box.xMax), bz = Mathf.Max(box.yMin - p.y, 0f, p.y - box.yMax);
+                if (bx * bx + bz * bz >= best * best) continue; // bu yol zaten daha uzak (hızlı eleme)
                 for (int i = 0; i < line.Length - 1; i++)
                 {
                     best = Mathf.Min(best, DistanceToSegment(p, line[i], line[i + 1]));

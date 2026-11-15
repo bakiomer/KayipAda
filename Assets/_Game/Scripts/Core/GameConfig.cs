@@ -56,7 +56,7 @@ namespace KayipAda
 
         [field: Header("Kamera")]
         [field: Tooltip("Kameranın aşağı bakma açısı (derece). 50 civarı: idle arcade görünümü.")]
-        [field: SerializeField, Range(20f, 89f)] public float CameraPitch { get; private set; } = 50f;
+        [field: SerializeField, Range(20f, 89f)] public float CameraPitch { get; private set; } = 45f;
 
         [field: Tooltip("Kameranın yatay dönüşü (derece). 0 = kamera adanın güneyinden kuzeye bakar.")]
         [field: SerializeField] public float CameraYaw { get; private set; } = 0f;
@@ -68,7 +68,7 @@ namespace KayipAda
         [field: SerializeField, Min(1f)] public float CameraDistance { get; private set; } = 34f;
 
         [field: Tooltip("Kamera oyuncunun ne kadar önüne bakar (metre). Oyuncu ekranın biraz altında durur.")]
-        [field: SerializeField] public float CameraFocusOffset { get; private set; } = 3.5f;
+        [field: SerializeField] public float CameraFocusOffset { get; private set; } = 4.5f;
 
         [field: SerializeField, Min(0f)] public float CameraFollowSpeed { get; private set; } = 6f;
 
@@ -108,7 +108,10 @@ namespace KayipAda
         [field: Tooltip("Toplama sallanmasının süresi (saniye).")]
         [field: SerializeField, Min(0.01f)] public float NodeHitDuration { get; private set; } = 0.25f;
 
-        [field: Tooltip("Tükenen kaynak noktasının küçüleceği oran (0.5 = yarı boyut).")]
+        [field: Tooltip("Kaynak noktasının son kaynağı kalınca boyu (1 = hiç küçülmez). Toplandıkça bu boya doğru küçülür; yeniden dolarken bu boydan tam boya büyür.")]
+        [field: SerializeField, Range(0.2f, 1f)] public float NodeMinStockScale { get; private set; } = 0.6f;
+
+        [field: Tooltip("Kütüğü olmayan (tükenince yerinde parça kalmayan) kaynak noktasının tükenince boyu.")]
         [field: SerializeField, Range(0.05f, 1f)] public float NodeDepletedScale { get; private set; } = 0.35f;
 
         [field: Tooltip("Açılan nesnelerin zıplayarak belirme süresi (saniye).")]
@@ -132,6 +135,9 @@ namespace KayipAda
 
         [field: Tooltip("Sonraki hedef karesinin parlama/nabız hızı.")]
         [field: SerializeField, Min(0f)] public float GuidePulseSpeed { get; private set; } = 4f;
+
+        [field: Tooltip("Gemi teslim alanındaki yer işaretinin nabız atarken büyüyüp küçülme oranı (0.06 = %6).")]
+        [field: SerializeField, Min(0f)] public float GuidePulseScale { get; private set; } = 0.06f;
 
         [field: Header("Kaptanlık (kalıcı seviye)")]
         [field: Tooltip("Kaptanlık seviyesi başına hız/kapasite bonusu (0.03 = %3).")]
@@ -185,5 +191,15 @@ namespace KayipAda
 
         [field: Tooltip("Perdenin en fazla ne kadar yükselebileceği.")]
         [field: SerializeField, Min(0f)] public float PitchComboMax { get; private set; } = 0.35f;
+
+        [field: Header("Test Menüsü (sadece Editor ve geliştirme sürümü)")]
+        [field: Tooltip("Test Menüsü'ndeki \"+Para\" butonunun verdiği para.")]
+        [field: SerializeField, Min(1)] public int DevMoneyAmount { get; private set; } = 1000;
+
+        [field: Tooltip("Sınırsız para açıkken ekranda görünen para.")]
+        [field: SerializeField, Min(1)] public int DevInfiniteCoins { get; private set; } = 999999;
+
+        [field: Tooltip("Test Menüsü'ndeki oyun hızı seçenekleri.")]
+        [field: SerializeField] public float[] DevSpeeds { get; private set; } = { 1f, 2f, 5f };
     }
 }

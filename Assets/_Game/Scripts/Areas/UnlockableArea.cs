@@ -16,6 +16,22 @@ namespace KayipAda
         [Tooltip("Bölge kapalıyken görünen nesneler (çit, yazı, silik zemin).")]
         [SerializeField] private GameObject lockedVisual;
 
+        public AreaDefinition Area => area;
+
+        // Bu kök bir bina mı (içeriğinde doğrudan bir işleme binası var) yoksa bölge mi?
+        public bool HoldsBuilding
+        {
+            get
+            {
+                if (content == null) return false;
+                foreach (Transform child in content.transform)
+                {
+                    if (child.GetComponent<ProcessingBuilding>() != null) return true;
+                }
+                return false;
+            }
+        }
+
         private void Awake()
         {
             if (area == null || content == null)

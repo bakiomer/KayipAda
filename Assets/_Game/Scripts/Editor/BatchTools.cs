@@ -28,6 +28,7 @@ namespace KayipAda.EditorTools
                     return;
                 }
                 PrototypeSceneBuilder.BuildNow();
+                Debug.Log("KAYIPADA: Zemin kontrolü, sorunlu nesne: " + GroundCheck.Run());
                 Debug.Log("KAYIPADA: BuildScene tamam");
             }
             catch (Exception e)

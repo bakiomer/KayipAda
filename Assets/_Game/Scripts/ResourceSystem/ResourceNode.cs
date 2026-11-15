@@ -1,7 +1,8 @@
 // ResourceNode.cs
 // Kaynak noktası: ağaç, kaya ve meyve ağacı aynı bileşeni kullanır; farkı ResourceNodeType ayar dosyasıdır.
 // Karakter alanın içindeyken aralıklarla kaynak verir: her toplamada nokta sallanır ve sıkışıp genişler,
-// kaynak karakterin yığınına kavis çizerek uçar. Stok bitince nokta küçülür, süre dolunca yeniden büyür.
+// kaynak karakterin yığınına kavis çizerek uçar. Toplandıkça nokta küçülür; tükenince yerinde kütük (kaya için
+// kırık taşlar) kalır, yeniden dolarken kütükten büyüyerek eski boyuna döner.
 
 using UnityEngine;
 
@@ -18,6 +19,8 @@ namespace KayipAda
         [SerializeField] private float standRadius = 1.1f;
         [Tooltip("Her toplamada saçılan parçacıklar (yaprak, taş kırıntısı). Boş olabilir.")]
         [SerializeField] private ParticleSystem hitEffect;
+        [Tooltip("Tükenince yerinde kalan parça (kütük, kırık taşlar). Boş olabilir: o zaman nokta sadece küçülür.")]
+        [SerializeField] private GameObject remnant;
         [Tooltip("Her vuruşta kaç parçacık saçılır.")]
         [SerializeField] private int hitParticles = 5;
 
@@ -71,6 +74,7 @@ namespace KayipAda
 
             Stock = nodeType.Stock;
             Hit(); // dolunca küçük bir zıplama
+            if (remnant != null) Tween.PopOut(remnant.transform, config.PopInDuration, () => remnant.SetActive(false));
         }
 
         private void UpdateGather()
@@ -104,7 +108,29 @@ namespace KayipAda
             if (playerGot) AudioManager.Play(nodeType.HitSound, 0.6f);
             if (hitEffect != null) hitEffect.Emit(hitParticles);
 
-            if (IsDepleted) regrowTimer = nodeType.RegrowTime;
+            if (IsDepleted)
+            {
+                regrowTimer = nodeType.RegrowTime;
+                if (remnant != null)
+                {
+                    remnant.SetActive(true);
+                    Tween.PopIn(remnant.transform, Vector3.one, config.PopInDuration);
+                }
+            }
+        }
+
+        // Görünmesi gereken boyut: stok azaldıkça küçülür; tükenince kütük kalır (ya da küçük kalır),
+        // yeniden dolma süresince büyüyerek eski boyuna döner.
+        private float TargetSize()
+        {
+            float empty = remnant != null ? 0f : config.NodeDepletedScale;
+            if (IsDepleted)
+            {
+                float grown = 1f - Mathf.Clamp01(regrowTimer / Mathf.Max(0.01f, nodeType.RegrowTime));
+                return Mathf.Lerp(empty, config.NodeMinStockScale, grown);
+            }
+            float left = nodeType.Stock <= 1 ? 1f : (Stock - 1f) / (nodeType.Stock - 1f);
+            return Mathf.Lerp(config.NodeMinStockScale, 1f, left);
         }
 
         private void Hit()
@@ -116,8 +142,9 @@ namespace KayipAda
         // Boyut (tükenince küçülür) + vuruş sallanması ve sıkışması.
         private void UpdateVisual()
         {
-            float targetSize = IsDepleted ? config.NodeDepletedScale : 1f;
-            size = Mathf.Lerp(size, targetSize, 1f - Mathf.Exp(-8f * Time.deltaTime));
+            size = Mathf.Lerp(size, TargetSize(), 1f - Mathf.Exp(-8f * Time.deltaTime));
+            bool visible = size > 0.02f;
+            if (visual.gameObject.activeSelf != visible) visual.gameObject.SetActive(visible);
 
             float wave = 0f;
             if (hitTimer > 0f)

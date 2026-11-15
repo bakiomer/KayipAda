@@ -1,6 +1,6 @@
 // SaveData.cs
 // Cihazda JSON olarak saklanan kayıt: para, açık alanlar, yarım ödemeler, geliştirmeler, gemi ilerlemesi,
-// top gülleleri, oyun süresi ve kalıcı kaptanlık bilgisi (kaçıştan sonra da silinmez).
+// oyun süresi ve kalıcı kaptanlık bilgisi (kaçıştan sonra da silinmez).
 
 using System;
 using System.Collections.Generic;
@@ -25,7 +25,6 @@ namespace KayipAda
         public List<IdValue> Upgrades = new List<IdValue>();
         public int ShipStage;
         public List<IdValue> ShipDelivered = new List<IdValue>();
-        public List<int> CannonAmmo = new List<int>();
         public float PlayTime;
 
         // Kalıcı (kaçıştan sonra da kalır)
@@ -40,7 +39,6 @@ namespace KayipAda
             Upgrades.Clear();
             ShipStage = 0;
             ShipDelivered.Clear();
-            CannonAmmo.Clear();
             PlayTime = 0f;
         }
 

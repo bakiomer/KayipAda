@@ -1,8 +1,9 @@
 // ShipBuilder.cs
-// İskeledeki gemi inşası (4 aşama: Omurga, Gövde, Direk ve Yelken, Erzak; ShipConfig'te).
+// Kızaktaki gemi inşası (5 aşama: Omurga, Gövde, Direk, Yelken, Erzak; ShipConfig'te).
 // Teslim edilen her malzemeyle gemi aşağıdan yukarıya biraz daha belirir (BuildReveal shader), son aşamada
 // güvertede erzak sandıkları zıplayarak çıkar. Teslim alanının üstünde "Gövde: 12/30" gibi 3D gösterge vardır.
-// Gemi bitince son gece başlar (NightDefense). Kaçışta gemi yelken açıp uzaklaşır.
+// Her aşama bitince "Aşama tamamlandı!" kutlaması olur ve bir sonraki hedef açılır (Stage.UnlockOnComplete).
+// Gemi bitince suya indirme töreni başlar (LaunchCeremony).
 
 using System;
 using System.Collections.Generic;
@@ -121,6 +122,15 @@ namespace KayipAda
             RefreshLabel();
         }
 
+        // Test Menüsü: şu anki aşamayı malzeme beklemeden bitirir (kutlama ve kilit açma dahil).
+        public void ForceCompleteStage()
+        {
+            if (IsComplete) return;
+            CompleteStage();
+            reveal = TargetReveal();
+            RefreshLabel();
+        }
+
         private bool StageDone()
         {
             foreach (ShipConfig.Requirement req in ship.Stages[StageIndex].Requirements)
@@ -133,16 +143,16 @@ namespace KayipAda
         private void CompleteStage()
         {
             ShipConfig.Stage finished = ship.Stages[StageIndex];
-            if (StageIndex == 0 && ship.KeelDoneArea != null) AreaManager.Instance.Unlock(ship.KeelDoneArea);
             StageIndex++;
             delivered.Clear();
+            if (finished.UnlockOnComplete != null) AreaManager.Instance.Unlock(finished.UnlockOnComplete);
 
-            if (Effects.Instance != null)
+            if (Effects.Instance != null) Effects.Instance.Confetti(deliveryTarget.position + Vector3.up);
+            if (CelebrationBanner.Instance != null)
             {
-                Effects.Instance.Confetti(deliveryTarget.position + Vector3.up);
-                Effects.Instance.ShowText(deliveryTarget.position + Vector3.up * 3f, finished.Name + " tamam!", new Color(0.6f, 1f, 0.6f));
+                CelebrationBanner.Instance.Show(finished.Name + " tamamlandı!", finished.UnlockMessage, ship.CelebrationDuration);
             }
-            AudioManager.Play(SoundId.Unlock);
+            AudioManager.Play(SoundId.StageComplete);
             StageCompleted?.Invoke();
 
             if (IsComplete)
@@ -252,20 +262,6 @@ namespace KayipAda
                   .Append(Mathf.Min(Delivered(req.Resource), Required(req))).Append('/').Append(Required(req));
             }
             progressLabel.text = sb.ToString();
-        }
-
-        // Kaçış: gemi denize doğru süzülür (kamera takip eder).
-        public void Sail(Vector3 direction)
-        {
-            Transform mover = transform;
-            Vector3 from = mover.position;
-            Tween.Value(this, ship.SailDuration, t =>
-            {
-                float ease = t * t; // yavaş kalkış, sonra hızlanır
-                mover.position = from + direction.normalized * (ship.SailSpeed * ship.SailDuration * ease)
-                               + Vector3.up * Mathf.Sin(Time.time * 1.5f) * 0.08f;
-                mover.rotation = Quaternion.Euler(Mathf.Sin(Time.time * 1.2f) * 2f, mover.eulerAngles.y, Mathf.Sin(Time.time) * 3f);
-            });
         }
     }
 }

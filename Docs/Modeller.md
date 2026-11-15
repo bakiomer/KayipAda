@@ -11,15 +11,15 @@
 | Oyuncu (kaptan) | Player | Quaternius | Characters_Captain_Barbarossa.fbx | 1,9 m (yükseklik) | ✅ |
 | Oduncu işçi | Worker_Lumberjack | Quaternius | Characters_Henry.fbx | 1,75 m (yükseklik) | ✅ |
 | Taşıyıcı işçi | Worker_Carrier | Quaternius | Characters_Anne.fbx | 1,7 m (yükseklik) | ✅ |
+| Lifçi işçi (lif toplar, Halat Atölyesi'ne götürür) | Worker_Fiber | Quaternius | Characters_Mako.fbx | 1,75 m (yükseklik) | ✅ |
 
-## Düşmanlar (prefab hazır, sahnede kullanılmıyor)
+## Kullanılmayan karakterler (prefab hazır, sahnede yok)
 
 | Nesne | Prefab adı | Paket | Model dosyası | Boyut | Durum |
 |---|---|---|---|---|---|
 | Düşman: iskelet | Enemy_Skeleton | Quaternius | Characters_Skeleton.fbx | 1,8 m (yükseklik) | ✅ |
 | Düşman: başsız iskelet | Enemy_SkeletonHeadless | Quaternius | Characters_Skeleton_Headless.fbx | 1,5 m (yükseklik) | ✅ |
 | Düşman: köpek balığı korsan | Enemy_Sharky | Quaternius | Characters_Sharky.fbx | 1,9 m (yükseklik) | ✅ |
-| Düşman/yedek karakter: Mako | Enemy_Mako | Quaternius | Characters_Mako.fbx | 1,9 m (yükseklik) | ✅ |
 | Düşman: köpek balığı (yüzer) | Enemy_Shark | Quaternius | Characters_Shark.fbx | 3,5 m (en büyük kenar) | ✅ |
 | Düşman: dokunaç | Enemy_Tentacle | Quaternius | Characters_Tentacle.fbx | 3 m (yükseklik) | ✅ |
 
@@ -32,6 +32,8 @@
 | Meyve (kavun) — Quaternius'ta meyve yok | Fruit | KenneyNature | crop_melon.fbx | 0,5 m (en büyük kenar) | ✅ |
 | Kalas — Quaternius'ta yok | Plank | KenneySurvival | resource-planks.fbx | 0,75 m (en büyük kenar) | ✅ |
 | Tuğla (kesme taş) — Quaternius'ta yok | Brick | KenneySurvival | resource-stone.fbx | 0,6 m (en büyük kenar) | ✅ |
+| Lif (palmiye lifi demeti) | Fiber | Quaternius | UI_Wheat.fbx | 0,6 m (en büyük kenar) | ✅ |
+| Yelken bezi (sarılı bez) — Quaternius'ta yok | Cloth | KenneySurvival | bedroll-packed.fbx | 0,7 m (en büyük kenar) | ✅ |
 | Uçan/zıplayan para | Coin | Quaternius | UI_Gold.fbx | 0,45 m (en büyük kenar) | ✅ |
 
 ## Kaynak noktaları
@@ -39,27 +41,34 @@
 | Nesne | Prefab adı | Paket | Model dosyası | Boyut | Durum |
 |---|---|---|---|---|---|
 | Odun veren palmiye | Node_Palm_1 | Quaternius | Environment_PalmTree_1.fbx | 5,5 m (yükseklik) | ✅ |
-| Odun veren palmiye | Node_Palm_2 | Quaternius | Environment_PalmTree_2.fbx | 5,2 m (yükseklik) | ✅ |
-| Odun veren palmiye | Node_Palm_3 | Quaternius | Environment_PalmTree_3.fbx | 5,8 m (yükseklik) | ✅ |
+| Odun veren palmiye | Node_Palm_2 | Quaternius | Environment_PalmTree_1.fbx | 5,2 m (yükseklik) | ✅ |
+| Odun veren palmiye | Node_Palm_3 | Quaternius | Environment_PalmTree_1.fbx | 5,8 m (yükseklik) | ✅ |
 | Taş veren kaya | Node_Rock_1 | Quaternius | Environment_Rock_1.fbx | 1,7 m (yükseklik) | ✅ |
 | Taş veren kaya | Node_Rock_2 | Quaternius | Environment_Rock_2.fbx | 1,6 m (yükseklik) | ✅ |
 | Taş veren kaya | Node_Rock_3 | Quaternius | Environment_Rock_3.fbx | 1,8 m (yükseklik) | ✅ |
 | Meyve ağacı — Quaternius'ta yok | Node_FruitTree | KenneyNature | tree_fat.fbx | 3,4 m (yükseklik) | ✅ |
+| Lif veren palmiye (Palmiye Koyu) | Node_FiberPalm | Quaternius | Environment_PalmTree_1.fbx | 4,6 m (yükseklik) | ✅ |
+| Kesilen ağacın kütüğü (tükenince) | Stump | KenneyNature | stump_round.fbx | 0,55 m (yükseklik) | ✅ |
+| Tükenen kayanın yerinde kalan taşlar | Rubble | KenneyPirate | rocks-sand-a.fbx | 1,1 m (en büyük kenar) | ✅ |
 
 ## Binalar ve alanlar
 
 | Nesne | Prefab adı | Paket | Model dosyası | Boyut | Durum |
 |---|---|---|---|---|---|
 | Bıçkıhane | Sawmill | Quaternius | Environment_Sawmill.fbx | 3,8 m (en büyük kenar) | ✅ |
-| Taş Atölyesi (ev modeli) | StoneWorkshop | Quaternius | Environment_House2.fbx | 3,8 m (en büyük kenar) | ✅ |
+| Taş Atölyesi (ev modeli) | StoneWorkshop | Quaternius | Environment_House3.fbx | 3,8 m (en büyük kenar) | ✅ |
+| Halat Atölyesi (ahşap yapı) — Quaternius evleri yan yatık geliyor | RopeWorkshop | KenneySurvival | structure.fbx | 3,6 m (en büyük kenar) | ✅ |
+| Dokuma Tezgahı (bez çatılı tezgah) | Loom | KenneySurvival | structure-canvas.fbx | 3,4 m (en büyük kenar) | ✅ |
 | Pazar tezgahı (bez çatılı) — Quaternius'ta yok | MarketStall | KenneySurvival | structure-canvas.fbx | 3,2 m (en büyük kenar) | ✅ |
 | Pazardaki altın sandığı | MarketChest | Quaternius | Prop_Chest_Gold.fbx | 0,9 m (en büyük kenar) | ✅ |
 | Kamp çadırı — Quaternius'ta yok | CampTent | KenneySurvival | tent-canvas.fbx | 2,6 m (en büyük kenar) | ✅ |
 | Kamp ateşi | Campfire | KenneySurvival | campfire-pit.fbx | 1,1 m (en büyük kenar) | ✅ |
 | Kapalı bölge çiti — Quaternius'ta yok | Fence | KenneySurvival | fence.fbx | 2 m (en büyük kenar) | ✅ |
 | İskele | Dock | Quaternius | Environment_Dock.fbx | 7 m (en büyük kenar) | ✅ |
-| İskele direği | DockPole | Quaternius | Environment_Dock_Pole.fbx | 2,2 m (yükseklik) | ✅ |
+| İskele direği / inşa iskelesi | DockPole | Quaternius | Environment_Dock_Pole.fbx | 2,6 m (en büyük kenar) | ✅ |
 | Yarım kalmış gemi iskeleti (dekor) | ShipWreck | KenneyPirate | ship-wreck.fbx | 10 m (en büyük kenar) | ✅ |
+| Geliştirme tezgahı (kampta) — Quaternius'ta yok | UpgradeBench | KenneySurvival | workbench.fbx | 1,9 m (en büyük kenar) | ✅ |
+| İnşa edilen gemi (kızakta aşağıdan yukarı belirir, törende suya kayar) | Ship | Quaternius | Ship_Large.fbx | 9 m (en büyük kenar) | ✅ |
 
 ## Süsler
 
@@ -82,13 +91,13 @@
 | Kumda taşlar | SandRocks_C | KenneyPirate | rocks-sand-c.fbx | 0,9 m (en büyük kenar) | ✅ |
 | Küçük çakıl (kabuk yerine) | Pebble_A | KenneyNature | stone_smallFlatA.fbx | 0,35 m (en büyük kenar) | ✅ |
 | Küçük çakıl (kabuk yerine) | Pebble_B | KenneyNature | stone_smallFlatB.fbx | 0,3 m (en büyük kenar) | ✅ |
-| Ot öbeği | GrassTuft | KenneyPirate | grass-plant.fbx | 0,7 m (yükseklik) | ✅ |
-| Çimen yaması | GrassPatch | KenneyPirate | patch-grass.fbx | 1,2 m (en büyük kenar) | ✅ |
+| Ot öbeği | GrassTuft | KenneyNature | grass_leafs.fbx | 0,6 m (yükseklik) | ✅ |
+| Büyük ot öbeği | GrassPatch | KenneyNature | grass_leafsLarge.fbx | 0,9 m (en büyük kenar) | ✅ |
 | Uzun ot | Grass | KenneyNature | grass_large.fbx | 0,6 m (yükseklik) | ✅ |
 | Sarı çiçek | FlowerYellow | KenneyNature | flower_yellowA.fbx | 0,45 m (yükseklik) | ✅ |
 | Kırmızı çiçek | FlowerRed | KenneyNature | flower_redA.fbx | 0,45 m (yükseklik) | ✅ |
 | Küçük çalı | Bush | KenneyNature | plant_bushSmall.fbx | 0,9 m (yükseklik) | ✅ |
-| Süs palmiyesi (kenarlarda) | DecorPalm | Quaternius | Environment_PalmTree_2.fbx | 5 m (yükseklik) | ✅ |
+| Süs palmiyesi (kenarlarda) | DecorPalm | Quaternius | Environment_PalmTree_1.fbx | 5 m (yükseklik) | ✅ |
 | Kayalık arkasında yamaç | Cliff | Quaternius | Environment_Cliff1.fbx | 3,2 m (yükseklik) | ✅ |
 | Süs kayası | BigRock | Quaternius | Environment_Rock_4.fbx | 1,3 m (yükseklik) | ✅ |
 | Küçük süs kayası | SmallRock | Quaternius | Environment_Rock_5.fbx | 0,7 m (yükseklik) | ✅ |
@@ -107,15 +116,21 @@ Yok — tüm modeller yüklendi.
 - Taşıma animasyonu: Quaternius karakterlerinde yok → kodla taşıma pozu (CharacterVisual).
 - Meyve: Quaternius'ta yok → Kenney Nature kavun (crop_melon).
 - Tuğla: hiçbir pakette tuğla yok → Kenney Survival kesme taş (resource-stone).
+- Halat: hiçbir pakette yok → kodla üretilen halat halkası (ArtGenerator.BuildRopeMesh).
+- Havai fişek ve su sıçraması: partikül sistemiyle kodla üretildi (PrefabFactory).
 - Dalga/deniz ortam sesi: Audio klasöründe yok → AudioManager yumuşak dalga sesini kendisi üretir.
 - Quaternius renk dokusu (Atlas_Pirate.png): indirilen FBX klasöründe yoktu → Quaternius'un resmi paylaşımından eklendi (CC0).
+
+## Font
+- **Paytone One** (Google Fonts, SIL Open Font License 1.1 — ücretsiz, ticari kullanım serbest). Dosya: `Assets/_Game/Art/Fonts/PaytoneOne-Regular.ttf`, lisans: `Assets/_Game/Art/Fonts/OFL.txt`. Türkçe harflerin hepsi (ı, ğ, ş, ç, ö, ü, İ) fontta var.
 
 ## Sesler (`Assets/_Game/Data/SoundLibrary.asset`)
 
 | Olay | Ses dosyaları (ThirdParty/Audio) |
 |---|---|
 | Toplama | Interface/pluck_001, pluck_002 |
-| Vuruş (ağaç/kaya) | RPG/chop |
+| Vuruş (ağaç) | RPG/chop |
+| Vuruş (kaya) | Impact/impactMining_000..003 |
 | Satış | RPG/handleCoins, handleCoins2 |
 | Para akışı (açma karesi) | Interface/tick_001, tick_002, tick_004 |
 | Alan açıldı | Interface/confirmation_002 |
@@ -123,4 +138,10 @@ Yok — tüm modeller yüklendi.
 | Adım | Impact/footstep_grass_000..004 |
 | Binaya bırakma | Impact/impactWood_light_000..002 |
 | Ürün çıktı | Impact/impactPlank_medium_000..001 |
+| Geliştirme alındı | Interface/maximize_006 |
+| Gemiye malzeme | Impact/impactWood_medium_000..002 |
+| Gemi aşaması tamamlandı | Interface/maximize_008 |
+| Gemi suya indi | Impact/impactSoft_heavy_000..001 |
+| Havai fişek | Impact/impactGlass_light_000..002 |
+| Kaçış | Interface/confirmation_004 |
 | Ortam (dalga) | Pakette yok → AudioManager üretir |

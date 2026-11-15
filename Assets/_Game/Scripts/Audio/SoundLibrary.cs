@@ -39,9 +39,10 @@ namespace KayipAda
         public void EditorAddMissing(Entry[] defaults)
         {
             System.Collections.Generic.List<Entry> list = new System.Collections.Generic.List<Entry>(entries);
+            list.RemoveAll(e => e == null || !System.Enum.IsDefined(typeof(SoundId), e.Id)); // kaldırılmış türler
             foreach (Entry d in defaults)
             {
-                if (Find(d.Id) == null) list.Add(d);
+                if (!list.Exists(e => e.Id == d.Id)) list.Add(d);
             }
             entries = list.ToArray();
         }

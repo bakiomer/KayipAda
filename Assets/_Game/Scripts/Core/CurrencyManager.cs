@@ -21,6 +21,26 @@ namespace KayipAda
 
         public int Coins { get; private set; }
 
+        // Test Menüsü: sınırsız para açıkken harcama parayı azaltmaz (sadece Editor/geliştirme sürümü).
+        public bool IsInfinite { get; private set; }
+        private int coinsBeforeInfinite;
+
+        public void SetInfinite(bool on, int displayAmount)
+        {
+            if (on == IsInfinite) return;
+            IsInfinite = on;
+            if (on)
+            {
+                coinsBeforeInfinite = Coins;
+                Coins = Mathf.Max(Coins, displayAmount);
+            }
+            else
+            {
+                Coins = coinsBeforeInfinite;
+            }
+            CoinsChanged?.Invoke(Coins);
+        }
+
         private void Awake()
         {
             Instance = this;
@@ -43,6 +63,7 @@ namespace KayipAda
         // Yeterli para varsa harcar ve true döner; yoksa hiçbir şey yapmaz.
         public bool TrySpend(int amount)
         {
+            if (IsInfinite) return true;
             if (Coins < amount) return false;
 
             Coins -= amount;

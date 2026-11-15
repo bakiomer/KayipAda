@@ -24,30 +24,50 @@ MonoBehaviour:
   <UnlockPayInterval>k__BackingField: 0.05
   <UnlockPayDuration>k__BackingField: 2
   <CoinFlyDuration>k__BackingField: 0.3
-  <CameraPitch>k__BackingField: 50
+  <CameraPitch>k__BackingField: 45
   <CameraYaw>k__BackingField: 0
   <CameraFov>k__BackingField: 32
   <CameraDistance>k__BackingField: 34
-  <CameraFocusOffset>k__BackingField: 3.5
+  <CameraFocusOffset>k__BackingField: 4.5
   <CameraFollowSpeed>k__BackingField: 6
   <JoystickRange>k__BackingField: 110
   <JoystickDeadZone>k__BackingField: 0.1
   <StackSpacing>k__BackingField: 0.28
   <StackFollowSharpness>k__BackingField: 25
-  <StackLagPerLevel>k__BackingField: 0.12
+  <StackSwayPerLevel>k__BackingField: 0.04
+  <StackMaxLeanPerLevel>k__BackingField: 0.02
   <ItemFlyDuration>k__BackingField: 0.3
   <ItemFlyHeight>k__BackingField: 1.2
   <NodeSquash>k__BackingField: 0.15
   <NodeShakeAngle>k__BackingField: 6
   <NodeHitDuration>k__BackingField: 0.25
+  <NodeMinStockScale>k__BackingField: 0.6
   <NodeDepletedScale>k__BackingField: 0.35
   <PopInDuration>k__BackingField: 0.45
   <PopInStagger>k__BackingField: 0.04
   <CoinPunch>k__BackingField: 0.2
   <FloatingTextDuration>k__BackingField: 0.9
+  <GuideArrowHeight>k__BackingField: 2.6
+  <GuideArrowBob>k__BackingField: 0.3
+  <GuidePulseSpeed>k__BackingField: 4
+  <GuidePulseScale>k__BackingField: 0.06
+  <CaptainBonusPerLevel>k__BackingField: 0.03
+  <CaptainMaxLevel>k__BackingField: 10
+  <EscapeXp>k__BackingField: 100
+  <XpPerCaptainLevel>k__BackingField: 100
+  <AutoSaveInterval>k__BackingField: 10
+  <QuickTestMode>k__BackingField: 0
+  <QuickTestPriceScale>k__BackingField: 0.08
+  <QuickTestAmountScale>k__BackingField: 0.2
   <SfxVolume>k__BackingField: 0.8
   <AmbientVolume>k__BackingField: 0.25
   <FootstepDistance>k__BackingField: 1.6
   <PitchComboWindow>k__BackingField: 0.35
   <PitchComboStep>k__BackingField: 0.04
   <PitchComboMax>k__BackingField: 0.35
+  <DevMoneyAmount>k__BackingField: 1000
+  <DevInfiniteCoins>k__BackingField: 999999
+  <DevSpeeds>k__BackingField:
+  - 1
+  - 2
+  - 5

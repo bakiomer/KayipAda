@@ -20,6 +20,8 @@ namespace KayipAda
         [SerializeField] private Transform spawnPoint;
 
         private readonly List<Worker> workers = new List<Worker>();
+
+        public AreaDefinition HireArea => hireArea;
         private float timer;
 
         private void Awake()

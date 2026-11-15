@@ -107,19 +107,10 @@ namespace KayipAda
             }
         }
 
-        // Gemi ve toplar: her şey uyandıktan sonra.
+        // Gemi: her şey uyandıktan sonra.
         private void RestoreLate()
         {
             if (ShipBuilder.Instance != null) ShipBuilder.Instance.Restore(data.ShipStage, SaveData.ToDictionary(data.ShipDelivered));
-            Cannon[] cannons = Cannons();
-            for (int i = 0; i < cannons.Length && i < data.CannonAmmo.Count; i++) cannons[i].SetAmmo(data.CannonAmmo[i]);
-        }
-
-        private static Cannon[] Cannons()
-        {
-            Cannon[] cannons = FindObjectsByType<Cannon>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-            System.Array.Sort(cannons, (a, b) => string.CompareOrdinal(a.name + a.transform.position, b.name + b.transform.position));
-            return cannons;
         }
 
         public void Save()
@@ -159,8 +150,6 @@ namespace KayipAda
                 data.ShipDelivered.Clear();
                 foreach (KeyValuePair<string, int> p in ShipBuilder.Instance.DeliveredCounts) data.ShipDelivered.Add(new SaveData.IdValue(p.Key, p.Value));
             }
-            data.CannonAmmo.Clear();
-            foreach (Cannon c in Cannons()) data.CannonAmmo.Add(c.Ammo);
         }
 
         // Kaçış: kaptanlık XP'si kazanılır. Döndürülen değer: kazanılan XP.
@@ -170,6 +159,17 @@ namespace KayipAda
             data.Escapes++;
             Save();
             return config.EscapeXp;
+        }
+
+        // Test Menüsü: kaydı tamamen siler (kaptanlık dahil) ve oyunu baştan başlatır.
+        public void DeleteAndRestart()
+        {
+            Delete();
+            enabled = false; // sahne yüklenene kadar otomatik kayıt yazmasın
+            data = new SaveData();
+            Time.timeScale = 1f;
+            PlayerController.InputBlocked = false;
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         }
 
         // "Tekrar oyna": adadaki ilerleme sıfırlanır, kaptanlık kalır; sahne baştan yüklenir.

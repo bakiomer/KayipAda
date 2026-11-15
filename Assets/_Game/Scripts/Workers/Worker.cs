@@ -31,11 +31,21 @@ namespace KayipAda
             ApplyStats();
         }
 
+        private bool gathering;
+
         private void Update()
         {
             // Her karede: Play sırasında ayar dosyasında yapılan değişiklik hemen etkilesin.
             ApplyStats();
-            Think();
+            if (!gathering) Think();
+        }
+
+        // Final töreni: işi bırakıp verilen noktada toplan.
+        public void Gather(Vector3 point)
+        {
+            gathering = true;
+            Stack.WorkTarget = null;
+            Mover.MoveTo(point);
         }
 
         // Alt sınıfın durum makinesi: her karede bir kez çağrılır.
