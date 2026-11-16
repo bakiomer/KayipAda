@@ -110,6 +110,7 @@ namespace KayipAda
                     if (type != null && levels.TryGetValue(type.Id, out int level)) upgrades.SetLevel(type, level);
                 }
             }
+            if (CrewManager.Instance != null) CrewManager.Instance.Restore(SaveData.ToDictionary(data.Crew));
         }
 
         // Gemi: her şey uyandıktan sonra.
@@ -149,6 +150,11 @@ namespace KayipAda
                 {
                     if (type != null) data.Upgrades.Add(new SaveData.IdValue(type.Id, UpgradeManager.Instance.GetLevel(type)));
                 }
+            }
+            if (CrewManager.Instance != null)
+            {
+                data.Crew.Clear();
+                foreach (KeyValuePair<string, int> c in CrewManager.Instance.Counts) data.Crew.Add(new SaveData.IdValue(c.Key, c.Value));
             }
             if (ShipBuilder.Instance != null)
             {

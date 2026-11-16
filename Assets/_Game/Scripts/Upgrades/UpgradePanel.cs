@@ -1,5 +1,6 @@
 // UpgradePanel.cs
-// Alttan kayarak açılan geliştirme paneli. Açıkken oyuncu yürümez (PlayerController.InputBlocked).
+// Alttan kayarak açılan panel: kamptaki geliştirme tezgahında oyuncu geliştirmeleri, Tayfa Barakası'nda işçi kartları
+// (tut) + işçi geliştirmeleri. Açıkken oyuncu yürümez (PlayerController.InputBlocked).
 // Panelin dışına (karartılmış alana) ya da X tuşuna dokununca kapanır. Satın alınca satır zıplar,
 // tezgahta parlama efekti ve ses çıkar.
 
@@ -17,6 +18,8 @@ namespace KayipAda
         [SerializeField] private GameObject dimmer;
         [SerializeField] private Button closeButton;
         [SerializeField] private UpgradeRow[] rows = new UpgradeRow[0];
+        [Tooltip("Tayfa Barakası: işçi kartları (boş olabilir).")]
+        [SerializeField] private CrewCard[] cards = new CrewCard[0];
 
         private UpgradeStation station;
         private float shownY;
@@ -29,6 +32,7 @@ namespace KayipAda
             shownY = sheet.anchoredPosition.y;
             hiddenY = shownY - sheet.rect.height - 60f;
             foreach (UpgradeRow row in rows) row.Init(this);
+            foreach (CrewCard card in cards) card.Init(this);
             if (closeButton != null) closeButton.onClick.AddListener(Close);
             if (dimmer != null && dimmer.TryGetComponent(out Button dimButton)) dimButton.onClick.AddListener(Close);
             SetVisible(false);
@@ -91,9 +95,25 @@ namespace KayipAda
             }
         }
 
+        // Tayfa Barakası: işçi tut. İşçi kapıdan çıkar (WorkerSpawner), kart zıplar.
+        public void Hire(CrewCard card)
+        {
+            CrewManager crew = CrewManager.Instance;
+            if (crew == null || !crew.TryHire(card.Type))
+            {
+                Tween.Shake(card.transform, 4f, 0.25f); // para yetmedi
+                return;
+            }
+            RefreshAll();
+            Tween.PunchScale(card.transform, 0.08f, 0.3f);
+            AudioManager.Play(SoundId.Upgrade);
+            if (Effects.Instance != null && station != null) Effects.Instance.Sparkle(station.EffectPoint.position);
+        }
+
         private void RefreshAll()
         {
             foreach (UpgradeRow row in rows) row.Refresh();
+            foreach (CrewCard card in cards) card.Refresh();
         }
 
         private void SetVisible(bool visible)

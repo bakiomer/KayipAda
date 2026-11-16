@@ -35,7 +35,7 @@ namespace KayipAda.EditorTools
             Section(sb, "Kaynak noktaları", nodes.ToArray());
             Section(sb, "Binalar ve alanlar", new[]
             {
-                ModelCatalog.Sawmill, ModelCatalog.Workshop, ModelCatalog.RopeWorkshop, ModelCatalog.Loom, ModelCatalog.MarketStall, ModelCatalog.MarketChest, ModelCatalog.Tent,
+                ModelCatalog.Sawmill, ModelCatalog.Workshop, ModelCatalog.RopeWorkshop, ModelCatalog.Loom, ModelCatalog.Barracks, ModelCatalog.Merchant, ModelCatalog.Tent,
                 ModelCatalog.Campfire, ModelCatalog.Fence, ModelCatalog.Sign, ModelCatalog.ShipFlag, ModelCatalog.Dock, ModelCatalog.DockPole, ModelCatalog.ShipWreck,
                 ModelCatalog.UpgradeBench, ModelCatalog.Ship
             });

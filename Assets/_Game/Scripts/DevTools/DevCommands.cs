@@ -68,13 +68,13 @@ namespace KayipAda
             }
         }
 
-        // Her işçi türünün karesini açar (işçi sayısı WorkerType.Count; başlangıçta her türden 1).
+        // Her işçi türünden en az 1 tane tutar (gereken bina kapalı olsa da; para harcamaz).
         public static void HireAllWorkers()
         {
-            if (!Use()) return;
-            foreach (WorkerSpawner spawner in Object.FindObjectsByType<WorkerSpawner>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            if (!Use() || CrewManager.Instance == null) return;
+            foreach (WorkerType type in CrewManager.Instance.Types)
             {
-                Unlock(spawner.HireArea);
+                if (type != null && CrewManager.Instance.GetHired(type) < 1) CrewManager.Instance.SetHired(type, 1);
             }
         }
 

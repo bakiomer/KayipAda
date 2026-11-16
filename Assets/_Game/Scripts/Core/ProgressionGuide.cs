@@ -15,6 +15,8 @@ namespace KayipAda
         [Tooltip("Hedef ekran dışındayken kenarda duran ok (arayüzde).")]
         [SerializeField] private RectTransform screenArrow;
         [SerializeField] private Camera cam;
+        [Tooltip("Tayfa Barakası: açılmış ama hiç tutulmamış işçi türü varsa (ve en ucuz hedefse) ok buraya bakar.")]
+        [SerializeField] private Transform crewStation;
 
         private UnlockPad[] pads = new UnlockPad[0];
         private UnlockPad current;
@@ -58,12 +60,27 @@ namespace KayipAda
                 }
             }
 
+            // İlk işçi tutma da bir hedef: fiyatı en ucuz kareden ucuzsa ok barakayı gösterir.
+            bool crewFirst = false;
+            CrewManager crew = CrewManager.Instance;
+            if (crew != null && crewStation != null)
+            {
+                foreach (WorkerType type in crew.Types)
+                {
+                    if (type == null || crew.GetHired(type) > 0 || !crew.IsAvailable(type)) continue;
+                    int price = crew.NextPrice(type);
+                    if (price < bestPrice) { bestPrice = price; crewFirst = true; }
+                }
+            }
+            if (crewFirst) best = null;
+
             if (best != current)
             {
                 if (current != null) current.SetHighlighted(false);
                 current = best;
                 if (current != null) current.SetHighlighted(true);
             }
+            if (crewFirst) return crewStation;
             if (best != null) return best.transform;
 
             ShipBuilder ship = ShipBuilder.Instance;

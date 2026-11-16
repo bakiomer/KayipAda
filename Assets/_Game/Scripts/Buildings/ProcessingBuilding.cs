@@ -29,6 +29,13 @@ namespace KayipAda
         // Girişte bir işlem için yeterli ham madde var mı? (Taşıyıcı işçi "yeni ürün gelecek mi" diye bakar.)
         public bool HasEnoughInput => inputPile.Count >= type.InputAmount;
 
+        // Şu an işliyor mu (makineler sadece işlerken hareket eder)? İşlemin ilerlemesi 0..1.
+        public bool IsWorking => working;
+        public float Progress => progress;
+
+        // Bir ürün çıkınca.
+        public event System.Action Produced;
+
         private float progress; // 0..1
         private bool working;
 
@@ -74,8 +81,9 @@ namespace KayipAda
 
         private void SetWorking(bool value)
         {
-            if (value == working || workEffect == null) return;
+            if (value == working) return;
             working = value;
+            if (workEffect == null) return;
             if (working) workEffect.Play();
             else workEffect.Stop(true, ParticleSystemStopBehavior.StopEmitting);
         }
@@ -108,6 +116,7 @@ namespace KayipAda
 
             if (bodyVisual != null) Tween.PunchScale(bodyVisual, config.NodeSquash, 0.3f);
             AudioManager.Play(SoundId.Produce, 0.4f);
+            Produced?.Invoke();
         }
     }
 }

@@ -32,6 +32,13 @@ namespace KayipAda
         VictoryMusic = 26,  // final töreni müziği (sesler sırayla çalınır)
         PartPlace = 27,     // gemi parçası yerine oturdu
         Seagull = 28,       // uzaktan martı sesi
-        ShipSlide = 29      // gemi kızaktan kayıyor (ahşap gıcırtı + sürtünme)
+        ShipSlide = 29,     // gemi kızaktan kayıyor (ahşap gıcırtı + sürtünme)
+        MachineCreak = 30,  // halat çarkı turu (ahşap gıcırtı)
+        MachineFriction = 31, // halat çarkında lif sürtünmesi
+        LoomTick = 32,      // dokuma tezgahında mekik "tık-tak"
+        Discovery = 33,     // bulut dağıldı / yeni bölge keşfedildi
+        ChestOpen = 34,     // sandık açıldı
+        Anvil = 35,         // demirci örsü (çekiç)
+        QuestDone = 36      // yan görev tamamlandı
     }
 }

@@ -57,10 +57,10 @@
 |---|---|---|---|---|---|
 | Bıçkıhane | Sawmill | Quaternius | Environment_Sawmill.fbx | 3,8 m (en büyük kenar) | ✅ |
 | Taş Atölyesi (ev modeli) | StoneWorkshop | Quaternius | Environment_House3.fbx | 3,8 m (en büyük kenar) | ✅ |
-| Halat Atölyesi (ahşap yapı) — Quaternius evleri yan yatık geliyor | RopeWorkshop | KenneySurvival | structure.fbx | 3,6 m (en büyük kenar) | ✅ |
-| Dokuma Tezgahı (bez çatılı tezgah) | Loom | KenneySurvival | structure-canvas.fbx | 3,4 m (en büyük kenar) | ✅ |
-| Pazar tezgahı (bez çatılı) — Quaternius'ta yok | MarketStall | KenneySurvival | structure-canvas.fbx | 3,2 m (en büyük kenar) | ✅ |
-| Pazardaki altın sandığı | MarketChest | Quaternius | Prop_Chest_Gold.fbx | 0,9 m (en büyük kenar) | ✅ |
+| Halat Atölyesi — kodla kurulan halat çarkı (MachineBuilder), model kullanılmaz | RopeWorkshop | KenneySurvival | structure.fbx | 3,6 m (en büyük kenar) | ✅ |
+| Dokuma Tezgahı — kodla kurulan el tezgahı (MachineBuilder), model kullanılmaz | Loom | KenneySurvival | structure-canvas.fbx | 3,4 m (en büyük kenar) | ✅ |
+| Tayfa Barakası (korsan evi; işçiler kapısından çıkar) | Barracks | Quaternius | Environment_House1.fbx | 5 m (en büyük kenar) | ✅ |
+| Pazar satıcısı (tezgahın arkasında el sallar) | Merchant | Quaternius | Characters_Sharky.fbx | 1,8 m (yükseklik) | ✅ |
 | Kamp çadırı — Quaternius'ta yok | CampTent | KenneySurvival | tent-canvas.fbx | 2,6 m (en büyük kenar) | ✅ |
 | Kamp ateşi | Campfire | KenneySurvival | campfire-pit.fbx | 1,1 m (en büyük kenar) | ✅ |
 | Kapalı bölge çiti — Quaternius'ta yok | Fence | KenneySurvival | fence.fbx | 2 m (en büyük kenar) | ✅ |
@@ -78,7 +78,7 @@
 |---|---|---|---|---|---|
 | Varil | Barrel | Quaternius | Prop_Barrel.fbx | 0,95 m (yükseklik) | ✅ |
 | Sandık | Chest | Quaternius | Prop_Chest_Closed.fbx | 0,85 m (en büyük kenar) | ✅ |
-| Çapa | Anchor | Quaternius | Prop_Anchor.fbx | 1,5 m (yükseklik) | ✅ |
+| Çapa (kumda yatık) | Anchor | Quaternius | Prop_Anchor.fbx | 1,7 m (en büyük kenar) | ✅ |
 | Kova | Bucket | Quaternius | Prop_Bucket.fbx | 0,5 m (yükseklik) | ✅ |
 | Balık kovası | BucketFish | Quaternius | Prop_Bucket_Fishes.fbx | 0,55 m (yükseklik) | ✅ |
 | Top | Cannon | Quaternius | Prop_Cannon.fbx | 1,7 m (en büyük kenar) | ✅ |

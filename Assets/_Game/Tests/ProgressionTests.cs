@@ -40,14 +40,14 @@ namespace KayipAda.Tests
         [UnityTest]
         public IEnumerator UpgradeStation_OpensPanelAndBlocksMovement()
         {
-            UpgradeStation station = FindAny<UpgradeStation>();
+            UpgradeStation station = Find<UpgradeStation>("UpgradeStation"); // (Tayfa Barakası da bir UpgradeStation)
             Assert.IsNotNull(station, "Geliştirme tezgahı yok");
             Teleport(station.transform.position);
             yield return WaitFor(() => PlayerController.InputBlocked, 3f);
             Assert.IsTrue(PlayerController.InputBlocked, "Panel açılınca oyuncu durmadı");
             yield return new WaitForSeconds(0.5f);
             Shot("B_gelistirme_paneli");
-            FindAny<UpgradePanel>().Close();
+            Find<UpgradePanel>("UpgradePanel").Close();
             Assert.IsFalse(PlayerController.InputBlocked);
         }
 
@@ -171,8 +171,10 @@ namespace KayipAda.Tests
             EscapePanel escape = FindAny<EscapePanel>();
             Assert.IsNotNull(ceremony, "Tören yok");
             Assert.IsNotNull(escape, "Kaçış ekranı yok");
-            AreaManager.Instance.Unlock(PadArea("Pad Lumberjack"));
-            yield return new WaitForSeconds(1f);
+            Hire("lumberjack", 2);
+            Hire("carrier", 2);
+            Hire("fiber", 1);
+            yield return new WaitForSeconds(3.5f); // işçiler barakadan çıksın (toplanma çekiminde kalabalık)
 
             Vector3 shipStart = ship.Model.position;
             yield return FinishShip(ship);

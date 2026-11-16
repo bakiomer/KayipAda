@@ -22,6 +22,12 @@ namespace KayipAda.EditorTools
         public bool Upright;     // eğri modeli (palmiye) gövdesi dik duracak şekilde döndür
         public string Note;      // Modeller.md'de görünen açıklama
 
+        // Quaternius çevre/eşya modelleri Blender'dan "Z yukarı" gelir; dosyadaki kök dönüşü (X 270°) onları dik tutar.
+        // Bu dönüş korunur (yoksa iskele dik duvar gibi, evler ve sandıklar yan yatık görünür). Palmiyeler (Upright)
+        // ve gemi kendi düzeltmesini yapar; zıplayan balığın duruşunu kod verir.
+        public bool KeepImportRotation => Pack == ModelPack.Quaternius && !Upright && Key != "JumpFish"
+                                          && (File.StartsWith("Environment_") || File.StartsWith("Prop_"));
+
         public string Path
         {
             get
@@ -107,10 +113,12 @@ namespace KayipAda.EditorTools
         // ---------------------------------------------------------------- Binalar ve alanlar
         public static readonly ModelSpec Sawmill = M("Sawmill", ModelPack.Quaternius, "Environment_Sawmill", 3.8f, SizeAxis.Largest, true, true, "Bıçkıhane");
         public static readonly ModelSpec Workshop = M("StoneWorkshop", ModelPack.Quaternius, "Environment_House3", 3.8f, SizeAxis.Largest, true, true, "Taş Atölyesi (ev modeli)");
-        public static readonly ModelSpec RopeWorkshop = M("RopeWorkshop", ModelPack.KenneySurvival, "structure", 3.6f, SizeAxis.Largest, true, true, "Halat Atölyesi (ahşap yapı) — Quaternius evleri yan yatık geliyor");
-        public static readonly ModelSpec Loom = M("Loom", ModelPack.KenneySurvival, "structure-canvas", 3.4f, SizeAxis.Largest, true, true, "Dokuma Tezgahı (bez çatılı tezgah)");
-        public static readonly ModelSpec MarketStall = M("MarketStall", ModelPack.KenneySurvival, "structure-canvas", 3.2f, SizeAxis.Largest, true, true, "Pazar tezgahı (bez çatılı) — Quaternius'ta yok");
-        public static readonly ModelSpec MarketChest = M("MarketChest", ModelPack.Quaternius, "Prop_Chest_Gold", 0.9f, SizeAxis.Largest, true, true, "Pazardaki altın sandığı");
+        // Halat Atölyesi ve Dokuma Tezgahı: pakette uygun model yok → kodla kurulan makine (MachineBuilder). Dosya yalnızca
+        // boyut/ad için; model yüklenmez.
+        public static readonly ModelSpec RopeWorkshop = M("RopeWorkshop", ModelPack.KenneySurvival, "structure", 3.6f, SizeAxis.Largest, true, true, "Halat Atölyesi — kodla kurulan halat çarkı (MachineBuilder), model kullanılmaz");
+        public static readonly ModelSpec Loom = M("Loom", ModelPack.KenneySurvival, "structure-canvas", 3.4f, SizeAxis.Largest, true, true, "Dokuma Tezgahı — kodla kurulan el tezgahı (MachineBuilder), model kullanılmaz");
+        public static readonly ModelSpec Barracks = M("Barracks", ModelPack.Quaternius, "Environment_House1", 5f, SizeAxis.Largest, true, true, "Tayfa Barakası (korsan evi; işçiler kapısından çıkar)");
+        public static readonly ModelSpec Merchant = M("Merchant", ModelPack.Quaternius, "Characters_Sharky", 1.8f, SizeAxis.Height, false, true, "Pazar satıcısı (tezgahın arkasında el sallar)");
         public static readonly ModelSpec Tent = M("CampTent", ModelPack.KenneySurvival, "tent-canvas", 2.6f, SizeAxis.Largest, true, true, "Kamp çadırı — Quaternius'ta yok");
         public static readonly ModelSpec Campfire = M("Campfire", ModelPack.KenneySurvival, "campfire-pit", 1.1f, SizeAxis.Largest, true, false, "Kamp ateşi");
         public static readonly ModelSpec ShipFlag = M("ShipFlag", ModelPack.KenneyPirate, "flag-pirate-high", 2.2f, SizeAxis.Height, true, false, "Erzak aşamasında direğin tepesine çıkan korsan bayrağı");
@@ -127,7 +135,7 @@ namespace KayipAda.EditorTools
         {
             M("Barrel", ModelPack.Quaternius, "Prop_Barrel", 0.95f, SizeAxis.Height, true, true, "Varil"),
             M("Chest", ModelPack.Quaternius, "Prop_Chest_Closed", 0.85f, SizeAxis.Largest, true, true, "Sandık"),
-            M("Anchor", ModelPack.Quaternius, "Prop_Anchor", 1.5f, SizeAxis.Height, true, true, "Çapa"),
+            M("Anchor", ModelPack.Quaternius, "Prop_Anchor", 1.7f, SizeAxis.Largest, true, true, "Çapa (kumda yatık)"),
             M("Bucket", ModelPack.Quaternius, "Prop_Bucket", 0.5f, SizeAxis.Height, true, false, "Kova"),
             M("BucketFish", ModelPack.Quaternius, "Prop_Bucket_Fishes", 0.55f, SizeAxis.Height, true, false, "Balık kovası"),
             M("Cannon", ModelPack.Quaternius, "Prop_Cannon", 1.7f, SizeAxis.Largest, true, true, "Top"),

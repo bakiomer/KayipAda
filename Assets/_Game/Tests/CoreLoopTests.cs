@@ -81,8 +81,8 @@ namespace KayipAda.Tests
         public IEnumerator Workers_EarnMoneyOnTheirOwn()
         {
             AreaManager.Instance.Unlock(PadArea("Pad Sawmill"));
-            AreaManager.Instance.Unlock(PadArea("Pad Lumberjack"));
-            AreaManager.Instance.Unlock(PadArea("Pad Carrier"));
+            Hire("lumberjack");
+            Hire("carrier");
             Teleport(new Vector3(-3f, 0f, 3f)); // oyuncu kenarda dursun, hiçbir alana girmesin
             int before = CurrencyManager.Instance.Coins;
 

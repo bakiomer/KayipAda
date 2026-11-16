@@ -69,7 +69,7 @@ namespace KayipAda.EditorTools
             model.name = "Model";
             model.transform.SetParent(parent, false);
             model.transform.localPosition = Vector3.zero;
-            model.transform.localRotation = Quaternion.identity;
+            model.transform.localRotation = spec.KeepImportRotation && source != null ? source.transform.localRotation : Quaternion.identity;
             Normalize(model, spec);
             if (spec.Upright) Straighten(model, spec);
             BuilderUtil.SetShadows(model, spec.CastShadows);
@@ -426,6 +426,11 @@ namespace KayipAda.EditorTools
             BuilderUtil.SetField(visual, "stack", stack);
             BuilderUtil.SetField(visual, "dust", dust);
             BuilderUtil.SetBool(visual, "footsteps", isPlayer);
+
+            // Ayak izi / su halkası / yaprak (TrailPool); işçiler daha seyrek.
+            TrailEmitter trail = root.AddComponent<TrailEmitter>();
+            BuilderUtil.SetField(trail, "config", config);
+            BuilderUtil.SetBool(trail, "isPlayer", isPlayer);
 
             if (isPlayer)
             {
@@ -1072,7 +1077,7 @@ namespace KayipAda.EditorTools
         //          [ bina gövdesi ]        z +0.9
         //     [giriş]          [çıkış]    z -1.5
         public static GameObject BuildBuilding(ModelSpec spec, BuildingType type, GameConfig config, GameObject workFxPrefab,
-                                               ModelSpec decor, Vector3 decorPos)
+                                               ModelSpec decor, Vector3 decorPos, MachineBuilder.Kind machine = MachineBuilder.Kind.None)
         {
             Vector3 bodyPos = new Vector3(0f, 0f, 0.9f);
             GameObject root = new GameObject(spec.Key);
@@ -1081,7 +1086,9 @@ namespace KayipAda.EditorTools
             Transform body = new GameObject("Body").transform;
             body.SetParent(root.transform, false);
             body.localPosition = bodyPos;
-            CreateModel(spec, body);
+            Vector3 productPos = bodyPos + Vector3.up * 1.2f;
+            if (machine == MachineBuilder.Kind.None) CreateModel(spec, body);
+            else productPos = bodyPos + MachineBuilder.Build(machine, body, building, config, spec.Size);
             BuilderUtil.SetVector2(body.gameObject.AddComponent<NavObstacle>(), "size", new Vector2(spec.Size * 0.85f, spec.Size * 0.7f));
 
             if (decor != null)
@@ -1094,7 +1101,7 @@ namespace KayipAda.EditorTools
 
             Transform spawn = new GameObject("ProductSpawnPoint").transform;
             spawn.SetParent(root.transform, false);
-            spawn.localPosition = bodyPos + Vector3.up * 1.2f;
+            spawn.localPosition = productPos;
 
             ProgressRing ring = CreateBuildingRing(root.transform, bodyPos + Vector3.up * (spec.Size + 1.3f)); // adın üstünde
             CreateBoardSign(root.transform, bodyPos + Vector3.up * (spec.Size + 0.55f), type.DisplayName);
@@ -1102,8 +1109,11 @@ namespace KayipAda.EditorTools
             ParticleSystem fx = null;
             if (workFxPrefab != null)
             {
-                fx = Instance(workFxPrefab, root.transform, bodyPos + Vector3.up * (spec.Size * 0.7f)).GetComponent<ParticleSystem>();
+                Vector3 fxPos = machine == MachineBuilder.Kind.None ? bodyPos + Vector3.up * (spec.Size * 0.7f) : productPos; // makinede lif tozu makaranın yanında
+                fx = Instance(workFxPrefab, root.transform, fxPos).GetComponent<ParticleSystem>();
             }
+
+            CreateRecipeBalloon(root.transform, bodyPos + Vector3.up * (spec.Size + 2.2f), building, config, type);
 
             ItemPile inputPile = CreateSlot("Input", root.transform, new Vector3(-1.4f, 0f, -1.5f), type.Input, true, config);
             BuildingInput input = inputPile.transform.parent.gameObject.AddComponent<BuildingInput>();
@@ -1158,15 +1168,25 @@ namespace KayipAda.EditorTools
             AddBoxTrigger(slot, new Vector3(0f, 1f, 0f), new Vector3(1.6f, 2f, 1.6f));
 
             Canvas canvas = UiFactory.CreateWorldCanvas("Marker", slot.transform, new Vector3(0f, 0.035f, 0f),
-                                                        Quaternion.Euler(90f, 0f, 0f), new Vector2(170f, 170f));
+                                                        Quaternion.Euler(90f, 0f, 0f), new Vector2(200f, 200f));
             Color tint = isInput ? new Color(0.55f, 0.85f, 1f) : new Color(1f, 0.85f, 0.35f);
             Image back = UiFactory.CreateImage("Back", canvas.transform, ArtGenerator.LoadSprite(ArtGenerator.CirclePath), new Color(1f, 1f, 1f, 0.35f));
             UiFactory.Stretch(back.rectTransform);
             Image ring = UiFactory.CreateImage("Ring", canvas.transform, ArtGenerator.LoadSprite(ArtGenerator.RingPath), tint);
             UiFactory.Stretch(ring.rectTransform);
             Image icon = UiFactory.CreateImage("Icon", canvas.transform, resource != null ? resource.Icon : null, Color.white);
-            UiFactory.Size(icon, new Vector2(0f, -12f), new Vector2(104f, 104f));
+            UiFactory.Size(icon, new Vector2(0f, -12f), new Vector2(124f, 124f));
             icon.preserveAspect = true;
+            // Yerdeki işaretin üstünde süzülen büyük ikon: uzaktan da hangi malzemenin girip çıktığı okunur (hiç kaybolmaz).
+            Canvas floating = UiFactory.CreateWorldCanvas("FloatIcon", slot.transform, new Vector3(0f, 2.05f, 0f), Quaternion.identity, new Vector2(90f, 90f));
+            floating.gameObject.AddComponent<Billboard>();
+            Image bubble = UiFactory.CreateImage("Bubble", floating.transform, ArtGenerator.LoadSprite(ArtGenerator.CirclePath), new Color(1f, 1f, 1f, 0.92f));
+            UiFactory.Stretch(bubble.rectTransform);
+            Image bubbleRing = UiFactory.CreateImage("Ring", floating.transform, ArtGenerator.LoadSprite(ArtGenerator.RingPath), tint);
+            UiFactory.Stretch(bubbleRing.rectTransform);
+            Image floatIcon = UiFactory.CreateImage("Icon", floating.transform, resource != null ? resource.Icon : null, Color.white);
+            UiFactory.Size(floatIcon, Vector2.zero, new Vector2(64f, 64f));
+            floatIcon.preserveAspect = true;
             // Ok: giriş = binaya doğru (yukarı), çıkış = binadan dışarı (aşağı).
             Image arrow = UiFactory.CreateImage("Arrow", canvas.transform, ArtGenerator.LoadSprite(ArtGenerator.ArrowPath), tint);
             UiFactory.Size(arrow, new Vector2(0f, 62f), new Vector2(46f, 46f));
@@ -1178,6 +1198,46 @@ namespace KayipAda.EditorTools
             ItemPile pile = pileGo.AddComponent<ItemPile>();
             BuilderUtil.SetField(pile, "config", config);
             return pile;
+        }
+
+        // Oyuncu yaklaşınca açılan tarif balonu: "3 [lif] → 1 [halat]" (açık renkli balon, koyu sayılar, büyük ikonlar).
+        private static void CreateRecipeBalloon(Transform parent, Vector3 localPos, ProcessingBuilding building, GameConfig config, BuildingType type)
+        {
+            Canvas canvas = UiFactory.CreateWorldCanvas("RecipeBalloon", parent, localPos, Quaternion.identity, new Vector2(330f, 130f));
+            canvas.gameObject.AddComponent<Billboard>();
+            GameObject visual = new GameObject("Visual", typeof(RectTransform));
+            visual.transform.SetParent(canvas.transform, false);
+            UiFactory.Stretch((RectTransform)visual.transform);
+            Color paper = new Color(1f, 0.98f, 0.92f, 0.96f);
+            Image back = UiFactory.CreateImage("Back", visual.transform, ArtGenerator.LoadSprite(ArtGenerator.RoundedRectPath), paper);
+            back.type = Image.Type.Sliced;
+            UiFactory.Stretch(back.rectTransform);
+            Image tail = UiFactory.CreateImage("Tail", visual.transform, ArtGenerator.LoadSprite(ArtGenerator.ArrowPath), paper);
+            UiFactory.Size(tail, new Vector2(0f, -78f), new Vector2(46f, 34f));
+            tail.rectTransform.localRotation = Quaternion.Euler(0f, 0f, 180f);
+            Color dark = new Color(0.32f, 0.2f, 0.1f);
+            TMPro.TextMeshProUGUI inCount = UiFactory.CreateUIText("InCount", visual.transform, type.InputAmount.ToString(), 70f, UiFactory.Gold);
+            UiFactory.Size(inCount, new Vector2(-128f, 0f), new Vector2(60f, 100f));
+            Image inIcon = UiFactory.CreateImage("InIcon", visual.transform, type.Input != null ? type.Input.Icon : null, Color.white);
+            UiFactory.Size(inIcon, new Vector2(-62f, 0f), new Vector2(84f, 84f));
+            inIcon.preserveAspect = true;
+            Image arrow = UiFactory.CreateImage("Arrow", visual.transform, ArtGenerator.LoadSprite(ArtGenerator.ArrowPath), new Color(0.36f, 0.7f, 0.3f));
+            UiFactory.Size(arrow, new Vector2(8f, 0f), new Vector2(48f, 48f));
+            arrow.rectTransform.localRotation = Quaternion.Euler(0f, 0f, -90f); // sağı gösterir
+            TMPro.TextMeshProUGUI outCount = UiFactory.CreateUIText("OutCount", visual.transform, type.OutputAmount.ToString(), 70f, UiFactory.Gold);
+            UiFactory.Size(outCount, new Vector2(72f, 0f), new Vector2(60f, 100f));
+            Image outIcon = UiFactory.CreateImage("OutIcon", visual.transform, type.Output != null ? type.Output.Icon : null, Color.white);
+            UiFactory.Size(outIcon, new Vector2(132f, 0f), new Vector2(84f, 84f));
+            outIcon.preserveAspect = true;
+
+            RecipeBalloon balloon = canvas.gameObject.AddComponent<RecipeBalloon>();
+            BuilderUtil.SetField(balloon, "config", config);
+            BuilderUtil.SetField(balloon, "building", building);
+            BuilderUtil.SetField(balloon, "visual", visual.transform);
+            BuilderUtil.SetField(balloon, "inputCount", inCount);
+            BuilderUtil.SetField(balloon, "inputIcon", inIcon);
+            BuilderUtil.SetField(balloon, "outputCount", outCount);
+            BuilderUtil.SetField(balloon, "outputIcon", outIcon);
         }
 
         // Binanın üstünde kameraya dönük, işlerken dolan halka.
@@ -1213,36 +1273,6 @@ namespace KayipAda.EditorTools
         }
 
         // ================================================================ Pazar, açma karesi, kamp
-
-        public static GameObject BuildMarket(GameConfig config)
-        {
-            GameObject root = new GameObject("Market");
-            AddBoxTrigger(root, new Vector3(0f, 1f, 0f), new Vector3(3f, 2f, 2.6f));
-            AddGroundDecal("Decal", root.transform, Vector3.zero, new Vector2(3f, 2.6f), new Color(1f, 0.8f, 0.2f, 0.45f));
-
-            Transform stall = new GameObject("Stall").transform;
-            stall.SetParent(root.transform, false);
-            stall.localPosition = new Vector3(0f, 0f, 2.2f);
-            CreateModel(ModelCatalog.MarketStall, stall);
-            BuilderUtil.SetVector2(stall.gameObject.AddComponent<NavObstacle>(), "size", new Vector2(3f, 1.6f));
-
-            Transform chest = new GameObject("Chest").transform;
-            chest.SetParent(root.transform, false);
-            chest.localPosition = new Vector3(1.9f, 0f, 1.6f);
-            chest.localRotation = Quaternion.Euler(0f, -20f, 0f);
-            CreateModel(ModelCatalog.MarketChest, chest);
-
-            Transform drop = new GameObject("DropPoint").transform;
-            drop.SetParent(root.transform, false);
-            drop.localPosition = new Vector3(0f, 1.1f, 1.8f);
-
-            UiFactory.CreateWorldLabel("Label", root.transform, new Vector3(0f, 3.9f, 2.2f), "PAZAR", 7f, UiFactory.Gold);
-
-            Market market = root.AddComponent<Market>();
-            BuilderUtil.SetField(market, "config", config);
-            BuilderUtil.SetField(market, "dropPoint", drop);
-            return Save(root, Folder + "/World/Market.prefab");
-        }
 
         // Yerde yuvarlak açma karesi: koyu daire, dolan altın halka, ortada para ikonu + büyük fiyat, üstte ad.
         public static GameObject BuildUnlockPad(GameConfig config)
@@ -1397,6 +1427,79 @@ namespace KayipAda.EditorTools
         }
 
         // Bina çalışırken: duman (yukarı süzülen gri bulut) ya da talaş (fışkıran küçük parçalar).
+        // Lif tozu: makinede yavaşça süzülen küçük sarımsı parçacıklar.
+        public static GameObject BuildWorkEffect(string name, bool sawdust, Color tint)
+        {
+            GameObject prefab = BuildWorkEffect(name, sawdust);
+            GameObject root = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+            ParticleSystem ps = root.GetComponent<ParticleSystem>();
+            ParticleSystem.MainModule main = ps.main;
+            main.startColor = new Color(tint.r, tint.g, tint.b, 0.9f);
+            main.gravityModifier = 0.25f;
+            main.startSpeed = new ParticleSystem.MinMaxCurve(0.4f, 1.1f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.04f, 0.09f);
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.8f, 1.4f);
+            ParticleSystem.EmissionModule emission = ps.emission;
+            emission.rateOverTime = 9f;
+            PrefabUtility.UnpackPrefabInstance(root, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
+            return Save(root, Folder + "/FX/" + name + ".prefab");
+        }
+
+        // ================================================================ Karakter izleri (TrailPool)
+
+        // Kumda ayak izi: koyu, yumuşak kenarlı küçük oval.
+        public static GameObject BuildFootprint()
+        {
+            GameObject quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            Object.DestroyImmediate(quad.GetComponent<Collider>());
+            quad.name = "Footprint";
+            quad.transform.localScale = new Vector3(0.3f, 0.46f, 1f);
+            Renderer r = quad.GetComponent<Renderer>();
+            r.sharedMaterial = ArtGenerator.GetTransparent("M_Footprint", ArtGenerator.LoadSprite(ArtGenerator.SoftCirclePath)?.texture,
+                                                           new Color(0.38f, 0.25f, 0.12f, 0.7f));
+            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            r.receiveShadows = false;
+            return Save(quad, Folder + "/FX/Footprint.prefab");
+        }
+
+        // Kıyıda su halkası: genişleyip kaybolan beyaz halka.
+        public static GameObject BuildRipple()
+        {
+            GameObject quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            Object.DestroyImmediate(quad.GetComponent<Collider>());
+            quad.name = "Ripple";
+            quad.transform.localScale = new Vector3(1.1f, 1.1f, 1f);
+            Renderer r = quad.GetComponent<Renderer>();
+            r.sharedMaterial = ArtGenerator.GetTransparent("M_Ripple", ArtGenerator.LoadSprite(ArtGenerator.RingPath)?.texture,
+                                                           new Color(1f, 1f, 1f, 0.6f));
+            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            r.receiveShadows = false;
+            return Save(quad, Folder + "/FX/Ripple.prefab");
+        }
+
+        // Çimende adımda uçuşan birkaç yaprak/ot parçası (Emit ile, kendisi yayın yapmaz).
+        public static GameObject BuildLeafBurst()
+        {
+            ParticleSystem ps = NewParticles("LeafBurst", "M_Confetti", ArtGenerator.SquarePath, out GameObject root);
+            ParticleSystem.MainModule main = ps.main;
+            main.loop = false;
+            main.playOnAwake = false;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.5f, 0.9f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(0.8f, 1.8f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.05f, 0.1f);
+            main.startColor = new ParticleSystem.MinMaxGradient(new Color(0.35f, 0.65f, 0.2f), new Color(0.55f, 0.8f, 0.3f));
+            main.gravityModifier = 0.9f;
+            main.maxParticles = 20;
+            main.startRotation = new ParticleSystem.MinMaxCurve(0f, 6.28f);
+            ParticleSystem.EmissionModule emission = ps.emission;
+            emission.rateOverTime = 0f;
+            ParticleSystem.ShapeModule shape = ps.shape;
+            shape.shapeType = ParticleSystemShapeType.Hemisphere;
+            shape.radius = 0.15f;
+            FadeOut(ps);
+            return Save(root, Folder + "/FX/LeafBurst.prefab");
+        }
+
         public static GameObject BuildWorkEffect(string name, bool sawdust)
         {
             ParticleSystem ps = NewParticles(name, sawdust ? "M_Confetti" : "M_Particle",

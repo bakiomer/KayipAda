@@ -46,7 +46,7 @@ namespace KayipAda.Tests
             Assert.IsTrue(AreaManager.Instance.IsUnlocked(PadArea("Pad Loom")), "Dokuma Tezgahı açılmadı");
             Assert.IsTrue(AreaManager.Instance.IsUnlocked(PadArea("Pad RopeWorkshop")), "Halat Atölyesi açılmadı");
             DevCommands.HireAllWorkers();
-            Assert.IsTrue(AreaManager.Instance.IsUnlocked(PadArea("Pad FiberWorker")), "Lifçi çıkmadı");
+            Assert.GreaterOrEqual(CrewManager.Instance.GetHired(CrewManager.Instance.Types[2]), 1, "Lifçi tutulmadı");
             yield return new WaitForSeconds(3f);
             Assert.GreaterOrEqual(Object.FindObjectsByType<Worker>(FindObjectsSortMode.None).Length, 3, "İşçiler çıkmadı");
 

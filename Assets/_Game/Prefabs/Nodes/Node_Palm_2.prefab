@@ -29,7 +29,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 6288665361096901591}
+  - {fileID: 5665162793902991576}
   m_Father: {fileID: 7390329803334049322}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &6829196987100257369
@@ -105,6 +105,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: KayipAda::KayipAda.NavObstacle
   size: {x: 0.6, y: 0.6}
+  oriented: 0
+  cornerRadius: 0
 --- !u!114 &4240286399027503529
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2455,10 +2457,10 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 7766884616407141715}
+  - {fileID: 7988250331183423626}
   m_Father: {fileID: 7390329803334049322}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1001 &5822990142020871228
+--- !u!1001 &5265845919402004275
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -2535,12 +2537,12 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 228bd383800341643bd4673610f640d7, type: 3}
---- !u!4 &6288665361096901591 stripped
+--- !u!4 &5665162793902991576 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 228bd383800341643bd4673610f640d7, type: 3}
-  m_PrefabInstance: {fileID: 5822990142020871228}
+  m_PrefabInstance: {fileID: 5265845919402004275}
   m_PrefabAsset: {fileID: 0}
---- !u!1001 &7801146140255693496
+--- !u!1001 &7588932777474049889
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -2613,8 +2615,8 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 1c8484331dcb99d43bd47a1698d3b8b2, type: 3}
---- !u!4 &7766884616407141715 stripped
+--- !u!4 &7988250331183423626 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 1c8484331dcb99d43bd47a1698d3b8b2, type: 3}
-  m_PrefabInstance: {fileID: 7801146140255693496}
+  m_PrefabInstance: {fileID: 7588932777474049889}
   m_PrefabAsset: {fileID: 0}

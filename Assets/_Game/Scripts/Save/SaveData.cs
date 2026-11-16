@@ -23,6 +23,7 @@ namespace KayipAda
         public List<string> Unlocked = new List<string>();
         public List<IdValue> Paid = new List<IdValue>();
         public List<IdValue> Upgrades = new List<IdValue>();
+        public List<IdValue> Crew = new List<IdValue>(); // Tayfa Barakası'nda tutulan işçi sayıları
         public int ShipStage;
         public List<IdValue> ShipDelivered = new List<IdValue>();
         public float PlayTime;
@@ -38,6 +39,7 @@ namespace KayipAda
             Unlocked.Clear();
             Paid.Clear();
             Upgrades.Clear();
+            Crew.Clear();
             ShipStage = 0;
             ShipDelivered.Clear();
             PlayTime = 0f;

@@ -56,6 +56,13 @@ namespace KayipAda.Tests
             return UnityEngine.Object.FindAnyObjectByType<T>(FindObjectsInactive.Include);
         }
 
+        // Tayfa Barakası'ndan işçi tut (para harcamadan; testler için).
+        protected static void Hire(string workerId, int count = 1)
+        {
+            foreach (WorkerType t in CrewManager.Instance.Types)
+                if (t != null && t.Id == workerId) CrewManager.Instance.SetHired(t, count);
+        }
+
         protected static AreaDefinition PadArea(string padName)
         {
             UnlockPad pad = Find<UnlockPad>(padName);

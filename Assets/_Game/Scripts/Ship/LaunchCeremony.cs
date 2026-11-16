@@ -72,15 +72,21 @@ namespace KayipAda
             Phase = "toplanma";
             if (CelebrationBanner.Instance != null) CelebrationBanner.Instance.Show("GEMİ HAZIR!", "Herkes iskeleye!", ship.GatherTime);
             GatherEveryone();
+            yield return null; // oyuncu ışınlandı: kalabalığın yeri güncel
             Haptics.Vibrate();
             StartCoroutine(Sunset());
-            // Kamera alçaktan ve yandan (geminin burun tarafından): toplanan kalabalık, gemi ve ada birlikte.
+            // Kamera kara tarafında, kalabalığın gerisinden gemiye doğru çapraz bakar: toplanan sıra derinliğe uzanır
+            // (dikey ekrana sığar), arkasında gemi.
             Vector3 bow = Flat(shipRoot.forward);
             Vector3 sea = Flat(slideDirection);
-            float gatherYaw = YawOf(bow + sea * 0.3f);
+            Vector3 crowd = GatherCenter();
+            Vector3 view = (sea * ship.GatherShotSide + bow * ship.GatherShotBack).normalized; // kameranın baktığı yön (yatay)
+            Vector3 shotPos = crowd - view * ship.GatherShotDistance + Vector3.up * ship.GatherShotHeight;
+            Vector3 shotLook = crowd + view * 1.6f + Vector3.up * 0.9f;
+            float gatherYaw = YawOf(shotPos - center);
             for (float t = 0f; t < ship.GatherTime; t += Time.deltaTime)
             {
-                Orbit(Vector3.Lerp(center, GatherCenter(), 0.4f), gatherYaw, ship.OrbitDistance, ship.OrbitHeight, 2.5f);
+                if (cameraFollow != null) cameraFollow.SetShot(shotPos, Quaternion.LookRotation(shotLook - shotPos), 2.5f);
                 yield return null;
             }
 
@@ -231,12 +237,18 @@ namespace KayipAda
                 if (body != null) body.position = spot;
                 player.transform.position = spot;
             }
+            // İşçiler toplanma yerine ışınlanır (adanın öbür ucundan yürümesin; kalabalık kadrajda olsun).
             int i = 0;
+            Vector3 back = -Flat(slideDirection);
             foreach (Worker worker in FindObjectsByType<Worker>(FindObjectsSortMode.None))
             {
                 if (gatherPoints.Length == 0) break;
                 Transform point = gatherPoints[i % gatherPoints.Length];
-                worker.Gather(point.position + new Vector3((i / gatherPoints.Length) * 0.9f, 0f, 0f));
+                Vector3 spot = point.position + back * ((i / gatherPoints.Length) * 0.9f);
+                Rigidbody wb = worker.GetComponent<Rigidbody>();
+                if (wb != null) wb.position = spot;
+                worker.transform.position = spot;
+                worker.Gather(spot);
                 i++;
             }
             SetCheer(true);

@@ -159,10 +159,15 @@ namespace KayipAda.EditorTools
             CreateBuildingTypeIfMissing("StoneWorkshop", "Taş Atölyesi", "Stone", 2,    "Brick", 1,    3f,   10,        10);
             CreateBuildingTypeIfMissing("RopeWorkshop",  "Halat Atölyesi", "Fiber", 3,  "Rope",  1,    3f,   12,        10);
             CreateBuildingTypeIfMissing("Loom",          "Dokuma Tezgahı", "Fiber", 4,  "Cloth", 1,    4f,   12,        10);
-            //                        dosya         ad          hız   kapasite  sayı
-            CreateWorkerTypeIfMissing("Lumberjack", "Oduncu",   3.2f, 6,        1);
-            CreateWorkerTypeIfMissing("Carrier",    "Taşıyıcı", 3.6f, 8,        1);
-            CreateWorkerTypeIfMissing("FiberGatherer", "Lifçi", 3.2f, 6,        1);
+            //                        dosya            ad          hız   kapasite
+            CreateWorkerTypeIfMissing("Lumberjack",    "Oduncu",   3.2f, 6);
+            CreateWorkerTypeIfMissing("Carrier",       "Taşıyıcı", 3.6f, 8);
+            CreateWorkerTypeIfMissing("FiberGatherer", "Lifçi",    3.2f, 6);
+            // Tayfa Barakası (eski dosyalarda yoksa bir kez yazılır). İlk fiyatlar eski açma kareleriyle aynı (ekonomi korunur).
+            //                 dosya            kimlik         tutma fiyatları (sırayla)      gereken bina      kilit yazısı               eski açma karesi
+            EnsureCrewSetup("Lumberjack",    "lumberjack",   new[] { 400, 950, 1700 },     "Sawmill",        "Bıçkıhane gerekli",       "HireLumberjack");
+            EnsureCrewSetup("Carrier",       "carrier",      new[] { 600, 1300, 2200 },    "Sawmill",        "Bıçkıhane gerekli",       "HireCarrier");
+            EnsureCrewSetup("FiberGatherer", "fiber",        new[] { 500, 1100, 1900 },    "RopeWorkshop",   "Halat Atölyesi gerekli",  "HireFiber");
             //                     dosya             kimlik             ad                    etkilediği                      fiyatlar (5 seviye)                  toplam etki (5 seviye)
             CreateUpgradeIfMissing("PlayerCapacity", "player_capacity", "Taşıma Kapasitesi", UpgradeStat.PlayerCapacity, new[] { 120, 280, 520, 840, 1300 },  new[] { 2f, 4f, 6f, 9f, 12f });
             CreateUpgradeIfMissing("PlayerSpeed",    "player_speed",    "Koşu Hızı",         UpgradeStat.PlayerSpeed,    new[] { 140, 320, 600, 960, 1440 },  new[] { 0.08f, 0.16f, 0.24f, 0.32f, 0.4f });
@@ -184,6 +189,10 @@ namespace KayipAda.EditorTools
         }
 
         private static readonly string[] UpgradeFiles = { "PlayerCapacity", "PlayerSpeed", "WorkerSpeed", "WorkerCapacity", "BuildingSpeed" };
+        // Kamptaki tezgah: oyuncu geliştirmeleri; Tayfa Barakası: işçi geliştirmeleri.
+        private static readonly string[] BenchUpgrades = { "PlayerCapacity", "PlayerSpeed", "BuildingSpeed" };
+        private static readonly string[] CrewUpgrades = { "WorkerSpeed", "WorkerCapacity" };
+        private static readonly string[] CrewFiles = { "Lumberjack", "Carrier", "FiberGatherer" };
 
         // Gemi aşamaları: her biri bitince bir sonraki hedefin kilidini açar.
         private static void CreateShipConfigIfMissing()
@@ -260,13 +269,21 @@ namespace KayipAda.EditorTools
             AssetDatabase.CreateAsset(type, path);
         }
 
-        private static void CreateWorkerTypeIfMissing(string file, string displayName, float speed, int capacity, int count)
+        private static void CreateWorkerTypeIfMissing(string file, string displayName, float speed, int capacity)
         {
             string path = WorkerTypesFolder + "/" + file + ".asset";
             if (BuilderUtil.Load<WorkerType>(path) != null) return;
             WorkerType type = ScriptableObject.CreateInstance<WorkerType>();
-            type.EditorSetup(displayName, speed, capacity, count);
+            type.EditorSetup(displayName, speed, capacity);
             AssetDatabase.CreateAsset(type, path);
+        }
+
+        private static void EnsureCrewSetup(string file, string id, int[] prices, string requiredArea, string lockedText, string legacyArea)
+        {
+            WorkerType type = Data<WorkerType>(WorkerTypesFolder, file);
+            if (type == null || !string.IsNullOrEmpty(type.Id)) return; // senin ayarların korunur
+            type.EditorSetupCrew(id, prices, Data<AreaDefinition>(AreasFolder, requiredArea), lockedText, Data<AreaDefinition>(AreasFolder, legacyArea));
+            EditorUtility.SetDirty(type);
         }
 
         // Ses seçimi (Docs/Modeller.md'de de listelenir). Dosya varsa sadece eksik ses türleri eklenir.
@@ -312,7 +329,10 @@ namespace KayipAda.EditorTools
                 Sound(SoundId.ShipSlide, 0.8f, normal, "RPG/creak1", "RPG/creak2", "RPG/creak3"),
                 Sound(SoundId.Firework, 0.6f, 0.1f, A + "havai_fisek/rubberduck_fw_01", A + "havai_fisek/rubberduck_fw_02", A + "havai_fisek/rubberduck_fw_06"),
                 Sound(SoundId.Seagull, 0.3f, 0.06f, A + "marti/rangomango_seagull_ambient_1", A + "marti/rangomango_seagull_ambient_4",
-                      A + "marti/rangomango_seagull_ambient_5")
+                      A + "marti/rangomango_seagull_ambient_5"),
+                Sound(SoundId.MachineCreak, 0.22f, 0.1f, "RPG/creak1", "RPG/creak2", "RPG/creak3"),
+                Sound(SoundId.MachineFriction, 0.16f, 0.12f, "RPG/cloth1", "RPG/cloth2", "RPG/cloth3", "RPG/cloth4"),
+                Sound(SoundId.LoomTick, 0.3f, 0.06f, "Impact/impactWood_light_003", "Impact/impactWood_light_004")
             };
             AudioClip ambient = LoadSound(A + "ortam_dalga_kus/dalga_kus_dongu");
             AudioClip music = LoadSound(A + "arka_plan_muzik/dizzycrow_pirates_orchestra");
@@ -384,6 +404,7 @@ namespace KayipAda.EditorTools
             public GameObject[] Palms, Rocks;
             public GameObject FruitTree, Sawmill, Workshop;
             public GameObject Sparkle, Splash, Firework, Puff, GoldBurst, ScreenConfetti, UpgradeStation, FiberWorker, RopeWorkshop, Loom;
+            public GameObject Barracks, Footprint, Ripple, Leaves;
             public GameObject[] FiberPalms;
             public readonly Dictionary<string, GameObject> Decor = new Dictionary<string, GameObject>();
         }
@@ -425,6 +446,14 @@ namespace KayipAda.EditorTools
                 CharacterAnimation.GetOverride(baseController, ModelCatalog.Carrier.Path, ModelCatalog.Carrier.Key), config, dust, false);
             p.FiberWorker = PrefabFactory.BuildCharacter(ModelCatalog.FiberWorker,
                 CharacterAnimation.GetOverride(baseController, ModelCatalog.FiberWorker.Path, ModelCatalog.FiberWorker.Key), config, dust, false);
+            // Tayfa Barakası kartlarındaki işçi resimleri.
+            SetPortrait("Lumberjack", CampBuilder.RenderPortrait(p.Lumberjack, ModelCatalog.Lumberjack));
+            SetPortrait("Carrier", CampBuilder.RenderPortrait(p.Carrier, ModelCatalog.Carrier));
+            SetPortrait("FiberGatherer", CampBuilder.RenderPortrait(p.FiberWorker, ModelCatalog.FiberWorker));
+            // Karakter izleri (ayak izi, su halkası, yaprak).
+            p.Footprint = PrefabFactory.BuildFootprint();
+            p.Ripple = PrefabFactory.BuildRipple();
+            p.Leaves = PrefabFactory.BuildLeafBurst();
 
             foreach (ModelSpec enemy in ModelCatalog.Enemies)
             {
@@ -470,11 +499,12 @@ namespace KayipAda.EditorTools
                                                     sawdust, FindDecor("LogPile"), new Vector3(-2.7f, 0f, 1.2f));
             p.Workshop = PrefabFactory.BuildBuilding(ModelCatalog.Workshop, Data<BuildingType>(BuildingTypesFolder, "StoneWorkshop"), config,
                                                      smoke, FindDecor("Workbench"), new Vector3(-2.6f, 0f, 0.8f));
+            GameObject fiberDust = PrefabFactory.BuildWorkEffect("FiberDust", true, MapLayout.ItemFiberColor);
             p.RopeWorkshop = PrefabFactory.BuildBuilding(ModelCatalog.RopeWorkshop, Data<BuildingType>(BuildingTypesFolder, "RopeWorkshop"), config,
-                                                         sawdust, FindDecor("Bucket"), new Vector3(-2.6f, 0f, 0.8f));
+                                                         fiberDust, FindDecor("Bucket"), new Vector3(-2.3f, 0f, 1.4f), MachineBuilder.Kind.RopeWheel);
             p.Loom = PrefabFactory.BuildBuilding(ModelCatalog.Loom, Data<BuildingType>(BuildingTypesFolder, "Loom"), config,
-                                                 sawdust, FindDecor("Crate"), new Vector3(-2.6f, 0f, 0.8f));
-            p.Market = PrefabFactory.BuildMarket(config);
+                                                 fiberDust, FindDecor("Crate"), new Vector3(-2.3f, 0f, 1.4f), MachineBuilder.Kind.Loom);
+            p.Market = CampBuilder.BuildMarket(config);
             p.UnlockPad = PrefabFactory.BuildUnlockPad(config);
             p.Camp = PrefabFactory.BuildCamp();
 
@@ -483,7 +513,16 @@ namespace KayipAda.EditorTools
                 p.Decor[spec.Key] = PrefabFactory.BuildDecor(spec);
 
             p.UpgradeStation = PrefabFactory.BuildUpgradeStation(config);
+            p.Barracks = CampBuilder.BuildBarracks(config, p.Decor[ModelCatalog.ShipFlag.Key]);
             return p;
+        }
+
+        private static void SetPortrait(string workerFile, Sprite portrait)
+        {
+            WorkerType type = Data<WorkerType>(WorkerTypesFolder, workerFile);
+            if (type == null || portrait == null) return;
+            type.EditorSetPortrait(portrait);
+            EditorUtility.SetDirty(type);
         }
 
         private static ModelSpec FindDecor(string key)
@@ -537,6 +576,17 @@ namespace KayipAda.EditorTools
             foreach (string file in UpgradeFiles) upgradeTypes.Add(Data<UpgradeType>(UpgradesFolder, file));
             BuilderUtil.SetArray(upgrades, "upgrades", upgradeTypes.ToArray());
             BuilderUtil.SetField(managers.AddComponent<SaveManager>(), "config", config);
+            CrewManager crew = managers.AddComponent<CrewManager>();
+            BuilderUtil.SetField(crew, "config", config);
+            List<WorkerType> crewTypes = new List<WorkerType>();
+            foreach (string file in CrewFiles) crewTypes.Add(Data<WorkerType>(WorkerTypesFolder, file));
+            BuilderUtil.SetArray(crew, "types", crewTypes.ToArray());
+            TrailPool trails = managers.AddComponent<TrailPool>();
+            BuilderUtil.SetField(trails, "config", config);
+            BuilderUtil.SetField(trails, "footprintPrefab", p.Footprint.GetComponent<Renderer>());
+            BuilderUtil.SetField(trails, "ripplePrefab", p.Ripple.GetComponent<Renderer>());
+            BuilderUtil.SetField(trails, "leaves", Object.Instantiate(p.Leaves, managers.transform).GetComponent<ParticleSystem>());
+            BuilderUtil.SetFloat(trails, "sandWidth", MapLayout.SandWidth);
             Effects effects = managers.AddComponent<Effects>();
             BuilderUtil.SetField(effects, "sparklePrefab", p.Sparkle.GetComponent<ParticleSystem>());
             BuilderUtil.SetField(effects, "splashPrefab", p.Splash.GetComponent<ParticleSystem>());
@@ -557,12 +607,9 @@ namespace KayipAda.EditorTools
             AreaDefinition orchard = Data<AreaDefinition>(AreasFolder, "Orchard");
             AreaDefinition sawmillArea = Data<AreaDefinition>(AreasFolder, "Sawmill");
             AreaDefinition workshopArea = Data<AreaDefinition>(AreasFolder, "StoneWorkshop");
-            AreaDefinition hireLumberjack = Data<AreaDefinition>(AreasFolder, "HireLumberjack");
-            AreaDefinition hireCarrier = Data<AreaDefinition>(AreasFolder, "HireCarrier");
             AreaDefinition cove = Data<AreaDefinition>(AreasFolder, "Cove");
             AreaDefinition ropeArea = Data<AreaDefinition>(AreasFolder, "RopeWorkshop");
             AreaDefinition loomArea = Data<AreaDefinition>(AreasFolder, "Loom");
-            AreaDefinition hireFiber = Data<AreaDefinition>(AreasFolder, "HireFiber");
             AreaDefinition stage1 = Data<AreaDefinition>(AreasFolder, "ShipStage1");
             AreaDefinition stage2 = Data<AreaDefinition>(AreasFolder, "ShipStage2");
             AreaDefinition stage3 = Data<AreaDefinition>(AreasFolder, "ShipStage3");
@@ -617,26 +664,36 @@ namespace KayipAda.EditorTools
             CreatePad(p.UnlockPad, pads, "Pad Orchard", MapLayout.OrchardPad, orchard, stage4, reserved);
             CreatePad(p.UnlockPad, pads, "Pad Sawmill", MapLayout.Sawmill + MapLayout.BuildingPadOffset, sawmillArea, null, reserved);
             CreatePad(p.UnlockPad, pads, "Pad StoneWorkshop", MapLayout.Workshop + MapLayout.BuildingPadOffset, workshopArea, rocky, reserved);
-            CreatePad(p.UnlockPad, pads, "Pad Lumberjack", MapLayout.LumberjackPad, hireLumberjack, sawmillArea, reserved);
-            CreatePad(p.UnlockPad, pads, "Pad Carrier", MapLayout.CarrierPad, hireCarrier, hireLumberjack, reserved);
             CreatePad(p.UnlockPad, pads, "Pad Cove", MapLayout.CovePad, cove, stage1, reserved);
             CreatePad(p.UnlockPad, pads, "Pad RopeWorkshop", MapLayout.RopeWorkshop + MapLayout.BuildingPadOffset, ropeArea, stage2, reserved);
             CreatePad(p.UnlockPad, pads, "Pad Loom", MapLayout.Loom + MapLayout.BuildingPadOffset, loomArea, stage3, reserved);
-            CreatePad(p.UnlockPad, pads, "Pad FiberWorker", MapLayout.FiberWorkerPad, hireFiber, stage3, reserved);
 
             // Kamp, geliştirme tezgahı ve işçiler
             Place(p.Camp, null, MapLayout.Camp, 0f);
             Reserve(reserved, MapLayout.Camp, 3.8f);
-            UpgradePanel upgradePanel = UiBuilder.CreateUpgradePanel(config, upgradeTypes);
+            List<Object> benchTypes = new List<Object>(), crewUpgradeTypes = new List<Object>();
+            foreach (string file in BenchUpgrades) benchTypes.Add(Data<UpgradeType>(UpgradesFolder, file));
+            foreach (string file in CrewUpgrades) crewUpgradeTypes.Add(Data<UpgradeType>(UpgradesFolder, file));
+            UpgradePanel upgradePanel = UiBuilder.CreateUpgradePanel(config, benchTypes);
             GameObject station = Place(p.UpgradeStation, null, MapLayout.UpgradeStation, 0f);
             BuilderUtil.SetField(station.GetComponent<UpgradeStation>(), "panel", upgradePanel);
             Reserve(reserved, MapLayout.UpgradeStation, 2.6f);
+
+            // Tayfa Barakası: üstüne girilince işçi kartları; işçiler kapısından çıkar.
+            UpgradePanel crewPanel = UiBuilder.CreateCrewPanel(config, crewTypes, crewUpgradeTypes);
+            GameObject barracks = Place(p.Barracks, null, MapLayout.Barracks, MapLayout.BarracksYaw);
+            BuilderUtil.SetField(barracks.GetComponent<UpgradeStation>(), "panel", crewPanel);
+            Reserve(reserved, MapLayout.Barracks, 2.2f);
+            Reserve(reserved, barracks.transform.TransformPoint(new Vector3(0f, 0f, MapLayout.BarracksDepth)), 3.4f);
+            barracksDoor = barracks.transform.Find("Door");
+            barracksCheer = barracks.transform.Find("CheerPoint");
+            crewStation = barracks.transform;
             Transform workers = new GameObject("Workers").transform;
 
             LumberjackWorker lumberjack = CreateWorkerTemplate<LumberjackWorker>(p.Lumberjack, Data<WorkerType>(WorkerTypesFolder, "Lumberjack"));
             BuilderUtil.SetArray(lumberjack, "trees", palms);
             BuilderUtil.SetField(lumberjack, "buildingInput", sawmill.GetComponentInChildren<BuildingInput>(true));
-            CreateSpawner("Lumberjacks", workers, hireLumberjack, Data<WorkerType>(WorkerTypesFolder, "Lumberjack"), lumberjack, config);
+            CreateSpawner("Lumberjacks", workers, Data<WorkerType>(WorkerTypesFolder, "Lumberjack"), lumberjack, config);
 
             CarrierWorker carrier = CreateWorkerTemplate<CarrierWorker>(p.Carrier, Data<WorkerType>(WorkerTypesFolder, "Carrier"));
             BuilderUtil.SetArray(carrier, "sources", new Object[]
@@ -645,14 +702,14 @@ namespace KayipAda.EditorTools
                 ropeWorkshop.GetComponentInChildren<BuildingOutput>(true), loom.GetComponentInChildren<BuildingOutput>(true)
             });
             BuilderUtil.SetField(carrier, "market", market);
-            CreateSpawner("Carriers", workers, hireCarrier, Data<WorkerType>(WorkerTypesFolder, "Carrier"), carrier, config);
+            CreateSpawner("Carriers", workers, Data<WorkerType>(WorkerTypesFolder, "Carrier"), carrier, config);
 
             // Lifçi: koydaki palmiyelerden lif toplar, Halat Atölyesi'ne götürür (Oduncu ile aynı davranış).
             WorkerType fiberType = Data<WorkerType>(WorkerTypesFolder, "FiberGatherer");
             LumberjackWorker fiberWorker = CreateWorkerTemplate<LumberjackWorker>(p.FiberWorker, fiberType);
             BuilderUtil.SetArray(fiberWorker, "trees", fiberPalms);
             BuilderUtil.SetField(fiberWorker, "buildingInput", ropeWorkshop.GetComponentInChildren<BuildingInput>(true));
-            CreateSpawner("FiberGatherers", workers, hireFiber, fiberType, fiberWorker, config);
+            CreateSpawner("FiberGatherers", workers, fiberType, fiberWorker, config);
 
             // Oyuncu ve kamera
             GameObject player = Place(p.Player, null, MapLayout.PlayerStart, 0f);
@@ -671,7 +728,7 @@ namespace KayipAda.EditorTools
             CreateShipyard(p, island, config, follow, reserved);
             UiBuilder.CreateConfettiOverlay(); // kaçış ekranının da önünde
             CreateIslandLife(config);
-            CreateGuide(config, follow.GetComponent<Camera>());
+            CreateGuide(config, follow.GetComponent<Camera>(), crewStation);
 
             // Süsler (yolları ve oyun alanlarını kapatmadan)
             foreach (Vector3 rock in MapLayout.Rocks) Reserve(reserved, rock, 2.4f);
@@ -1043,29 +1100,32 @@ namespace KayipAda.EditorTools
         // ---------------------------------------------------------------- İşçiler
 
         // Gizli hazır işçi: WorkerSpawner bunu kopyalayıp kamptan çıkarır.
+        // Sahne kurulurken baraka kapısı (işçilerin çıktığı yer), sevinç noktası ve rehber hedefi.
+        private static Transform barracksDoor, barracksCheer, crewStation;
+
         private static T CreateWorkerTemplate<T>(GameObject prefab, WorkerType type) where T : Worker
         {
-            GameObject go = Place(prefab, null, MapLayout.CampSpawn, 180f);
+            GameObject go = Place(prefab, null, barracksDoor.position, 180f);
             T worker = go.AddComponent<T>();
             BuilderUtil.SetField(worker, "type", type);
             return worker;
         }
 
-        private static void CreateSpawner(string name, Transform parent, AreaDefinition hireArea, WorkerType type, Worker template, GameConfig config)
+        private static void CreateSpawner(string name, Transform parent, WorkerType type, Worker template, GameConfig config)
         {
             GameObject go = new GameObject(name);
             go.transform.SetParent(parent, false);
-            go.transform.position = MapLayout.CampSpawn;
+            go.transform.SetPositionAndRotation(barracksDoor.position, barracksDoor.rotation);
 
             template.transform.SetParent(go.transform, true);
             template.gameObject.SetActive(false);
 
             WorkerSpawner spawner = go.AddComponent<WorkerSpawner>();
             BuilderUtil.SetField(spawner, "config", config);
-            BuilderUtil.SetField(spawner, "hireArea", hireArea);
             BuilderUtil.SetField(spawner, "workerType", type);
             BuilderUtil.SetField(spawner, "template", template);
             BuilderUtil.SetField(spawner, "spawnPoint", go.transform);
+            BuilderUtil.SetField(spawner, "cheerPoint", barracksCheer);
         }
 
         // ---------------------------------------------------------------- Tersane: kızaktaki gemi ve final töreni
@@ -1145,24 +1205,24 @@ namespace KayipAda.EditorTools
             GameObject flag = Place(p.Decor[ModelCatalog.ShipFlag.Key], supplies, shipRoot.transform.TransformPoint(parts.TopOfTallestMast), 90f);
             flag.name = "Flag";
 
-            // Engeller: dönük gövdeyi boyunca birkaç kare ile kapat (eksene hizalı dikdörtgenler).
-            List<NavObstacle> blocks = new List<NavObstacle>();
-            int blockCount = MapLayout.ShipBlockCount;
-            for (int i = 0; i < blockCount; i++)
-            {
-                GameObject block = new GameObject("Block " + i);
-                block.transform.SetParent(shipRoot.transform, false);
-                block.transform.localPosition = new Vector3(sb.center.x, 0f, sb.min.z + sb.size.z * (i + 0.5f) / blockCount);
-                NavObstacle o = block.AddComponent<NavObstacle>();
-                float side = Mathf.Max(sb.size.x, sb.size.z / blockCount) + 0.3f;
-                BuilderUtil.SetVector2(o, "size", new Vector2(side, side));
-                blocks.Add(o);
-            }
-
             // Döndür: burun bowDir yönüne.
             shipRoot.transform.rotation = Quaternion.LookRotation(bowDir);
             Vector3 shipCenter = shipRoot.transform.TransformPoint(sb.center);
             float halfWidth = sb.size.x * 0.5f;
+
+            // Engel: gemi + kızak + inşa iskelesi tek, gemiyle aynı yöne dönük, köşeleri yuvarlak bir kutu. Deniz
+            // tarafında kıyıya kadar uzanır (gövde ile su arasında sıkışacak dar boşluk kalmaz). Oyuncu kenarından kayar.
+            float landSide = halfWidth + 0.25f + MapLayout.ScaffoldDepth + 0.2f;
+            float seaSide = halfWidth + MapLayout.ShipInland;
+            GameObject blockGo = new GameObject("ShipObstacle");
+            blockGo.transform.SetParent(root, false);
+            blockGo.transform.SetPositionAndRotation(new Vector3(shipCenter.x, 0f, shipCenter.z) + slideDir * ((seaSide - landSide) * 0.5f),
+                                                     Quaternion.LookRotation(bowDir));
+            NavObstacle shipBlock = blockGo.AddComponent<NavObstacle>();
+            BuilderUtil.SetVector2(shipBlock, "size", new Vector2(landSide + seaSide, sb.size.z * MapLayout.ShipObstacleLength));
+            BuilderUtil.SetBool(shipBlock, "oriented", true);
+            BuilderUtil.SetFloat(shipBlock, "cornerRadius", MapLayout.ShipObstacleRounding);
+            List<NavObstacle> blocks = new List<NavObstacle> { shipBlock };
 
             CreateCradle(root, shipCenter, bowDir, slideDir, sb.size.z, sb.size.x, wood, plank);
             GameObject scaffolding = CreateScaffolding(p, root, shipCenter, bowDir, slideDir, sb.size.z, halfWidth);
@@ -1171,10 +1231,10 @@ namespace KayipAda.EditorTools
             target.SetParent(shipRoot.transform, false);
             target.localPosition = new Vector3(sb.center.x, parts.DeckY, sb.center.z);
 
-            // Teslim alanı: geminin kara tarafında, hemen yanında; üstünde kutusuz aşama göstergesi.
+            // Teslim alanı: geminin kara tarafında, kızaktan ve iskeleden uzakta açık zeminde; üstünde aşama göstergesi.
             GameObject delivery = new GameObject("ShipDelivery");
             delivery.transform.SetParent(root, false);
-            delivery.transform.position = new Vector3(shipCenter.x, 0f, shipCenter.z) - slideDir * (halfWidth + MapLayout.DeliveryGap);
+            delivery.transform.position = new Vector3(shipCenter.x, 0f, shipCenter.z) - slideDir * (landSide + MapLayout.DeliveryGap);
             CapsuleCollider trigger = delivery.AddComponent<CapsuleCollider>();
             trigger.isTrigger = true;
             trigger.radius = 1.4f;
@@ -1211,7 +1271,7 @@ namespace KayipAda.EditorTools
             {
                 Transform t = new GameObject("Gather " + i).transform;
                 t.SetParent(gatherRoot, false);
-                t.position = delivery.transform.position - slideDir * 2f + bowDir * (-2.2f + i * 1.1f);
+                t.position = delivery.transform.position - slideDir * ((i % 2) * 0.9f - 0.3f) + bowDir * (-1.6f + i * 0.8f);
                 gatherPoints.Add(t);
             }
 
@@ -1495,7 +1555,7 @@ namespace KayipAda.EditorTools
 
         // ---------------------------------------------------------------- Yönlendirme oku
 
-        private static void CreateGuide(GameConfig config, Camera cam)
+        private static void CreateGuide(GameConfig config, Camera cam, Transform crew)
         {
             GameObject guide = new GameObject("ProgressionGuide");
             GameObject arrow = new GameObject("WorldArrow");
@@ -1521,6 +1581,7 @@ namespace KayipAda.EditorTools
             BuilderUtil.SetField(component, "worldArrow", arrow.transform);
             BuilderUtil.SetField(component, "screenArrow", screenArrow.rectTransform);
             BuilderUtil.SetField(component, "cam", cam);
+            BuilderUtil.SetField(component, "crewStation", crew);
         }
 
         // ---------------------------------------------------------------- Süsler

@@ -39,7 +39,10 @@ namespace KayipAda
         [field: Header("İşçiler")]
         [field: Tooltip("Aynı görevde birden fazla işçi varsa kamptan kaç saniye arayla çıktıkları.")]
         [field: SerializeField, Min(0f)] public float WorkerSpawnInterval { get; private set; } = 0.6f;
-        // Not: İşçi hızı, kapasitesi ve sayısı her göreve özeldir → Data/Workers; tutma fiyatı → Data/Areas (Hire...)
+        // Not: İşçi hızı, kapasitesi, tutma fiyatları ve en fazla sayısı her göreve özeldir → Data/Workers
+
+        [field: Tooltip("Barakadan yeni çıkan işçinin kapının önünde sevinç süresi (saniye).")]
+        [field: SerializeField, Min(0f)] public float HireCheerTime { get; private set; } = 1.3f;
 
         [field: Header("Bölge Açma (UnlockPad)")]
         [field: Tooltip("Kareye basınca ödemenin başlaması için beklenen süre (saniye).")]
@@ -288,6 +291,41 @@ namespace KayipAda
 
         [field: Tooltip("Yazıların belirme/kaybolma hızı (saniyede).")]
         [field: SerializeField, Min(0.1f)] public float LabelFadeSpeed { get; private set; } = 3f;
+
+        [field: Header("Bina tarifleri ve makineler")]
+        [field: Tooltip("Oyuncu binaya bu kadar (metre) yaklaşınca tarif balonu (3 lif → 1 halat) çıkar.")]
+        [field: SerializeField, Min(0f)] public float RecipeShowDistance { get; private set; } = 5.5f;
+
+        [field: Tooltip("Makine sesleri bu uzaklığa kadar tam, sonra azalarak duyulur.")]
+        [field: SerializeField, Min(0f)] public float MachineSoundNear { get; private set; } = 4f;
+
+        [field: Tooltip("Makine sesleri bu uzaklıktan sonra duyulmaz.")]
+        [field: SerializeField, Min(0f)] public float MachineSoundFar { get; private set; } = 13f;
+
+        [field: Tooltip("Makinenin dönme/vuruş hızı (1 = normal). Bina hızlandıkça ayrıca artar.")]
+        [field: SerializeField, Min(0.1f)] public float MachineSpeed { get; private set; } = 1f;
+
+        [field: Header("Karakter izi (ayak izi, yaprak, su halkası)")]
+        [field: Tooltip("Ayak izi, yaprak ve su halkaları açık mı.")]
+        [field: SerializeField] public bool TrailsEnabled { get; private set; } = true;
+
+        [field: Tooltip("Aynı anda en fazla iz sayısı (havuz).")]
+        [field: SerializeField, Min(0)] public int TrailMaxCount { get; private set; } = 20;
+
+        [field: Tooltip("Ayak izinin kaybolma süresi (saniye).")]
+        [field: SerializeField, Min(0.1f)] public float FootprintLifetime { get; private set; } = 3f;
+
+        [field: Tooltip("Oyuncu kaç metrede bir iz bırakır.")]
+        [field: SerializeField, Min(0.1f)] public float FootprintStep { get; private set; } = 0.55f;
+
+        [field: Tooltip("İşçiler kaç metrede bir iz bırakır (daha seyrek).")]
+        [field: SerializeField, Min(0.1f)] public float WorkerFootprintStep { get; private set; } = 1.6f;
+
+        [field: Tooltip("Çimende her adımda yaprak/ot parçası çıkma olasılığı (0-1).")]
+        [field: SerializeField, Range(0f, 1f)] public float GrassLeafChance { get; private set; } = 0.18f;
+
+        [field: Tooltip("Kıyıya bu kadar (metre) yakınken adımlar suda halka bırakır.")]
+        [field: SerializeField, Min(0f)] public float RippleCoastDistance { get; private set; } = 0.75f;
 
         [field: Header("Test Menüsü (sadece Editor ve geliştirme sürümü)")]
         [field: Tooltip("Test Menüsü'ndeki \"+Para\" butonunun verdiği para.")]

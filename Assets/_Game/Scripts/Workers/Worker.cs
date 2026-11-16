@@ -32,18 +32,43 @@ namespace KayipAda
         }
 
         private bool gathering;
+        private bool celebrating;
+        private float cheerTimer;
+        private CharacterVisual visual;
 
         private void Update()
         {
             // Her karede: Play sırasında ayar dosyasında yapılan değişiklik hemen etkilesin.
             ApplyStats();
+            if (celebrating) { UpdateCelebration(); return; }
             if (!gathering) Think();
+        }
+
+        // Barakadan yeni çıkan işçi: önce kapının önüne yürür, kısa bir sevinç yapar, sonra işe koşar.
+        public void Celebrate(Vector3 point, float seconds)
+        {
+            celebrating = true;
+            cheerTimer = seconds;
+            Stack.WorkTarget = null;
+            Mover.MoveTo(point);
+        }
+
+        private void UpdateCelebration()
+        {
+            if (!Mover.HasArrived) return;
+            if (visual == null) visual = GetComponentInChildren<CharacterVisual>();
+            if (cheerTimer > 0f && visual != null) visual.SetCheer(true);
+            cheerTimer -= Time.deltaTime;
+            if (cheerTimer > 0f) return;
+            if (visual != null) visual.SetCheer(false);
+            celebrating = false;
         }
 
         // Final töreni: işi bırakıp verilen noktada toplan.
         public void Gather(Vector3 point)
         {
             gathering = true;
+            celebrating = false;
             Stack.WorkTarget = null;
             Mover.MoveTo(point);
         }

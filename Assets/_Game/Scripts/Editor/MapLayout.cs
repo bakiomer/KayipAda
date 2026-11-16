@@ -8,9 +8,9 @@
 //        │ kaya  TAŞ ATÖLY.│    |    │ ağaç     ağaç   │   z 6..15 (çitli, başta kapalı)
 //        │ kaya       kaya │    |    │      ağaç       │
 //        └──────[kare]─────┘    |    └─────[kare]──────┘   z 4.5
-//               palmiye    palmiye    palmiye             z -1..2  BAŞLANGIÇ SAHİLİ
-//  KAMP  [oduncu kare]      oyuncu      [taşıyıcı kare]    z -6
-//            PAZAR                    BIÇKIHANE           z -12
+// TAYFA         palmiye    palmiye    palmiye             z -1..2  BAŞLANGIÇ SAHİLİ
+// BARAKASI                  oyuncu                         z -6
+//  KAMP      PAZAR                    BIÇKIHANE           z -12
 
 using System.Collections.Generic;
 using UnityEngine;
@@ -32,26 +32,35 @@ namespace KayipAda.EditorTools
         public static readonly Vector3 Market = new Vector3(-5f, 0f, -11.5f);
         public static readonly Vector3 Sawmill = new Vector3(5f, 0f, -12f);
         public static readonly Vector3 Camp = new Vector3(-11f, 0f, -5f);
-        public static readonly Vector3 CampSpawn = new Vector3(-9f, 0f, -6.8f);
-        public static readonly Vector3 LumberjackPad = new Vector3(-6.5f, 0f, -6.2f);
-        public static readonly Vector3 CarrierPad = new Vector3(6.5f, 0f, -6.2f);
+
+        // Tayfa Barakası: kampın kuzeyinde. Kök = oyuncunun girdiği alan; ev bunun BarracksDepth kadar arkasında.
+        public static readonly Vector3 Barracks = new Vector3(-12.2f, 0f, -0.6f);
+        public const float BarracksDepth = 2.6f;
+        public const float BarracksYaw = 20f;                  // baraka hafifçe kampa/yola dönük
+        public const float BarracksHouseYaw = 0f;              // ev modelinin kapısı alana baksın diye dönüş
+        public static readonly Vector2 BarracksObstacle = new Vector2(4.7f, 1.8f);
+
+        // Liman Pazarı: açık tezgah; satış alanı kökte, tezgah bunun MarketStallDepth kadar arkasında.
+        public const float MarketStallDepth = 2.45f;
+        public static readonly Vector2 MarketStallSize = new Vector2(3.2f, 1.7f);
+        public static readonly Color MarketAwningColor = new Color(0.85f, 0.22f, 0.2f);
 
         // Kayalık (kuzeybatı) ve Meyve Bahçesi (kuzeydoğu): XZ dikdörtgenleri
         public static readonly Rect RockyRect = new Rect(-11f, 6f, 9f, 9f);
-        public static readonly Rect OrchardRect = new Rect(2f, 6f, 7.5f, 9f);
+        public static readonly Rect OrchardRect = new Rect(2f, 6f, 6.5f, 9f);
         public static readonly Vector3 RockyPad = new Vector3(-6.5f, 0f, 4.4f);
-        public static readonly Vector3 OrchardPad = new Vector3(5.75f, 0f, 4.4f);
+        public static readonly Vector3 OrchardPad = new Vector3(5.25f, 0f, 4.4f);
         public static readonly Vector3[] Rocks = { new Vector3(-9f, 0f, 8.4f), new Vector3(-4.3f, 0f, 8.4f), new Vector3(-9.3f, 0f, 12.6f) };
         public static readonly Vector3 Workshop = new Vector3(-5f, 0f, 12.6f);
-        public static readonly Vector3[] FruitTrees = { new Vector3(4f, 0f, 8.6f), new Vector3(8f, 0f, 8.6f), new Vector3(6f, 0f, 12.8f) };
+        public static readonly Vector3[] FruitTrees = { new Vector3(3.9f, 0f, 8.6f), new Vector3(6.8f, 0f, 9.4f), new Vector3(5f, 0f, 12.8f) };
 
-        // Palmiye Koyu (doğu): lif veren palmiyeler. Kuzeyinde Halat Atölyesi ve Dokuma Tezgahı.
+        // Palmiye Koyu (doğu): lif veren palmiyeler. Kuzeyinde, bahçe çitinden yürüme yolu kadar uzakta Halat Atölyesi
+        // ve Dokuma Tezgahı (giriş/çıkış alanları hiçbir şeye değmez).
         public static readonly Rect CoveRect = new Rect(10.5f, -6f, 5f, 8f);
         public static readonly Vector3 CovePad = new Vector3(9.2f, 0f, -2f);
         public static readonly Vector3[] FiberPalms = { new Vector3(12f, 0f, -4.3f), new Vector3(14.3f, 0f, -1.6f), new Vector3(12f, 0f, 0.8f) };
-        public static readonly Vector3 RopeWorkshop = new Vector3(13.2f, 0f, 6f);
-        public static readonly Vector3 Loom = new Vector3(12.6f, 0f, 12f);
-        public static readonly Vector3 FiberWorkerPad = new Vector3(8.6f, 0f, 2.4f);
+        public static readonly Vector3 RopeWorkshop = new Vector3(13.4f, 0f, 6.1f);
+        public static readonly Vector3 Loom = new Vector3(13.2f, 0f, 12.6f);
 
         // Kampın yanındaki geliştirme tezgahı
         public static readonly Vector3 UpgradeStation = new Vector3(-8f, 0f, -2.2f);
@@ -61,8 +70,9 @@ namespace KayipAda.EditorTools
         public const float ShipInland = 3.2f;   // geminin ortası kıyıdan bu kadar içeride
         public const float ShipBowTilt = 20f;   // gemi kıyıya paralel; burnu bu kadar (derece) denize dönük
         public const float ShipCradleHeight = 0.35f; // kızak altlığının yüksekliği (gemi bunun üstünde)
-        public const int ShipBlockCount = 5;    // gövdeyi kapatan engel karesi sayısı
-        public const float DeliveryGap = 3.1f;  // teslim alanının gövde kenarından uzaklığı
+        public const float ShipObstacleLength = 0.92f; // gemi engelinin boyu (gemi boyunun oranı; uçlar sivri)
+        public const float ShipObstacleRounding = 1.1f; // gemi engelinin köşe yuvarlaklığı (oyuncu takılmadan kayar)
+        public const float DeliveryGap = 2.9f;  // teslim alanının ortası, gemi engelinin (iskele dahil) kenarından bu kadar uzakta
         public const int ShipRailCount = 4;     // denize uzanan kayma rayı sayısı
         public const float ShipRailLength = 12f;
         // İnşa iskelesi: geminin boyunun oranı, direk aralığı, derinlik (iki direk sırası arası), kat yüksekliği ve sayısı.
@@ -118,11 +128,11 @@ namespace KayipAda.EditorTools
             new[] { new Vector2(0f, -9f), new Vector2(-5f, -10f) },                                  // pazar
             new[] { new Vector2(0f, -9f), new Vector2(5f, -10.5f) },                                 // bıçkıhane
             new[] { new Vector2(0f, 4.4f), new Vector2(-6.5f, 4.4f), new Vector2(-6.5f, 10.5f) },    // kayalık
-            new[] { new Vector2(0f, 4.4f), new Vector2(5.75f, 4.4f), new Vector2(5.75f, 10.5f) },    // meyve bahçesi
-            new[] { new Vector2(6.5f, -6.2f), new Vector2(9.2f, -2f) },                              // palmiye koyu
-            new[] { new Vector2(5.75f, 4.4f), new Vector2(9.9f, 3.3f), new Vector2(9.9f, 11.5f) },   // halat ve dokuma
+            new[] { new Vector2(0f, 4.4f), new Vector2(5.25f, 4.4f), new Vector2(5.25f, 10.5f) },    // meyve bahçesi
+            new[] { new Vector2(0f, -6f), new Vector2(6.5f, -6.2f), new Vector2(9.2f, -2f) },        // palmiye koyu
+            new[] { new Vector2(5.25f, 4.4f), new Vector2(10.2f, 3.6f), new Vector2(10.4f, 11.2f) },  // halat ve dokuma
             new[] { new Vector2(0f, -6f), new Vector2(-6.5f, -6.2f), new Vector2(-10f, -5.6f) },     // kamp
-            new[] { new Vector2(0f, -6f), new Vector2(6.5f, -6.2f) }
+            new[] { new Vector2(-6.5f, -6.2f), new Vector2(-9.6f, -2.6f), new Vector2(-12.2f, -0.9f) }  // tayfa barakası
         };
 
         // Bölge zemin tonları (doku üretiminde)

@@ -45,7 +45,20 @@ namespace KayipAda.EditorTools
 
         public static UpgradePanel CreateUpgradePanel(GameConfig config, List<Object> types)
         {
-            GameObject root = new GameObject("UpgradePanel", typeof(RectTransform));
+            return CreatePanel("UpgradePanel", "GELİŞTİRMELER", config, types, new List<WorkerType>());
+        }
+
+        // Tayfa Barakası paneli: üstte işçi kartları (resim, sayı, TUT + fiyat, kilit yazısı), altta işçi geliştirmeleri.
+        public static UpgradePanel CreateCrewPanel(GameConfig config, List<WorkerType> workers, List<Object> upgradeTypes)
+        {
+            return CreatePanel("CrewPanel", "TAYFA BARAKASI", config, upgradeTypes, workers);
+        }
+
+        private const float CardHeight = 440f;
+
+        private static UpgradePanel CreatePanel(string panelName, string titleText, GameConfig config, List<Object> types, List<WorkerType> workers)
+        {
+            GameObject root = new GameObject(panelName, typeof(RectTransform));
             root.transform.SetParent(Safe, false);
             UiFactory.Stretch((RectTransform)root.transform);
 
@@ -55,22 +68,34 @@ namespace KayipAda.EditorTools
             dimmer.gameObject.AddComponent<Button>().transition = Selectable.Transition.None;
 
             float rowHeight = 150f, gap = 16f;
-            float height = 200f + types.Count * (rowHeight + gap);
+            float cardsHeight = workers.Count > 0 ? CardHeight + gap : 0f;
+            float height = 200f + cardsHeight + types.Count * (rowHeight + gap);
             Image sheet = UiFactory.CreateImage("Sheet", root.transform, ArtGenerator.LoadSprite(ArtGenerator.RoundedRectPath), PanelColor);
             sheet.type = Image.Type.Sliced;
             sheet.raycastTarget = true; // panele dokunmak joystick'i başlatmasın
             Anchor(sheet.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 24f), new Vector2(-48f, height));
 
-            TextMeshProUGUI title = UiFactory.CreateUIText("Title", sheet.transform, "GELİŞTİRMELER", 60f, UiFactory.Gold);
+            TextMeshProUGUI title = UiFactory.CreateUIText("Title", sheet.transform, titleText, 60f, UiFactory.Gold);
             Anchor(title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -30f), new Vector2(0f, 90f));
 
             Button close = CreateButton("Close", sheet.transform, "X", Vector2.zero, new Vector2(100f, 100f), new Color(0.85f, 0.3f, 0.3f), 54f);
             Anchor((RectTransform)close.transform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-24f, -24f), new Vector2(100f, 100f));
 
+            List<Object> cards = new List<Object>();
+            if (workers.Count > 0)
+            {
+                const float sheetWidth = 1032f, inner = sheetWidth - 48f;
+                float cardWidth = (inner - (workers.Count - 1) * gap) / workers.Count;
+                for (int i = 0; i < workers.Count; i++)
+                {
+                    float x = -inner * 0.5f + cardWidth * 0.5f + i * (cardWidth + gap);
+                    cards.Add(CreateCrewCard(sheet.transform, workers[i], new Vector2(x, -140f), new Vector2(cardWidth, CardHeight)));
+                }
+            }
             List<Object> rows = new List<Object>();
             for (int i = 0; i < types.Count; i++)
             {
-                rows.Add(CreateUpgradeRow(sheet.transform, (UpgradeType)types[i], -140f - i * (rowHeight + gap), rowHeight));
+                rows.Add(CreateUpgradeRow(sheet.transform, (UpgradeType)types[i], -140f - cardsHeight - i * (rowHeight + gap), rowHeight));
             }
 
             UpgradePanel panel = root.AddComponent<UpgradePanel>();
@@ -79,7 +104,66 @@ namespace KayipAda.EditorTools
             BuilderUtil.SetField(panel, "dimmer", dimmer.gameObject);
             BuilderUtil.SetField(panel, "closeButton", close);
             BuilderUtil.SetArray(panel, "rows", rows.ToArray());
+            BuilderUtil.SetArray(panel, "cards", cards.ToArray());
             return panel;
+        }
+
+        // İşçi kartı: üstte resim (dairesel zemin), ad, "1/3", altta TUT + para + fiyat; kilitliyse kilit yazısı.
+        private static CrewCard CreateCrewCard(Transform sheet, WorkerType type, Vector2 topCenter, Vector2 size)
+        {
+            Image bg = UiFactory.CreateImage("Card " + (type != null ? type.Id : "?"), sheet, ArtGenerator.LoadSprite(ArtGenerator.RoundedRectPath), RowColor);
+            bg.type = Image.Type.Sliced;
+            Anchor(bg.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), topCenter, size);
+            Transform card = bg.transform;
+
+            Image circle = UiFactory.CreateImage("PortraitBack", card, ArtGenerator.LoadSprite(ArtGenerator.CirclePath), new Color(0.35f, 0.62f, 0.85f, 0.55f));
+            Anchor(circle.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -16f), new Vector2(190f, 190f));
+            Image portrait = UiFactory.CreateImage("Portrait", card, type != null ? type.Portrait : null, Color.white);
+            portrait.preserveAspect = true;
+            Anchor(portrait.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -6f), new Vector2(200f, 200f));
+
+            TextMeshProUGUI name = UiFactory.CreateUIText("Name", card, type != null ? type.DisplayName : "", 44f, Color.white);
+            Anchor(name.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -212f), new Vector2(-16f, 56f));
+            TextMeshProUGUI count = UiFactory.CreateUIText("Count", card, "0/1", 40f, UiFactory.Gold);
+            Anchor(count.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -266f), new Vector2(-16f, 50f));
+
+            float buttonWidth = size.x - 28f;
+            Button hire = CreateButton("Hire", card, "TUT", Vector2.zero, new Vector2(buttonWidth, 104f), Green, 40f);
+            Anchor((RectTransform)hire.transform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 18f), new Vector2(buttonWidth, 104f));
+            TMP_Text buttonLabel = hire.GetComponentInChildren<TMP_Text>();
+            buttonLabel.alignment = TextAlignmentOptions.MidlineLeft;
+            buttonLabel.rectTransform.offsetMin = new Vector2(18f, 0f);
+            Image coin = UiFactory.CreateImage("Coin", hire.transform, ArtGenerator.LoadSprite(ArtGenerator.CoinIconPath), Color.white);
+            Anchor(coin.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-buttonWidth * 0.08f, 0f), new Vector2(46f, 46f));
+            TextMeshProUGUI price = UiFactory.CreateUIText("Price", hire.transform, "0", 42f, Color.white);
+            price.alignment = TextAlignmentOptions.MidlineRight;
+            Anchor(price.rectTransform, new Vector2(0.5f, 0f), new Vector2(1f, 1f), new Vector2(1f, 0.5f), new Vector2(-14f, 0f), new Vector2(0f, 0f));
+            price.rectTransform.offsetMin = new Vector2(10f, 0f);
+            price.rectTransform.offsetMax = new Vector2(-14f, 0f);
+
+            // Kilit: düğme yerine koyu şerit + "Bıçkıhane gerekli".
+            Image lockBg = UiFactory.CreateImage("Lock", card, ArtGenerator.LoadSprite(ArtGenerator.RoundedRectPath), new Color(0f, 0f, 0f, 0.45f));
+            lockBg.type = Image.Type.Sliced;
+            Anchor(lockBg.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 18f), new Vector2(buttonWidth, 104f));
+            TextMeshProUGUI lockText = UiFactory.CreateUIText("Text", lockBg.transform, type != null ? type.LockedText : "", 34f, new Color(1f, 0.75f, 0.45f));
+            UiFactory.Stretch(lockText.rectTransform);
+            lockText.enableAutoSizing = true;
+            lockText.fontSizeMin = 22f;
+            lockText.fontSizeMax = 34f;
+
+            CrewCard component = bg.gameObject.AddComponent<CrewCard>();
+            BuilderUtil.SetField(component, "type", type);
+            BuilderUtil.SetField(component, "portrait", portrait);
+            BuilderUtil.SetField(component, "nameLabel", name);
+            BuilderUtil.SetField(component, "countLabel", count);
+            BuilderUtil.SetField(component, "hireButton", hire);
+            BuilderUtil.SetField(component, "buttonImage", hire.GetComponent<Image>());
+            BuilderUtil.SetField(component, "buttonLabel", buttonLabel);
+            BuilderUtil.SetField(component, "priceLabel", price);
+            BuilderUtil.SetField(component, "coinIcon", coin.gameObject);
+            BuilderUtil.SetField(component, "lockRoot", lockBg.gameObject);
+            BuilderUtil.SetField(component, "lockLabel", lockText);
+            return component;
         }
 
         private static UpgradeRow CreateUpgradeRow(Transform sheet, UpgradeType type, float y, float height)

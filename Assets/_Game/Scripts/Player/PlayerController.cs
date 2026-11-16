@@ -17,7 +17,7 @@ namespace KayipAda
         [Tooltip("Oyuncunun gövde yarıçapı (engellere bu kadar yaklaşır).")]
         [SerializeField] private float radius = 0.4f;
         [Tooltip("Kıyıdan ne kadar içeride kalır (metre). Harita yerleşimine aittir.")]
-        [SerializeField] private float coastMargin = 1.2f;
+        [SerializeField] private float coastMargin = 0.4f;
 
         // Açık bir panel (geliştirmeler, kaçış ekranı) varken oyuncu yürümez.
         public static bool InputBlocked { get; set; }

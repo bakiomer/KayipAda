@@ -103,12 +103,12 @@ namespace KayipAda
             }
             foreach (NavObstacle o in NavObstacle.Active)
             {
-                Rect r = o.GetRect(0f);
+                Vector2 c = o.Center;
                 sources.Add(new NavMeshBuildSource
                 {
                     shape = NavMeshBuildSourceShape.ModifierBox,
-                    transform = Matrix4x4.TRS(new Vector3(r.center.x, 0.5f, r.center.y), Quaternion.identity, Vector3.one),
-                    size = new Vector3(r.width, 4f, r.height),
+                    transform = Matrix4x4.TRS(new Vector3(c.x, 0.5f, c.y), Quaternion.Euler(0f, o.Yaw, 0f), Vector3.one),
+                    size = new Vector3(o.Size.x, 4f, o.Size.y),
                     area = 1 // yürünemez
                 });
             }
