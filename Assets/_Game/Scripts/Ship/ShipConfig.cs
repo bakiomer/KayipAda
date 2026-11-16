@@ -57,6 +57,8 @@ namespace KayipAda
         [Min(0f)] public float PieceDropHeight = 1.8f;
         [Tooltip("Gövdenin belirme hızı (saniyede oran).")]
         [Min(0.01f)] public float HullRevealSpeed = 0.6f;
+        [Tooltip("Gemi bitince inşa iskelesinin parçaları arası söküm aralığı (saniye).")]
+        [Min(0f)] public float ScaffoldRemoveInterval = 0.08f;
 
         [Header("Final töreni")]
         [Tooltip("Gemi bitince işçilerin iskelede toplanması için beklenen süre (saniye).")]
@@ -64,8 +66,8 @@ namespace KayipAda
         [Tooltip("Kameranın gemi etrafında dönme süresi (saniye), toplam açısı (derece), uzaklığı ve yüksekliği (metre).")]
         [Min(0f)] public float OrbitDuration = 5f;
         public float OrbitDegrees = 150f;
-        [Min(1f)] public float OrbitDistance = 17f;
-        public float OrbitHeight = 8f;
+        [Min(1f)] public float OrbitDistance = 16f;
+        public float OrbitHeight = 4.5f;
         [Tooltip("Geminin kızaktan suya kayma süresi (saniye).")]
         [Min(0.1f)] public float SlideDuration = 3f;
         [Tooltip("Kızakta kayılan mesafe (metre).")]
@@ -77,7 +79,15 @@ namespace KayipAda
         [Min(0.1f)] public float SailSpeed = 3.5f;
         [Tooltip("Uzaklaşırken kameranın gemiyi arkadan takip uzaklığı ve yüksekliği (metre).")]
         [Min(1f)] public float FollowDistance = 15f;
-        public float FollowHeight = 7f;
+        public float FollowHeight = 3.5f;
+        [Header("Gün batımı (final)")]
+        [Tooltip("Törende ışığın gün batımına dönme süresi (saniye), güneşin rengi, gücü ve açısı; ortam ışığı renkleri.")]
+        [Min(0.1f)] public float SunsetTime = 6f;
+        public Color SunsetColor = new Color(1f, 0.6f, 0.35f);
+        [Min(0f)] public float SunsetIntensity = 1.05f;
+        public float SunsetPitch = 14f;
+        public Color SunsetSky = new Color(0.62f, 0.5f, 0.68f);
+        public Color SunsetEquator = new Color(0.95f, 0.62f, 0.45f);
         [Tooltip("Ekranı kaplayan konfetinin süresi (saniye).")]
         [Min(0f)] public float ConfettiDuration = 8f;
         [Tooltip("Gemi kaç saniye yelken açıp uzaklaştıktan sonra kaçış ekranı gelir.")]

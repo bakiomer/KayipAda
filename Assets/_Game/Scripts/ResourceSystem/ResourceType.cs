@@ -28,6 +28,10 @@ namespace KayipAda
         [field: Tooltip("Arayüz ikonu (bina giriş/çıkış dairesi, gemi göstergesi). Sahne kurma komutu üretir.")]
         [field: SerializeField] public Sprite Icon { get; private set; }
 
+        [field: Tooltip("Sırttaki yığında bir parçanın kapladığı genişlik ve yükseklik (metre). Komut modelden ölçer.")]
+        [field: SerializeField] public float StackWidth { get; private set; } = 0.3f;
+        [field: SerializeField] public float StackHeight { get; private set; } = 0.28f;
+
         // Yeni bir parça oluşturur (kaynak noktası ve binalar kullanır).
         public ResourceItem Spawn(Vector3 position)
         {
@@ -55,6 +59,12 @@ namespace KayipAda
         public void EditorSetIcon(Sprite icon)
         {
             Icon = icon;
+        }
+
+        public void EditorSetStackSize(float width, float height)
+        {
+            StackWidth = width;
+            StackHeight = height;
         }
 #endif
     }

@@ -16,7 +16,7 @@ namespace KayipAda.EditorTools
     public class ThirdPartyImportProcessor : AssetPostprocessor
     {
         private const string Root = "Assets/_Game/ThirdParty/";
-        private const uint Version = 4;
+        private const uint Version = 5;
 
         // Döngüde çalması gereken animasyonlar.
         private static readonly HashSet<string> LoopClips = new HashSet<string>
@@ -99,7 +99,9 @@ namespace KayipAda.EditorTools
             AudioImporter importer = (AudioImporter)assetImporter;
             importer.forceToMono = true;
             AudioImporterSampleSettings settings = importer.defaultSampleSettings;
-            settings.loadType = AudioClipLoadType.DecompressOnLoad;
+            // Müzik ve uzun ortam sesleri bellekte açılmaz, çalarken okunur (telefonda bellek dostu).
+            bool longClip = assetPath.Contains("/arka_plan_muzik/") || assetPath.Contains("/final_zafer_muzik/") || assetPath.Contains("/ortam_dalga_kus/");
+            settings.loadType = longClip ? AudioClipLoadType.Streaming : AudioClipLoadType.DecompressOnLoad;
             settings.compressionFormat = AudioCompressionFormat.Vorbis;
             settings.quality = 0.6f;
             importer.defaultSampleSettings = settings;

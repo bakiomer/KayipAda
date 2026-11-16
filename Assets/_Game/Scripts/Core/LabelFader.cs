@@ -48,6 +48,7 @@ namespace KayipAda
             Vector3 focus = follow.FocusPoint;
             float distance = new Vector2(p.x - focus.x, p.z - focus.z).magnitude;
             float target = 1f - Mathf.InverseLerp(config.LabelFadeNear, config.LabelFadeFar, distance);
+            if (follow.HasShot) target = 0f; // sinematik çekimde kadrajı kapatmasın
 
             // Ekran kenarı: kenara yaklaştıkça kaybolur (yarım kesik görünmesin).
             Vector3 vp = cam.WorldToViewportPoint(p);

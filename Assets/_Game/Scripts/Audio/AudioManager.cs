@@ -27,6 +27,10 @@ namespace KayipAda
         private AudioSource ambientSource;
         private AudioSource birdSource;
         private AudioSource musicSource;
+        private AudioSource backgroundSource;
+        private float duckUntil = -1f;
+        private float backgroundLevel = 1f;   // 0..1, ducking ve finale geçiş bunu değiştirir
+        private bool victoryStarted;
         private readonly Queue<AudioClip> musicQueue = new Queue<AudioClip>();
         private float musicVolume = 1f;
         private int nextVoice;
@@ -69,6 +73,11 @@ namespace KayipAda
             musicSource = gameObject.AddComponent<AudioSource>();
             musicSource.playOnAwake = false;
             musicSource.spatialBlend = 0f;
+
+            backgroundSource = gameObject.AddComponent<AudioSource>();
+            backgroundSource.loop = true;
+            backgroundSource.playOnAwake = false;
+            backgroundSource.spatialBlend = 0f;
             AudioListener.volume = SoundOn ? 1f : 0f;
         }
 
@@ -78,15 +87,31 @@ namespace KayipAda
             ambientSource.clip = ambient;
             ambientSource.volume = config.AmbientVolume;
             ambientSource.Play();
-            birdSource.clip = CreateBirdClip();
-            birdSource.volume = config.BirdVolume;
-            birdSource.Play();
+            // Gerçek ortam kaydı (dalga + kuş) varsa kodla üretilen kuşlar gerekmez.
+            if (library == null || library.Ambient == null)
+            {
+                birdSource.clip = CreateBirdClip();
+                birdSource.volume = config.BirdVolume;
+                birdSource.Play();
+            }
+            if (library != null && library.Music != null)
+            {
+                backgroundSource.clip = library.Music;
+                backgroundSource.volume = config.BackgroundMusicVolume;
+                backgroundSource.Play();
+            }
         }
 
         private void Update()
         {
             ambientSource.volume = config.AmbientVolume;
             birdSource.volume = config.BirdVolume;
+
+            // Arka plan müziği: kutlamalarda kısılır (ducking), finalde tamamen söner (zafer müziğine geçiş).
+            float target = victoryStarted ? 0f : Time.unscaledTime < duckUntil ? config.MusicDuckLevel : 1f;
+            float speed = victoryStarted ? 1f / Mathf.Max(0.05f, config.MusicCrossfade) : 1f / Mathf.Max(0.05f, config.MusicDuckFade);
+            backgroundLevel = Mathf.MoveTowards(backgroundLevel, target, Time.unscaledDeltaTime * speed);
+            backgroundSource.volume = config.BackgroundMusicVolume * backgroundLevel;
             if (!musicSource.isPlaying && musicQueue.Count > 0)
             {
                 musicSource.clip = musicQueue.Dequeue();
@@ -95,10 +120,18 @@ namespace KayipAda
             }
         }
 
-        // Türün tüm seslerini sırayla çalar (final müziği). Önceki müzik kuyruğu silinir.
+        // Kutlama: arka plan müziği birkaç saniye kısılır.
+        public static void Duck(float seconds)
+        {
+            if (instance == null) return;
+            instance.duckUntil = Mathf.Max(instance.duckUntil, Time.unscaledTime + seconds);
+        }
+
+        // Türün tüm seslerini sırayla çalar (final müziği); arka plan müziği yumuşakça söner.
         public static void PlaySequence(SoundId id)
         {
             if (instance == null || instance.library == null) return;
+            instance.victoryStarted = true;
             SoundLibrary.Entry entry = instance.library.Find(id);
             if (entry == null || entry.Clips == null) return;
             instance.musicQueue.Clear();

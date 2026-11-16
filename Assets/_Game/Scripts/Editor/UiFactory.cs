@@ -101,6 +101,7 @@ namespace KayipAda.EditorTools
                 mat.SetFloat("_FaceDilate", 0.12f);
                 mat.SetFloat("_OutlineWidth", 0.32f);
                 mat.SetFloat("_OutlineSoftness", 0f);
+                mat.SetFloat("_Sharpness", 0.35f); // uzak/küçük yazılar bulanık görünmesin
                 mat.SetColor("_OutlineColor", TextDark);
                 mat.SetColor("_UnderlayColor", new Color(0.12f, 0.06f, 0.02f, 0.5f));
                 mat.SetFloat("_UnderlayOffsetX", 0.15f);

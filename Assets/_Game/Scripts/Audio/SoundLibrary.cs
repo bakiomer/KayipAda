@@ -24,12 +24,15 @@ namespace KayipAda
         [SerializeField] private Entry[] entries = new Entry[0];
         [Tooltip("Arka plandaki dalga/doğa sesi. Boşsa oyun kendi yumuşak dalga sesini üretir.")]
         [SerializeField] private AudioClip ambient;
+        [Tooltip("Döngülü arka plan müziği (korsan/tropik, sakin). Kutlamalarda kısılır, finalde zafer müziğine geçer.")]
+        [SerializeField] private AudioClip music;
         [Tooltip("Sahne kurma komutunun yazdığı ses düzeni sürümü. Komuttaki sürüm büyükse liste yeniden kurulur.")]
         [SerializeField] private int version;
 
         public int Version => version;
 
         public AudioClip Ambient => ambient;
+        public AudioClip Music => music;
 
         public Entry Find(SoundId id)
         {
@@ -53,10 +56,11 @@ namespace KayipAda
             entries = list.ToArray();
         }
 
-        public void EditorSetup(Entry[] newEntries, AudioClip newAmbient, int newVersion)
+        public void EditorSetup(Entry[] newEntries, AudioClip newAmbient, AudioClip newMusic, int newVersion)
         {
             entries = newEntries;
             ambient = newAmbient;
+            music = newMusic;
             version = newVersion;
         }
 #endif

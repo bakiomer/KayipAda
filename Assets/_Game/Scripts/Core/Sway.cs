@@ -9,6 +9,8 @@ namespace KayipAda
     public class Sway : MonoBehaviour
     {
         [SerializeField] private GameConfig config;
+        [Tooltip("Sallanma oranı (1 = GameConfig.SwayAngle; palmiye tepeleri daha az sallanır).")]
+        [SerializeField] private float amount = 1f;
 
         private Quaternion baseRotation;
         private float phase;
@@ -23,7 +25,7 @@ namespace KayipAda
 
         private void Update()
         {
-            float angle = Mathf.Sin(Time.time * config.SwaySpeed + phase) * config.SwayAngle;
+            float angle = Mathf.Sin(Time.time * config.SwaySpeed + phase) * config.SwayAngle * amount;
             transform.localRotation = baseRotation * Quaternion.AngleAxis(angle, axis);
         }
     }

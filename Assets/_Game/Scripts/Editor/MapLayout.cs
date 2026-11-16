@@ -62,9 +62,15 @@ namespace KayipAda.EditorTools
         public const float ShipBowTilt = 20f;   // gemi kıyıya paralel; burnu bu kadar (derece) denize dönük
         public const float ShipCradleHeight = 0.35f; // kızak altlığının yüksekliği (gemi bunun üstünde)
         public const int ShipBlockCount = 5;    // gövdeyi kapatan engel karesi sayısı
-        public const float DeliveryGap = 2.2f;  // teslim alanının gövde kenarından uzaklığı
+        public const float DeliveryGap = 3.1f;  // teslim alanının gövde kenarından uzaklığı
         public const int ShipRailCount = 4;     // denize uzanan kayma rayı sayısı
         public const float ShipRailLength = 12f;
+        // İnşa iskelesi: geminin boyunun oranı, direk aralığı, derinlik (iki direk sırası arası), kat yüksekliği ve sayısı.
+        public const float ScaffoldLengthFraction = 0.8f;
+        public const float ScaffoldBay = 1.6f;
+        public const float ScaffoldDepth = 0.9f;
+        public const float ScaffoldLevelHeight = 1.1f;
+        public const int ScaffoldLevels = 2;
         public const float ShipDeckFraction = 0.36f; // güverte yüksekliği (gemi boyunun oranı): altı gövde
         public const float ShipMastGap = 0.9f;  // farklı direk sayılması için boy eksenindeki en az uzaklık
         public const float ShipMastReach = 1.6f; // bir parçanın direğe ait sayıldığı en fazla uzaklık
@@ -74,11 +80,19 @@ namespace KayipAda.EditorTools
         public static readonly Vector3 DeliveryFromShip = new Vector3(-3.8f, 0f, -1.2f);
         public static readonly Vector3 WreckOffset = new Vector3(-10f, 0f, 3f);
 
+        // Yığında parçalar arası boşluk (1.05 = %5).
+        public const float StackGapScale = 1.05f;
+
         // Sırttaki kaynakların renkleri (kolay ayırt edilsin).
         public static readonly Color ItemStoneColor = new Color(0.62f, 0.63f, 0.67f);
         public static readonly Color ItemBrickColor = new Color(0.86f, 0.4f, 0.22f);
         public static readonly Color ItemFiberColor = new Color(0.97f, 0.83f, 0.3f);
         public static readonly Color ItemClothColor = new Color(0.97f, 0.94f, 0.84f);
+
+        // Doğal süs öbeği sayısı; süs palmiyelerinin rüzgârda sallanma oranı (otlara göre).
+        public const int DecorClusterCount = 16;
+        public static readonly Color ButterflyColor = new Color(1f, 0.62f, 0.15f);
+        public const float PalmSwayAmount = 0.35f;
 
         // Bölge çiti: kapı aralığı (metre), çit engelinin kalınlığı, kapı kanadının açılma açısı, tabela yazısının yüksekliği (oran).
         public const float GateWidth = 2.8f;
@@ -86,6 +100,7 @@ namespace KayipAda.EditorTools
         public const float GateOpenAngle = 100f;
         public const float SignTextHeight = 0.72f;
         public static readonly Color SignWoodColor = new Color(0.58f, 0.38f, 0.2f);
+        public const float SignLetterWidth = 0.3f; // bina tabelasında harf başına tahta genişliği (metre)
 
         // Ağaçların doğal çeşitliliği: en fazla eğim (derece), boy farkı (0.1 = ±%10), rastgele tohum.
         public const float TreeTiltMax = 8f;
@@ -122,8 +137,8 @@ namespace KayipAda.EditorTools
         }
 
         // Yolların kıvrımı: en fazla sapma (metre) ve dalga sıklığı (radyan/metre).
-        public const float PathWiggle = 0.45f;
-        public const float PathWiggleFrequency = 0.35f;
+        public const float PathWiggle = 0.85f;
+        public const float PathWiggleFrequency = 0.3f;
 
         private static Vector2[][] curvedPaths;
         private static Rect[] curvedBounds;
@@ -168,7 +183,10 @@ namespace KayipAda.EditorTools
                     for (int s = 0; s < steps; s++)
                     {
                         float t = s / (float)steps;
-                        float wiggle = Mathf.Sin(t * Mathf.PI) * Mathf.Sin((travelled + t * length) * PathWiggleFrequency + k * 1.7f);
+                        float along = travelled + t * length;
+                        // İki dalganın toplamı: düzenli değil, doğal kıvrım.
+                        float wiggle = Mathf.Sin(t * Mathf.PI) * (Mathf.Sin(along * PathWiggleFrequency + k * 1.7f) * 0.75f
+                                                                   + Mathf.Sin(along * PathWiggleFrequency * 2.3f + k * 0.6f) * 0.35f);
                         points.Add(CatmullRom(p0, a, b, p3, t) + normal * wiggle * PathWiggle);
                     }
                     travelled += length;

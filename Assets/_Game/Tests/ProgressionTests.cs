@@ -178,7 +178,7 @@ namespace KayipAda.Tests
             yield return FinishShip(ship);
             Assert.IsTrue(ceremony.IsRunning, "Gemi bitince tören başlamadı");
             ShipConfig c = ship.Config;
-            yield return new WaitForSeconds(c.GatherTime * 0.6f);
+            yield return new WaitForSeconds(c.GatherTime * 0.92f);
             Shot("C_toren_toplanma");
             yield return WaitFor(() => ceremony.Phase == "kamera", c.GatherTime + 2f);
             yield return new WaitForSeconds(c.OrbitDuration * 0.5f);

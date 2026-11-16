@@ -29,6 +29,8 @@ namespace KayipAda
         [Tooltip("Oyuncu ve işçilerin toplanacağı noktalar (iskelede).")]
         [SerializeField] private Transform[] gatherPoints = new Transform[0];
         [SerializeField] private CameraFollow cameraFollow;
+        [Tooltip("Güneş: törende gün batımı tonuna döner.")]
+        [SerializeField] private Light sun;
         [SerializeField] private EscapePanel escapePanel;
 
         public bool IsRunning { get; private set; }
@@ -71,19 +73,23 @@ namespace KayipAda
             if (CelebrationBanner.Instance != null) CelebrationBanner.Instance.Show("GEMİ HAZIR!", "Herkes iskeleye!", ship.GatherTime);
             GatherEveryone();
             Haptics.Vibrate();
-            float gatherYaw = cameraFollow != null ? cameraFollow.transform.eulerAngles.y : 0f;
+            StartCoroutine(Sunset());
+            // Kamera alçaktan ve yandan (geminin burun tarafından): toplanan kalabalık, gemi ve ada birlikte.
+            Vector3 bow = Flat(shipRoot.forward);
+            Vector3 sea = Flat(slideDirection);
+            float gatherYaw = YawOf(bow + sea * 0.3f);
             for (float t = 0f; t < ship.GatherTime; t += Time.deltaTime)
             {
                 Orbit(Vector3.Lerp(center, GatherCenter(), 0.4f), gatherYaw, ship.OrbitDistance, ship.OrbitHeight, 2.5f);
                 yield return null;
             }
 
-            // 2) Kamera geminin etrafında yavaşça döner.
+            // 2) Kamera alçaktan, burun tarafından deniz tarafına doğru yavaşça döner (sonunda ada arkada kalır).
             Phase = "kamera";
-            float startYaw = cameraFollow != null ? cameraFollow.transform.eulerAngles.y : 0f;
+            float endYaw = YawOf(sea + bow * 0.45f);
             for (float t = 0f; t < ship.OrbitDuration; t += Time.deltaTime)
             {
-                float yaw = startYaw - ship.OrbitDegrees * 0.5f + ship.OrbitDegrees * Mathf.SmoothStep(0f, 1f, t / ship.OrbitDuration);
+                float yaw = Mathf.LerpAngle(gatherYaw, endYaw, Mathf.SmoothStep(0f, 1f, t / ship.OrbitDuration));
                 Orbit(center, yaw, ship.OrbitDistance, ship.OrbitHeight, 2.5f);
                 yield return null;
             }
@@ -91,6 +97,7 @@ namespace KayipAda
             // 3) Kızaktan kayma: yavaş başlar, hızlanır; suya girerken batar, yana yatar; büyük sıçrama.
             Phase = "kayma";
             foreach (NavObstacle o in shipObstacles) if (o != null) o.enabled = false;
+            AudioManager.Play(SoundId.ShipSlide);
             AudioManager.PlaySequence(SoundId.VictoryMusic);
             Vector3 dir = Flat(slideDirection);
             Vector3 start = shipRoot.position;
@@ -104,7 +111,7 @@ namespace KayipAda
                 float k = t * t;
                 shipRoot.position = Vector3.Lerp(start, end, k);
                 shipRoot.rotation = Quaternion.AngleAxis(Mathf.Sin(t * Mathf.PI) * 7f, tiltAxis) * baseRotation;
-                Orbit(ShipCenter(), cameraFollow != null ? cameraFollow.transform.eulerAngles.y : 0f, ship.OrbitDistance, ship.OrbitHeight, 2f);
+                Orbit(ShipCenter(), endYaw, ship.OrbitDistance, ship.OrbitHeight, 2f); // denizden adaya bakar
                 if (!splashed && t > 0.65f)
                 {
                     splashed = true;
@@ -145,6 +152,13 @@ namespace KayipAda
             for (float t = 0f; t < seconds; t += Time.deltaTime) yield return null;
         }
 
+        // Merkezden kameraya doğru yöne karşılık gelen açı (Orbit için).
+        private static float YawOf(Vector3 fromCenterToCamera)
+        {
+            Vector3 d = Flat(fromCenterToCamera);
+            return Mathf.Atan2(-d.x, -d.z) * Mathf.Rad2Deg;
+        }
+
         // Kamera, merkezin çevresinde verilen açıda (yaw) ve yükseklikte durup merkeze bakar.
         private void Orbit(Vector3 center, float yaw, float distance, float height, float blend)
         {
@@ -154,14 +168,48 @@ namespace KayipAda
             cameraFollow.SetShot(pos, Quaternion.LookRotation(center - pos), blend);
         }
 
-        // Uzaklaşan gemiyi arkadan takip.
+        // Uzaklaşan gemi: kamera geminin önünde ve yanında, alçaktan geriye (gemiye ve arkadaki adaya) bakar.
+        // Kamera adanın değil açık denizin tarafında durur (önünü kapatan direk/nesne olmasın).
         private void Follow(Quaternion shipRotation)
         {
             if (cameraFollow == null) return;
             Vector3 forward = Flat(shipRotation * Vector3.forward);
+            Vector3 side = Vector3.Cross(Vector3.up, forward);
             Vector3 center = ShipCenter();
-            Vector3 pos = center - forward * ship.FollowDistance + Vector3.up * ship.FollowHeight;
-            cameraFollow.SetShot(pos, Quaternion.LookRotation(center + forward * 4f - pos), 2f);
+            Vector3 island = IslandCenter();
+            if (Vector3.Dot(side, center - island) < 0f) side = -side;
+            Vector3 pos = center + forward * (ship.FollowDistance * 0.55f) + side * (ship.FollowDistance * 0.75f) + Vector3.up * ship.FollowHeight;
+            Vector3 look = Vector3.Lerp(center, island, 0.25f) + Vector3.up * 1.5f;
+            cameraFollow.SetShot(pos, Quaternion.LookRotation(look - pos), 2f);
+        }
+
+        private static Vector3 IslandCenter()
+        {
+            if (IslandShape.Instance == null) return Vector3.zero;
+            Vector2 c = IslandShape.Instance.Center;
+            return new Vector3(c.x, 0f, c.y);
+        }
+
+        // Işık yavaşça gün batımı tonuna döner (güneş alçalır, renk turuncuya, ortam ışığı sıcak-mora).
+        private IEnumerator Sunset()
+        {
+            if (sun == null) yield break;
+            Color startColor = sun.color;
+            float startIntensity = sun.intensity;
+            Quaternion startRot = sun.transform.rotation;
+            Quaternion endRot = Quaternion.Euler(ship.SunsetPitch, sun.transform.eulerAngles.y, 0f);
+            Color sky = RenderSettings.ambientSkyColor, equator = RenderSettings.ambientEquatorColor, groundColor = RenderSettings.ambientGroundColor;
+            for (float t = 0f; t < ship.SunsetTime; t += Time.deltaTime)
+            {
+                float k = Mathf.SmoothStep(0f, 1f, t / ship.SunsetTime);
+                sun.color = Color.Lerp(startColor, ship.SunsetColor, k);
+                sun.intensity = Mathf.Lerp(startIntensity, ship.SunsetIntensity, k);
+                sun.transform.rotation = Quaternion.Slerp(startRot, endRot, k);
+                RenderSettings.ambientSkyColor = Color.Lerp(sky, ship.SunsetSky, k);
+                RenderSettings.ambientEquatorColor = Color.Lerp(equator, ship.SunsetEquator, k);
+                RenderSettings.ambientGroundColor = Color.Lerp(groundColor, ship.SunsetEquator * 0.6f, k);
+                yield return null;
+            }
         }
 
         private Vector3 GatherCenter()
@@ -203,11 +251,11 @@ namespace KayipAda
         private void TickFireworks(bool active)
         {
             if (!active || Time.time < nextFirework || fireworks >= ship.FireworkCount) return;
-            // Geminin önünde ve iki yanında: kamera nereden bakarsa baksın görünsün.
+            // Gemi ile ada arasında, iki yana dağılmış: patlamalar geminin ve adanın üzerinde görünür.
             Vector3 center = ShipCenter();
-            Vector3 ahead = Flat(Phase == "uzaklasma" ? shipRoot.forward : sailDirection);
-            Vector3 side = Vector3.Cross(Vector3.up, ahead);
-            Vector3 pos = center + ahead * Random.Range(6f, 14f) + side * Random.Range(-8f, 8f);
+            Vector3 island = IslandCenter();
+            Vector3 side = Vector3.Cross(Vector3.up, Flat(island - center));
+            Vector3 pos = Vector3.Lerp(center, island, Random.Range(0.1f, 0.55f)) + side * Random.Range(-9f, 9f);
             pos.y = 0f;
             if (Effects.Instance != null) Effects.Instance.Firework(pos);
             AudioManager.Play(SoundId.Firework, 0.7f);

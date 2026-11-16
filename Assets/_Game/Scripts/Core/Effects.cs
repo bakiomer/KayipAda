@@ -54,6 +54,20 @@ namespace KayipAda
 
         public void Splash(Vector3 position) => PlayOnce(splashPrefab, position, 3f);
 
+        // Küçük sıçrama (balık): normal sıçramanın küçültülmüş hali.
+        public void SmallSplash(Vector3 position)
+        {
+            if (splashPrefab == null) return;
+            ParticleSystem ps = Instantiate(splashPrefab, position, Quaternion.identity);
+            ps.transform.localScale = Vector3.one * 0.3f;
+            ParticleSystem.MainModule main = ps.main;
+            main.scalingMode = ParticleSystemScalingMode.Hierarchy;
+            main.startSizeMultiplier *= 0.35f;
+            main.startSpeedMultiplier *= 0.4f;
+            ps.Play();
+            Destroy(ps.gameObject, 2f);
+        }
+
         // Havai fişek: yerden yükselen, iz bırakan roket gökyüzünde renkli patlar.
         public void Firework(Vector3 position) => PlayOnce(fireworkPrefab, position, 5f);
 

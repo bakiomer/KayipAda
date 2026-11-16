@@ -271,43 +271,51 @@ namespace KayipAda.EditorTools
 
         // Ses seçimi (Docs/Modeller.md'de de listelenir). Dosya varsa sadece eksik ses türleri eklenir.
         // Ses düzeni sürümü: bu sayı dosyadakinden büyükse ses listesi yeniden kurulur (ses dengesi değişti).
-        private const int SoundVersion = 2;
+        private const int SoundVersion = 3;
 
-        // Her eylemin ayırt edilir sesi: odun = balta, taş = kazma, meyve = pop, lif = hışırtı, satış = para,
-        // alan açma = vuuş + çan + kısa müzik, aşama = müzik, final = zafer müziği, buton = tık.
-        // Toplama sesleri kısık ve 3-4 çeşitli (perde de değişir); para ve kutlamalar öne çıkar.
+        // Sesler: modern, dolgun, 8-bit olmayan; hepsi CC0 (kaynaklar Docs/Lisanslar.md). "A||B": A yoksa B (yedek:
+        // ThirdParty/Audio/Claude_Uretim). Toplama sesleri kısık ve 3-4 çeşitli (perde de değişir); para ve kutlamalar öne çıkar.
         private static void CreateSoundLibraryIfMissing()
         {
             const float gather = 0.08f, normal = 0.04f;
+            const string A = "Adaylar/", Y = "Claude_Uretim/KayipAda_Sesler/";
             SoundLibrary.Entry[] defaults =
             {
-                Sound(SoundId.Collect, 0.3f, gather, "Interface/pluck_001", "Interface/pluck_002"),
-                Sound(SoundId.Chop, 0.5f, gather, "RPG/chop", "Impact/impactWood_heavy_000", "Impact/impactWood_heavy_001", "Impact/impactWood_heavy_003"),
-                Sound(SoundId.Mine, 0.45f, gather, "Impact/impactMining_000", "Impact/impactMining_001", "Impact/impactMining_002",
-                      "Impact/impactMetal_light_000", "Impact/impactMetal_light_002"),
-                Sound(SoundId.Pop, 0.55f, gather, "gen:pop_1", "gen:pop_2", "gen:pop_3", "gen:pop_4"),
-                Sound(SoundId.Rustle, 0.5f, gather, "RPG/cloth1", "RPG/cloth2", "RPG/cloth3", "RPG/cloth4"),
-                Sound(SoundId.Sell, 0.95f, normal, "RPG/handleCoins", "RPG/handleCoins2"),
-                Sound(SoundId.Coin, 0.6f, normal, "Interface/tick_001", "Interface/tick_002", "Interface/tick_004"),
-                Sound(SoundId.Unlock, 0.85f, 0.02f, "Impact/impactBell_heavy_000", "Impact/impactBell_heavy_002"),
-                Sound(SoundId.Whoosh, 0.8f, normal, "gen:whoosh_1", "gen:whoosh_2"),
-                Sound(SoundId.UnlockJingle, 0.9f, 0f, "Jingles/jingles_STEEL01", "Jingles/jingles_STEEL04", "Jingles/jingles_STEEL05"),
+                Sound(SoundId.Collect, 0.18f, gather, "Interface/pluck_001", "Interface/pluck_002"),
+                Sound(SoundId.Chop, 0.5f, gather, A + "odun_balta/kheetor_chop_1||" + Y + "odun_1", A + "odun_balta/kheetor_chop_2||" + Y + "odun_2",
+                      A + "odun_balta/kenney_chop||" + Y + "odun_3", "Impact/impactWood_heavy_001"),
+                Sound(SoundId.Mine, 0.45f, gather, A + "tas_kazma/themightyglider_rock_break||" + Y + "tas_1", A + "tas_kazma/jordan4ibanez_mining_1||" + Y + "tas_2",
+                      A + "tas_kazma/jordan4ibanez_mining_2||" + Y + "tas_3", "Impact/impactMining_001"),
+                Sound(SoundId.Pop, 0.5f, gather, A + "meyve_pop/cogitollc_pop2||" + Y + "meyve_pop_1", A + "meyve_pop/cogitollc_pop5||" + Y + "meyve_pop_2",
+                      A + "meyve_pop/cogitollc_pop7||" + Y + "meyve_pop_3"),
+                Sound(SoundId.Rustle, 0.45f, gather, A + "lif_hisirti/qubodup_rustle12||" + Y + "lif_1", A + "lif_hisirti/qubodup_rustle17||" + Y + "lif_2",
+                      A + "lif_hisirti/qubodup_rustle09||" + Y + "lif_3"),
+                Sound(SoundId.Sell, 1f, normal, A + "para/kenney_handleCoins||" + Y + "para_1", A + "para/kenney_handleCoins2||" + Y + "para_2",
+                      A + "para/kenney_casino_chips_stack||" + Y + "para_3"),
+                Sound(SoundId.Coin, 0.55f, normal, "Interface/tick_001", "Interface/tick_002", "Interface/tick_004"),
+                Sound(SoundId.Unlock, 0.9f, 0.02f, A + "alan_acma/pwl_bell_ding3||" + Y + "acilma", A + "alan_acma/pwl_bell_ding2"),
+                Sound(SoundId.Whoosh, 0.85f, normal, A + "alan_acma/fupi_whoosh||" + Y + "acilma"),
+                Sound(SoundId.UnlockJingle, 0.85f, 0f, A + "asama_jingle/fupi_WinBrass||" + Y + "asama_tamam"),
                 Sound(SoundId.GateOpen, 0.6f, normal, "RPG/creak1", "RPG/creak2", "RPG/creak3"),
-                Sound(SoundId.Button, 0.6f, 0.02f, "Interface/click_001", "Interface/click_002"),
-                Sound(SoundId.Footstep, 0.22f, gather, "Impact/footstep_grass_000", "Impact/footstep_grass_001", "Impact/footstep_grass_002",
+                Sound(SoundId.Button, 0.6f, 0.02f, "Interface/click_001||" + Y + "buton", "Interface/click_002"),
+                Sound(SoundId.Footstep, 0.2f, gather, "Impact/footstep_grass_000", "Impact/footstep_grass_001", "Impact/footstep_grass_002",
                       "Impact/footstep_grass_003"),
-                Sound(SoundId.Drop, 0.35f, gather, "Impact/impactWood_light_000", "Impact/impactWood_light_001", "Impact/impactWood_light_002"),
-                Sound(SoundId.Produce, 0.45f, normal, "Impact/impactPlank_medium_000", "Impact/impactPlank_medium_001"),
-                Sound(SoundId.Upgrade, 0.9f, 0.02f, "Interface/maximize_006"),
-                Sound(SoundId.Build, 0.5f, gather, "Impact/impactWood_medium_000", "Impact/impactWood_medium_001", "Impact/impactWood_medium_002"),
-                Sound(SoundId.PartPlace, 0.75f, normal, "Impact/impactWood_heavy_002", "Impact/impactWood_heavy_004", "Impact/impactPlank_medium_002"),
-                Sound(SoundId.StageComplete, 1f, 0f, "Jingles/jingles_STEEL07", "Jingles/jingles_STEEL02"),
-                Sound(SoundId.Victory, 1f, 0f, "Jingles/jingles_SAX07"),
-                Sound(SoundId.VictoryMusic, 1f, 0f, "Jingles/jingles_STEEL06", "Jingles/jingles_STEEL03", "Jingles/jingles_STEEL14",
-                      "Jingles/jingles_STEEL12", "Jingles/jingles_PIZZI07", "Jingles/jingles_STEEL07", "Jingles/jingles_STEEL02"),
-                Sound(SoundId.Splash, 1f, normal, "Impact/impactSoft_heavy_000", "Impact/impactSoft_heavy_001"),
-                Sound(SoundId.Firework, 0.65f, 0.1f, "Impact/impactGlass_light_000", "Impact/impactGlass_light_001", "Impact/impactGlass_light_002")
+                Sound(SoundId.Drop, 0.32f, gather, "Impact/impactWood_light_000", "Impact/impactWood_light_001", "Impact/impactWood_light_002"),
+                Sound(SoundId.Produce, 0.42f, normal, "Impact/impactPlank_medium_000", "Impact/impactPlank_medium_001"),
+                Sound(SoundId.Upgrade, 0.9f, 0.02f, A + "alan_acma/pwl_bell_ding2||" + Y + "acilma"),
+                Sound(SoundId.Build, 0.45f, gather, "Impact/impactWood_medium_000", "Impact/impactWood_medium_001", "Impact/impactWood_medium_002"),
+                Sound(SoundId.PartPlace, 0.7f, normal, "Impact/impactWood_heavy_002", "Impact/impactWood_heavy_004", "Impact/impactPlank_medium_002"),
+                Sound(SoundId.StageComplete, 1f, 0f, A + "asama_jingle/fupi_WinSteelDrums||" + Y + "asama_tamam"),
+                Sound(SoundId.Victory, 0.8f, 0f, A + "alan_acma/pwl_bell_ding3||" + Y + "acilma"),
+                Sound(SoundId.VictoryMusic, 1f, 0f, A + "final_zafer_muzik/medieval_victory_28sn||" + Y + "final_zafer"),
+                Sound(SoundId.Splash, 1f, normal, A + "kizak_su/thimras_big_splash", A + "kizak_su/qubodup_water_splash_01"),
+                Sound(SoundId.ShipSlide, 0.8f, normal, "RPG/creak1", "RPG/creak2", "RPG/creak3"),
+                Sound(SoundId.Firework, 0.6f, 0.1f, A + "havai_fisek/rubberduck_fw_01", A + "havai_fisek/rubberduck_fw_02", A + "havai_fisek/rubberduck_fw_06"),
+                Sound(SoundId.Seagull, 0.3f, 0.06f, A + "marti/rangomango_seagull_ambient_1", A + "marti/rangomango_seagull_ambient_4",
+                      A + "marti/rangomango_seagull_ambient_5")
             };
+            AudioClip ambient = LoadSound(A + "ortam_dalga_kus/dalga_kus_dongu");
+            AudioClip music = LoadSound(A + "arka_plan_muzik/dizzycrow_pirates_orchestra");
 
             SoundLibrary existing = BuilderUtil.Load<SoundLibrary>(SoundLibraryPath);
             if (existing != null && existing.Version >= SoundVersion)
@@ -318,23 +326,39 @@ namespace KayipAda.EditorTools
             }
             if (existing != null)
             {
-                existing.EditorSetup(defaults, existing.Ambient, SoundVersion); // ses dengesi yenilendi
+                existing.EditorSetup(defaults, ambient, music, SoundVersion); // ses düzeni yenilendi
                 EditorUtility.SetDirty(existing);
                 return;
             }
             SoundLibrary library = ScriptableObject.CreateInstance<SoundLibrary>();
-            library.EditorSetup(defaults, null, SoundVersion);
+            library.EditorSetup(defaults, ambient, music, SoundVersion);
             AssetDatabase.CreateAsset(library, SoundLibraryPath);
         }
 
-        // "gen:ad" = kodla üretilen ses (Audio/Generated/ad.wav), diğerleri ThirdParty/Audio altındaki .ogg dosyaları.
+        // Ses dosyasını uzantısına bakmadan bulur: ThirdParty/Audio altında (ogg, wav, mp3) ya da "gen:ad" (Audio/Generated).
+        private static AudioClip LoadSound(string file)
+        {
+            if (file.StartsWith("gen:")) return BuilderUtil.Load<AudioClip>(Root + "/Audio/Generated/" + file.Substring(4) + ".wav");
+            foreach (string ext in new[] { ".ogg", ".wav", ".mp3" })
+            {
+                AudioClip clip = BuilderUtil.Load<AudioClip>(AudioFolder + "/" + file + ext);
+                if (clip != null) return clip;
+            }
+            return null;
+        }
+
+        // "A||B": A bulunamazsa B (yedek) kullanılır.
         private static SoundLibrary.Entry Sound(SoundId id, float volume, float pitchJitter, params string[] files)
         {
             List<AudioClip> clips = new List<AudioClip>();
             foreach (string file in files)
             {
-                string path = file.StartsWith("gen:") ? Root + "/Audio/Generated/" + file.Substring(4) + ".wav" : AudioFolder + "/" + file + ".ogg";
-                AudioClip clip = BuilderUtil.Load<AudioClip>(path);
+                AudioClip clip = null;
+                foreach (string option in file.Split(new[] { "||" }, System.StringSplitOptions.None))
+                {
+                    clip = LoadSound(option);
+                    if (clip != null) break;
+                }
                 if (clip != null) clips.Add(clip);
                 else Debug.LogWarning("Kayıp Ada: Ses bulunamadı (atlandı): " + file);
             }
@@ -474,6 +498,11 @@ namespace KayipAda.EditorTools
             if (type == null) return;
             type.EditorSetPrefab(prefab);
             type.EditorSetIcon(IconGenerator.Create(type.Id));
+            // Yığındaki yer: modelin yatay genişliği ve yüksekliği (biraz boşlukla).
+            GameObject probe = (GameObject)PrefabUtility.InstantiatePrefab(prefab.gameObject);
+            Bounds b = PrefabFactory.WorldBounds(probe);
+            Object.DestroyImmediate(probe);
+            type.EditorSetStackSize(Mathf.Max(b.size.x, b.size.z) * MapLayout.StackGapScale, b.size.y * MapLayout.StackGapScale);
             EditorUtility.SetDirty(type);
         }
 
@@ -641,6 +670,7 @@ namespace KayipAda.EditorTools
             UiBuilder.CreateDevMenu(config, devResources);
             CreateShipyard(p, island, config, follow, reserved);
             UiBuilder.CreateConfettiOverlay(); // kaçış ekranının da önünde
+            CreateIslandLife(config);
             CreateGuide(config, follow.GetComponent<Camera>());
 
             // Süsler (yolları ve oyun alanlarını kapatmadan)
@@ -730,7 +760,7 @@ namespace KayipAda.EditorTools
 
             Bloom bloom = profile.Add<Bloom>(true);
             bloom.threshold.Override(1f);
-            bloom.intensity.Override(0.15f);
+            bloom.intensity.Override(0.08f);
             bloom.scatter.Override(0.65f);
 
             ColorAdjustments color = profile.Add<ColorAdjustments>(true);
@@ -742,7 +772,7 @@ namespace KayipAda.EditorTools
             white.temperature.Override(8f);
 
             Vignette vignette = profile.Add<Vignette>(true);
-            vignette.intensity.Override(0.22f);
+            vignette.intensity.Override(0.12f);
             vignette.smoothness.Override(0.45f);
 
             foreach (VolumeComponent component in profile.components) AssetDatabase.AddObjectToAsset(component, profile);
@@ -846,13 +876,12 @@ namespace KayipAda.EditorTools
             Bounds b = PrefabFactory.WorldBounds(sign);
             Vector3 textPos = new Vector3(b.center.x, b.min.y + b.size.y * MapLayout.SignTextHeight, b.min.z - 0.04f);
             TMPro.TextMeshPro text = UiFactory.CreateWorldText("Title", sign.transform, sign.transform.InverseTransformPoint(textPos),
-                                                               title, 6f, Color.white);
+                                                               title, 9f, Color.white);
             RectTransform rt = (RectTransform)text.transform;
-            rt.sizeDelta = new Vector2(Mathf.Max(b.size.x * 0.92f, 1.6f), b.size.y * 0.34f);
+            rt.sizeDelta = new Vector2(Mathf.Max(b.size.x * 0.92f, 1.6f), b.size.y * 0.45f);
             text.enableAutoSizing = true;
             text.fontSizeMin = 3f;
-            text.fontSizeMax = 7f;
-            UiFactory.AddFader(sign);
+            text.fontSizeMax = 12f;
             BuilderUtil.SetVector2(sign.AddComponent<NavObstacle>(), "size", new Vector2(0.5f, 0.5f));
         }
 
@@ -1196,6 +1225,7 @@ namespace KayipAda.EditorTools
             BuilderUtil.SetVector3(ceremony, "sailDirection", sailDir);
             BuilderUtil.SetArray(ceremony, "gatherPoints", gatherPoints.ToArray());
             BuilderUtil.SetField(ceremony, "cameraFollow", follow);
+            BuilderUtil.SetField(ceremony, "sun", RenderSettings.sun);
             BuilderUtil.SetField(ceremony, "escapePanel", UiBuilder.CreateEscapePanel(config));
         }
 
@@ -1267,13 +1297,13 @@ namespace KayipAda.EditorTools
             for (int s = -1; s <= 1; s += 2)
                 WoodBox(cradle, "Bed", ground + slideDir * (s * width * 0.22f) + Vector3.up * (MapLayout.ShipCradleHeight * 0.5f),
                         along, new Vector3(0.5f, MapLayout.ShipCradleHeight, length * 0.85f), plank);
-            // Raylar: karadan denize, geminin altından geçer (kayma yolu).
-            int rails = MapLayout.ShipRailCount;
-            for (int i = 0; i < rails; i++)
+            // Kısa takozlar: altlıkları bağlar (uzun çapraz raylar yok; gemi törende kumdan denize kayar).
+            int chocks = MapLayout.ShipRailCount;
+            for (int i = 0; i < chocks; i++)
             {
-                float k = (i + 0.5f) / rails - 0.5f;
-                Vector3 c = ground + bowDir * (k * length * 0.8f) + slideDir * (MapLayout.ShipRailLength * 0.5f - width * 0.6f) + Vector3.up * 0.08f;
-                WoodBox(cradle, "Rail", c, across, new Vector3(0.32f, 0.16f, MapLayout.ShipRailLength), wood);
+                float k = (i + 0.5f) / chocks - 0.5f;
+                Vector3 c = ground + bowDir * (k * length * 0.75f) + Vector3.up * 0.08f;
+                WoodBox(cradle, "Chock", c, across, new Vector3(0.3f, 0.16f, width * 0.75f), wood);
             }
             BuilderUtil.MarkStatic(cradle.gameObject);
         }
@@ -1289,24 +1319,36 @@ namespace KayipAda.EditorTools
             go.GetComponent<Renderer>().sharedMaterial = material;
         }
 
-        // İnşa iskelesi: geminin kara tarafında direkler ve üstlerinde yatay tahtalar (gemi bitince kaybolur).
+        // İnşa iskelesi: geminin kara tarafında, boyu boyunca düzenli dikey direkler ve iki katlı yatay platformlar
+        // (tahta + korkuluk). Çocuklar sırayla kaldırılır (gemi bitince parça parça söker).
         private static GameObject CreateScaffolding(Prefabs p, Transform parent, Vector3 shipCenter, Vector3 bowDir, Vector3 slideDir,
                                                     float length, float halfWidth)
         {
             GameObject scaffolding = new GameObject("Scaffolding");
             scaffolding.transform.SetParent(parent, false);
-            Vector3 ground = new Vector3(shipCenter.x, 0f, shipCenter.z);
             Material plank = ArtGenerator.GetLit("M_ShipPlank", null, MapLayout.ShipPlankColor);
-            float[] spots = { -0.32f, 0.32f };
-            foreach (float s in spots)
+            Material wood = ArtGenerator.GetLit("M_ShipWood", null, MapLayout.ShipWoodColor);
+            Quaternion along = Quaternion.LookRotation(bowDir);
+            Vector3 ground = new Vector3(shipCenter.x, 0f, shipCenter.z);
+            float span = length * MapLayout.ScaffoldLengthFraction;
+            int bays = Mathf.Max(2, Mathf.RoundToInt(span / MapLayout.ScaffoldBay));
+            float[] rows = { halfWidth + 0.25f, halfWidth + 0.25f + MapLayout.ScaffoldDepth }; // iç ve dış direk sırası
+            float height = MapLayout.ScaffoldLevelHeight * MapLayout.ScaffoldLevels;
+            // Dikey direkler.
+            for (int b = 0; b <= bays; b++)
             {
-                Vector3 c = ground + bowDir * (s * length) - slideDir * (halfWidth + 0.5f);
-                Material wood = ArtGenerator.GetLit("M_ShipWood", null, MapLayout.ShipWoodColor);
-                Quaternion along = Quaternion.LookRotation(bowDir);
-                for (int k = -1; k <= 1; k += 2)
-                    WoodBox(scaffolding.transform, "Post", c + bowDir * (k * 0.9f) + Vector3.up * 1.1f, along, new Vector3(0.18f, 2.2f, 0.18f), wood);
-                WoodBox(scaffolding.transform, "Plank", c + Vector3.up * 1.6f, along, new Vector3(0.7f, 0.12f, 2.4f), plank);
-                WoodBox(scaffolding.transform, "Brace", c + Vector3.up * 0.9f, along * Quaternion.Euler(35f, 0f, 0f), new Vector3(0.12f, 0.12f, 2.2f), wood);
+                Vector3 along0 = ground + bowDir * (-span * 0.5f + span * b / bays);
+                foreach (float r in rows)
+                    WoodBox(scaffolding.transform, "Post", along0 - slideDir * r + Vector3.up * (height * 0.5f + 0.15f), along,
+                            new Vector3(0.14f, height + 0.3f, 0.14f), wood);
+            }
+            // Platformlar (her katta tahta) ve dış korkuluk.
+            Vector3 mid = ground - slideDir * (halfWidth + 0.25f + MapLayout.ScaffoldDepth * 0.5f);
+            for (int level = 1; level <= MapLayout.ScaffoldLevels; level++)
+            {
+                float y = MapLayout.ScaffoldLevelHeight * level;
+                WoodBox(scaffolding.transform, "Platform", mid + Vector3.up * y, along, new Vector3(MapLayout.ScaffoldDepth + 0.2f, 0.1f, span + 0.2f), plank);
+                WoodBox(scaffolding.transform, "Rail", ground - slideDir * rows[1] + Vector3.up * (y + 0.55f), along, new Vector3(0.08f, 0.08f, span), wood);
             }
             return scaffolding;
         }
@@ -1526,7 +1568,22 @@ namespace KayipAda.EditorTools
             Scatter(p, root, island, random, placed, "Bush", 4, -40f, -1f, 1.2f, MapLayout.OrchardRect);
             Scatter(p, root, island, random, placed, "Pebble_B", 8, -40f, -0.8f, 0.5f, MapLayout.CoveRect);
             Scatter(p, root, island, random, placed, "GrassTuft", 6, -40f, -0.8f, 0.7f, MapLayout.CoveRect);
+
+            // Boş çimenlikte doğal öbekler: birkaç çiçek, ot, küçük kaya ve çalı bir arada (yollara değmeden).
+            ScatterClusters(p, root, island, random, placed);
             BuilderUtil.MarkStatic(root.gameObject);
+
+            // Rüzgârda sallananlar (uzun otlar ve süs palmiyeleri) statik olmamalı.
+            foreach (Transform t in root)
+            {
+                bool sways = t.name.StartsWith("Grass") || t.name.StartsWith("DecorPalm");
+                if (!sways) continue;
+                Transform target = t.name.StartsWith("DecorPalm") ? t.Find("Model") ?? t : t;
+                Sway sway = target.gameObject.AddComponent<Sway>();
+                BuilderUtil.SetField(sway, "config", BuilderUtil.Load<GameConfig>(ConfigPath));
+                BuilderUtil.SetFloat(sway, "amount", t.name.StartsWith("DecorPalm") ? MapLayout.PalmSwayAmount : 1f);
+                foreach (Transform c in t.GetComponentsInChildren<Transform>(true)) GameObjectUtility.SetStaticEditorFlags(c.gameObject, 0);
+            }
         }
 
         private static void PlaceNear(Prefabs p, Transform parent, string key, Vector3 position, List<Vector3> placed)
@@ -1579,6 +1636,56 @@ namespace KayipAda.EditorTools
                     BuilderUtil.SetVector2(go.AddComponent<NavObstacle>(), "size", key == "DecorPalm" ? new Vector2(0.6f, 0.6f) : new Vector2(1.1f, 1.1f));
                 placed.Add(new Vector3(pos.x, pos.y, radius));
                 done++;
+            }
+        }
+
+        // Adadaki canlılık: yengeç, martı, kelebek, zıplayan balık (sayılar GameConfig'te; oyunda oluşturulur).
+        private static void CreateIslandLife(GameConfig config)
+        {
+            GameObject go = new GameObject("IslandLife");
+            IslandLife life = go.AddComponent<IslandLife>();
+            BuilderUtil.SetField(life, "config", config);
+            BuilderUtil.SetField(life, "crabPrefab", PrefabFactory.BuildCrab(config).GetComponent<Crab>());
+            BuilderUtil.SetField(life, "gullPrefab", PrefabFactory.BuildGull(config).GetComponent<Flyer>());
+            BuilderUtil.SetField(life, "butterflyPrefab", PrefabFactory.BuildButterfly(config, MapLayout.ButterflyColor, "Butterfly").GetComponent<Flyer>());
+            BuilderUtil.SetField(life, "fishPrefab", PrefabFactory.BuildFish());
+            BuilderUtil.SetVector3(life, "butterflyCenter", new Vector3(MapLayout.OrchardRect.center.x, 0f, MapLayout.OrchardRect.center.y));
+            BuilderUtil.SetFloat(life, "butterflyRadius", Mathf.Min(MapLayout.OrchardRect.width, MapLayout.OrchardRect.height) * 0.4f);
+        }
+
+        // Doğal öbekler: rastgele merkezler çevresinde 3-6 süs (çiçek, ot, küçük kaya, çalı) sıkışık bir arada.
+        private static void ScatterClusters(Prefabs p, Transform root, IslandShape island, System.Random random, List<Vector3> placed)
+        {
+            string[] kinds = { "FlowerRed", "FlowerYellow", "FlowerPurple", "FlowerYellowB", "GrassTuft", "Grass", "RockTiny", "BushRound" };
+            int made = 0;
+            for (int attempt = 0; attempt < 400 && made < MapLayout.DecorClusterCount; attempt++)
+            {
+                Vector2 c = new Vector2(island.Center.x + ((float)random.NextDouble() * 2f - 1f) * island.Radius.x,
+                                        island.Center.y + ((float)random.NextDouble() * 2f - 1f) * island.Radius.y);
+                if (island.SignedDistance(c) > -4.2f) continue;
+                if (MapLayout.DistanceToPaths(c) < MapLayout.PathWidth * 0.5f + 1.6f) continue;
+                if (InsideRect(c, MapLayout.RockyRect, 1f) || InsideRect(c, MapLayout.OrchardRect, 1f) || InsideRect(c, MapLayout.CoveRect, 1f)) continue;
+                bool free = true;
+                foreach (Vector3 o in placed)
+                {
+                    float min = o.z + 1.6f;
+                    if ((new Vector2(o.x, o.y) - c).sqrMagnitude < min * min) { free = false; break; }
+                }
+                if (!free) continue;
+
+                int count = 3 + random.Next(4);
+                for (int i = 0; i < count; i++)
+                {
+                    float a = (float)random.NextDouble() * Mathf.PI * 2f, r = 0.25f + (float)random.NextDouble() * 1.1f;
+                    Vector2 pos = c + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * r;
+                    if (MapLayout.DistanceToPaths(pos) < MapLayout.PathWidth * 0.5f + 0.4f) continue;
+                    string key = kinds[(made * 3 + i) % kinds.Length];
+                    if (i == 0 && random.NextDouble() < 0.5) key = "BushRound";
+                    GameObject go = Place(p.Decor[key], root, new Vector3(pos.x, 0f, pos.y), (float)random.NextDouble() * 360f);
+                    go.transform.localScale = Vector3.one * (0.8f + (float)random.NextDouble() * 0.4f);
+                }
+                placed.Add(new Vector3(c.x, c.y, 1.4f));
+                made++;
             }
         }
 

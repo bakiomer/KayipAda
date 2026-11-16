@@ -194,6 +194,7 @@ namespace KayipAda
             string title = finished.Name.ToUpper(new CultureInfo("tr-TR")) + " TAMAMLANDI!";
             if (CelebrationBanner.Instance != null) CelebrationBanner.Instance.Show(title, finished.UnlockMessage, ship.CelebrationDuration);
             AudioManager.Play(SoundId.StageComplete);
+            AudioManager.Duck(config.MusicDuckTime);
             Haptics.Vibrate();
             StageCompleted?.Invoke();
 
@@ -202,7 +203,7 @@ namespace KayipAda
 
             if (IsComplete)
             {
-                if (scaffolding != null) Tween.PopOut(scaffolding.transform, 0.5f, () => scaffolding.SetActive(false));
+                if (scaffolding != null) StartCoroutine(Dismantle());
                 ShipCompleted?.Invoke();
             }
         }
@@ -244,6 +245,21 @@ namespace KayipAda
             if (slowedFrom >= 0f) Time.timeScale = slowedFrom;
             slowedFrom = -1f;
             if (CameraFollow.Main != null) CameraFollow.Main.ClearShot();
+        }
+
+        // İnşa iskelesi parça parça sökülür: her parça küçülerek kaybolur, aralarında kısa bekleme.
+        private IEnumerator Dismantle()
+        {
+            Transform root = scaffolding.transform;
+            for (int i = root.childCount - 1; i >= 0; i--)
+            {
+                Transform piece = root.GetChild(i);
+                Tween.PopOut(piece, ship.PieceAppearDuration * 0.6f, () => piece.gameObject.SetActive(false));
+                if (i % 3 == 0) AudioManager.Play(SoundId.PartPlace, 0.4f);
+                yield return new WaitForSeconds(ship.ScaffoldRemoveInterval);
+            }
+            yield return new WaitForSeconds(ship.PieceAppearDuration);
+            scaffolding.SetActive(false);
         }
 
         // Kayıt sistemi için: aşama ve teslim edilenler.

@@ -64,32 +64,10 @@ namespace KayipAda.EditorTools
 
             sb.AppendLine("## Sesler (`Assets/_Game/Data/SoundLibrary.asset`)");
             sb.AppendLine();
-            sb.AppendLine("Toplama sesleri kısık ve 3-5 çeşitli (her çalışta perde ±%8 değişir); para ve kutlamalar öne çıkar.");
+            sb.AppendLine("Modern, 8-bit olmayan, hepsi CC0. Her sesin kaynağı, yazarı ve lisansı: **Docs/Lisanslar.md**. Adaylar:");
+            sb.AppendLine("`Assets/_Game/ThirdParty/Audio/Adaylar/<ihtiyaç>/`; yedek: `ThirdParty/Audio/Claude_Uretim`. Toplama sesleri kısık ve");
+            sb.AppendLine("3-4 çeşitli (perde ±%8), para ve kutlamalar öne çıkar. Arka plan müziği kutlamalarda kısılır, finalde zafer müziğine geçer.");
             sb.AppendLine();
-            sb.AppendLine("| Olay | Ses dosyaları |");
-            sb.AppendLine("|---|---|");
-            sb.AppendLine("| Odun (balta) | RPG/chop, Impact/impactWood_heavy_000/001/003 |");
-            sb.AppendLine("| Taş (kazma) | Impact/impactMining_000..002, impactMetal_light_000/002 |");
-            sb.AppendLine("| Meyve (pop) | Audio/Generated/pop_1..4 (kodla üretildi) |");
-            sb.AppendLine("| Lif (hışırtı) | RPG/cloth1..4 |");
-            sb.AppendLine("| Toplama | Interface/pluck_001, pluck_002 |");
-            sb.AppendLine("| Satış (para) | RPG/handleCoins, handleCoins2 |");
-            sb.AppendLine("| Para akışı (açma karesi) | Interface/tick_001, tick_002, tick_004 |");
-            sb.AppendLine("| Alan açıldı | Audio/Generated/whoosh_1..2 + Impact/impactBell_heavy_000/002 + Jingles/STEEL01/04/05 |");
-            sb.AppendLine("| Çit kapısı | RPG/creak1..3 |");
-            sb.AppendLine("| Buton | Interface/click_001, click_002 |");
-            sb.AppendLine("| Adım | Impact/footstep_grass_000..003 |");
-            sb.AppendLine("| Binaya bırakma / ürün | Impact/impactWood_light_000..002 / impactPlank_medium_000..001 |");
-            sb.AppendLine("| Geliştirme, yıldız | Interface/maximize_006 |");
-            sb.AppendLine("| Gemiye malzeme / parça oturdu | Impact/impactWood_medium_000..002 / impactWood_heavy_002/004, impactPlank_medium_002 |");
-            sb.AppendLine("| Gemi aşaması | Jingles/STEEL07, STEEL02 |");
-            sb.AppendLine("| Final zafer müziği (sırayla) | Jingles/STEEL06, 03, 14, 12, PIZZI07, STEEL07, 02 |");
-            sb.AppendLine("| Gemi suya indi / havai fişek | Impact/impactSoft_heavy_000..001 / impactGlass_light_000..002 |");
-            sb.AppendLine("| Kaçış ekranı | Jingles/SAX07 |");
-            sb.AppendLine("| Ortam (dalga + kuşlar) | Pakette yok → AudioManager üretir |");
-            sb.AppendLine();
-            sb.AppendLine("Jingles: Kenney \"Music Jingles\" (CC0), `Assets/_Game/ThirdParty/Audio/Jingles` (+ License.txt). " +
-                          "Uzun CC0 arka plan müziği bulunamadı; oyun içinde dalga + kuş ortam sesi çalar.");
 
             string folder = Path.Combine(Directory.GetParent(Application.dataPath).FullName, "Docs");
             Directory.CreateDirectory(folder);

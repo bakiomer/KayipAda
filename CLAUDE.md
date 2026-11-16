@@ -1,11 +1,13 @@
 # Kayıp Ada — Oyun Tasarımı ve Kod Kuralları
 
 > **Yön: 3D low-poly** (2D kutulardan geçildi; 2D son hali `main` dalında "2D son durum" kaydında).
-> **Şu anki durum:** Oyuncu geri bildirim turu yapıldı: kutusuz yazılar + Lilita tabanlı Türkçe font, bölge tabelaları,
-> giriş/çıkış ikonları, gemi kıyıya paralel kızakta ve 5 aşamada parça parça gelir, kutlamalar (AÇILDI!, üst band,
-> yavaşlama + kamera), ~20 sn sinematik final töreni, yıldızlı kaçış ekranı, çitli bölgeler + kapı, çarpışma ve NavMesh,
-> keten tarlası / meyve çalısı, yeni sesler + müzik. 17/17 test geçiyor (ekran görüntüleri `Docs/Screenshots`,
-> önce/sonra `Docs/Screenshots/Karsilastirma`). Kullanıcının elle denemesi bekleniyor (iş `3d` dalında).
+> **Şu anki durum:** Cila turu yapıldı:
+> - Sesler: CC0, 8-bit yok; zafer müziği, arka plan müziği ve ortam sesi var; kutlamalarda müzik kısılıyor.
+> - Sırttaki yığın 2-3 sütunlu, taşanı "x40" etiketiyle gösteriliyor.
+> - Gemi: düzgün iskele parça parça sökülüyor; final töreni gün batımında, alçak yan kamerayla, ada arka planda.
+> - Tabelalar: bina tabelaları binanın üstünde, açma karesinde ad yok.
+> - Ada: yuvarlak meyve ağaçları, doğal süs öbekleri, keskin zemin; yengeç, martı, balık ve kelebekler.
+> 22/22 test geçiyor (`Docs/Screenshots`, önce/sonra `Docs/Screenshots/Karsilastirma2`). İş `3d` dalında.
 
 ## Proje
 - **Motor:** Unity 6 (6000.6), **URP 3D** (Universal Renderer, mobil ayarlı `Assets/_Game/Settings/URP_Mobile`)
@@ -51,6 +53,14 @@ Her aşama bitince ekranda "… tamamlandı!" kutlaması ve konfeti. Final töre
 suya kayar, su sıçrar, havai fişekler patlar, kamera uzaklaşan gemiyi takip eder, ardından kaçış ekranı
 (süre, kaptanlık XP'si, "Yeni adalar yakında", "Tekrar oyna"). Miktarlar ve süreler `Data/Ship.asset`'te.
 
+## Sesler
+- Hepsi **CC0** (ya da ticari kullanıma açık); kaynak/yazar/lisans **Docs/Lisanslar.md**'de. 8-bit/chiptune ses kullanılmaz.
+  Adaylar `ThirdParty/Audio/Adaylar/<ihtiyaç>/`, yedekler `ThirdParty/Audio/Claude_Uretim/`; daha iyisi için elle indirilecekler
+  **Docs/IndirilecekSesler.md**. Bağlantılar `PrototypeSceneBuilder.CreateSoundLibraryIfMissing` (değiştirince `SoundVersion`++).
+- Toplama sesleri 3-4 çeşit, perde ±%8, kısık; para ve kutlamalar öne çıkar. Arka plan müziği (Dizzy Crow "Pirate's Orchestra")
+  döngüde kısık çalar, kutlamalarda kısılır (`AudioManager.Duck`), finalde zafer müziğine (RandomMind, 28 sn) yumuşak geçer.
+  Ortam: dalga + kuş döngüsü; ara sıra martı sesi. Uzun müzikler telefonda akışla (Streaming) okunur.
+
 ## Görsel Stil Kuralları
 - **Ana stil: Quaternius Pirate** (low-poly, tek renk atlası `Atlas_Pirate.png`). Önce her zaman Quaternius'a bakılır.
 - **Kenney** paketleri (Pirate, Nature, Survival) **sadece Quaternius'ta olmayan eşyalar** için; renkleri uyumlu olanlar seçilir.
@@ -60,6 +70,12 @@ suya kayar, su sıçrar, havai fişekler patlar, kamera uzaklaşan gemiyi takip 
 - **Ağaçlar** dik durur (eğri palmiye modeli `ModelSpec.Upright` ile dikleştirilir), her biri rastgele ±8° eğik ve
   biraz farklı boyda; gövde dibi zemine oturur. Havada/gömülü nesne kalmamalı: **Tools > Kayıp Ada > Zemin Kontrolü**.
 - **Kaynak noktaları** toplandıkça küçülür, tükenince kütük (kayada kırık taşlar) kalır, yeniden dolarken büyür.
+- **Sırttaki yığın** 2-3 sütunlu sıkışık blok (parça genişliğine göre), en fazla omuz hizasının biraz üstüne kadar
+  (`GameConfig.StackMaxHeight`); fazlası görünmez, yığının üstünde "x40" etiketi. İşçilerde de aynı.
+- **Canlılık** (abartısız, çarpışmasız): sahilde yengeçler (yaklaşınca kuma gömülür), martılar (gölgeli, ara sıra ses),
+  zıplayan balıklar, bahçede kelebekler, rüzgârda sallanan otlar ve süs palmiyeleri. Sayılar `GameConfig` > "Canlılar".
+- **Tabelalar**: bölge adı yalnızca ahşap bölge tabelasında; bina adı binanın üstündeki ahşap tabelada; açma karesinde
+  sadece para ikonu + fiyat. Tabelalar hep okunur (uzakta kaybolmaz); diğer dünya yazıları uzakta ve sinematikte kaybolur.
 - **Yumuşak gölgeler:** tek kaskad, yumuşak ama ucuz (Low). Küçük süslerin gölgesi kapalı; karakterlerin altında ayrıca yumuşak yuvarlak gölge.
 - **Mat malzemeler:** URP **Simple Lit**, parlama yok. Malzemeler **paylaşımlı** (`Art/Materials`), model başına kopya yok.
 - **His:** her etkileşimde küçük bir hareket + ses (zıplama, sallanma, kavisli uçuş, konfeti). Harici animasyon paketi yok, `Tween` kullanılır.
@@ -107,6 +123,7 @@ Assets/_Game/
     Ship/            Gemi inşası, teslim alanı, suya indirme töreni
     Save/            Kayıt sistemi (JSON, otomatik)
     DevTools/        Test Menüsü (sadece Editor ve geliştirme sürümü)
+    Life/            Adadaki canlılar: yengeç, martı/kelebek (Flyer), yönetici (IslandLife)
     UI/              Ekran arayüzü
     Editor/          Editör komutları (oyuna dahil edilmez): kurulum, içe aktarma, görsel/prefab üretimi, sahne
   Shaders/           Water (dalgalı su), UnlitTransparent (yumuşak gölge, yer işaretleri, partiküller), BuildReveal (gemi aşağıdan yukarı belirir)
@@ -124,6 +141,8 @@ Assets/_Game/
                      Audio (Impact, Interface, RPG, Jingles = Kenney Music Jingles CC0)
 Docs/Modeller.md     Model ve ses seçim tablosu (proje kökünde)
 Docs/Denge.md        Fiyat/hız denge tablosu (ilk kaçış ~33 dk)
+Docs/Lisanslar.md    Her sesin/modelin/fontun kaynağı, yazarı ve lisansı
+Docs/IndirilecekSesler.md  Elle indirilecek daha iyi ses adayları (Freesound/Pixabay/Mixkit linkleri)
 Docs/GeceRaporu.md   Gece çalışmasının raporu
 Docs/Screenshots/    Otomatik ekran görüntüleri (testler üretir)
 _BatchCopy/          Batchmode testleri için projenin kopyası (Git'e girmez)
@@ -164,6 +183,7 @@ SoundLibrary.asset   Hangi olayda hangi ses (Docs/Modeller.md'de liste; komut sa
 | `Sway` | Core | Bitkilerin rüzgârda sallanması (keten tarlası) |
 | `FenceGate` | Areas | Bölge çitinin kapısı: kapalıyken geçilmez, bölge açılınca kanatlar dışa açılır |
 | `IslandNavMesh` | Navigation | İşçilerin NavMesh'i (ada zemini − engeller); engel değişince arka planda yeniden kurulur |
+| `Crab` / `Flyer` / `IslandLife` | Life | Yengeç (yan yürür, kaçıp kuma gömülür), martı/kelebek uçuşu, canlıları oluşturan yönetici (+ zıplayan balık, martı sesi) |
 | `ConfettiOverlay` | UI | Ekranı kaplayan konfeti (final ve kaçış ekranı), arayüzün en üstünde |
 | `BurstText` / `SettingsPanel` | UI | Ekran ortasında esneyen "AÇILDI!" yazısı; sağ üstte "AYAR" (titreşim/ses) |
 | `IslandShape` | Core | Adanın organik kıyı şekli (elips + dalgalar). `SignedDistance`, `Contains`, `ClampInside`. Zemin/su/doku da bundan üretilir |
@@ -199,7 +219,7 @@ SoundLibrary.asset   Hangi olayda hangi ses (Docs/Modeller.md'de liste; komut sa
 | `ShipProgressView` | Ship | Teslim alanı üstündeki kutusuz gösterge: aşama adı + malzeme ikonu + "12/30" + ince çubuk |
 | `DeliveryMarker` | Ship | Gemi teslim alanında zıplayan ok + nabız atan yer işareti (yerde gemiyi gösteren oklar da var) |
 | `DevCommands` / `DevMenu` | DevTools | Test Menüsü komutları ve sol üstteki "TEST" butonlu oyun içi menü. **Sadece Editor ve Development Build**; satış sürümünde menü kendini siler, komutlar çalışmaz |
-| `LaunchCeremony` | Ship | ~20 sn final: toplanma + sevinç (Cheer), kamera gemi çevresinde döner, yana kayma + büyük sıçrama, zafer müziği, iz bırakan havai fişekler, ekranı kaplayan konfeti, gemi burnunu denize çevirip uzaklaşır (kamera arkadan), kaçış ekranı |
+| `LaunchCeremony` | Ship | ~20 sn final: ışık gün batımına döner; kamera alçaktan ve yandan (ada arkada); toplanma + sevinç (Cheer), kamera gemi çevresinde döner, yana kayma + büyük sıçrama, zafer müziği, iz bırakan havai fişekler, ekranı kaplayan konfeti, gemi burnunu denize çevirip uzaklaşır (kamera arkadan), kaçış ekranı |
 | `CelebrationBanner` | UI | Ekranın ortasında kısa kutlama yazısı ("Gövde tamamlandı!" + açılan yeni hedef) |
 | `SaveData` / `SaveManager` | Save | JSON kayıt (persistentDataPath/kayipada_save.json): para, alanlar, geliştirmeler, gemi; 10 sn'de bir, arka planda ve kapanırken; kaptanlık XP kalıcı (seviye başına %3, en fazla 10) |
 

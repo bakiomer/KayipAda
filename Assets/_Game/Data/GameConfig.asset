@@ -44,9 +44,13 @@ MonoBehaviour:
   <NodeMinStockScale>k__BackingField: 0.6
   <NodeDepletedScale>k__BackingField: 0.35
   <PopInDuration>k__BackingField: 0.45
+  <GateOpenDuration>k__BackingField: 0.8
+  <BurstTextDuration>k__BackingField: 1.8
   <PopInStagger>k__BackingField: 0.04
   <CoinPunch>k__BackingField: 0.2
   <FloatingTextDuration>k__BackingField: 0.9
+  <FloatingTextMergeDistance>k__BackingField: 2.5
+  <FloatingTextStackGap>k__BackingField: 0.7
   <GuideArrowHeight>k__BackingField: 2.6
   <GuideArrowBob>k__BackingField: 0.3
   <GuidePulseSpeed>k__BackingField: 4
@@ -54,17 +58,32 @@ MonoBehaviour:
   <CaptainBonusPerLevel>k__BackingField: 0.03
   <CaptainMaxLevel>k__BackingField: 10
   <EscapeXp>k__BackingField: 100
+  <ThreeStarSeconds>k__BackingField: 2100
+  <TwoStarSeconds>k__BackingField: 3000
+  <StarDelay>k__BackingField: 0.35
+  <CountUpDuration>k__BackingField: 1.2
+  <PulseSpeed>k__BackingField: 5
+  <PulseAmount>k__BackingField: 0.06
+  <EscapeConfettiDuration>k__BackingField: 20
   <XpPerCaptainLevel>k__BackingField: 100
   <AutoSaveInterval>k__BackingField: 10
-  <QuickTestMode>k__BackingField: 0
+  <QuickTestMode>k__BackingField: 1
   <QuickTestPriceScale>k__BackingField: 0.08
   <QuickTestAmountScale>k__BackingField: 0.2
   <SfxVolume>k__BackingField: 0.8
   <AmbientVolume>k__BackingField: 0.25
+  <BirdVolume>k__BackingField: 0.12
+  <MusicVolume>k__BackingField: 0.9
   <FootstepDistance>k__BackingField: 1.6
   <PitchComboWindow>k__BackingField: 0.35
   <PitchComboStep>k__BackingField: 0.04
   <PitchComboMax>k__BackingField: 0.35
+  <SwayAngle>k__BackingField: 5
+  <SwaySpeed>k__BackingField: 1.8
+  <LabelFadeNear>k__BackingField: 9
+  <LabelFadeFar>k__BackingField: 15
+  <LabelEdgeFade>k__BackingField: 0.12
+  <LabelFadeSpeed>k__BackingField: 3
   <DevMoneyAmount>k__BackingField: 1000
   <DevInfiniteCoins>k__BackingField: 999999
   <DevSpeeds>k__BackingField:

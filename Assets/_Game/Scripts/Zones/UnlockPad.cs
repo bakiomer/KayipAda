@@ -75,7 +75,9 @@ namespace KayipAda
                 if (Effects.Instance != null) Effects.Instance.Confetti(transform.position + Vector3.up * 0.5f);
                 if (BurstText.Instance != null) BurstText.Instance.Show("AÇILDI!", area.DisplayName);
                 AudioManager.Play(SoundId.Unlock);
+                AudioManager.Play(SoundId.Whoosh);
                 AudioManager.Play(SoundId.UnlockJingle);
+                AudioManager.Duck(config.MusicDuckTime);
                 Haptics.Vibrate();
                 hiding = true;
                 Tween.PopOut(transform, 0.3f, () => gameObject.SetActive(false));

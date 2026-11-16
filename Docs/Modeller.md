@@ -46,7 +46,7 @@
 | Taş veren kaya | Node_Rock_1 | Quaternius | Environment_Rock_1.fbx | 1,7 m (yükseklik) | ✅ |
 | Taş veren kaya | Node_Rock_2 | Quaternius | Environment_Rock_2.fbx | 1,6 m (yükseklik) | ✅ |
 | Taş veren kaya | Node_Rock_3 | Quaternius | Environment_Rock_3.fbx | 1,8 m (yükseklik) | ✅ |
-| Meyve çalısı (üstünde kodla üretilen kırmızı/turuncu meyveler) — Quaternius'ta yok | Node_FruitTree | KenneyNature | plant_bushLarge.fbx | 1,8 m (yükseklik) | ✅ |
+| Meyve ağacı (yuvarlak taçlı; üstünde kodla üretilen kırmızı/turuncu meyveler) — Quaternius'ta yok | Node_FruitTree | KenneyNature | tree_default.fbx | 2,6 m (yükseklik) | ✅ |
 | Keten/saz bitkisi (lif tarlası) — sarımsı-yeşile boyanır | FlaxClump | KenneyNature | crops_wheatStageB.fbx | 1,1 m (yükseklik) | ✅ |
 | Kesilen ağacın kütüğü (tükenince) | Stump | KenneyNature | stump_round.fbx | 0,55 m (yükseklik) | ✅ |
 | Tükenen kayanın yerinde kalan taşlar | Rubble | KenneyPirate | rocks-sand-a.fbx | 1,1 m (en büyük kenar) | ✅ |
@@ -64,7 +64,7 @@
 | Kamp çadırı — Quaternius'ta yok | CampTent | KenneySurvival | tent-canvas.fbx | 2,6 m (en büyük kenar) | ✅ |
 | Kamp ateşi | Campfire | KenneySurvival | campfire-pit.fbx | 1,1 m (en büyük kenar) | ✅ |
 | Kapalı bölge çiti — Quaternius'ta yok | Fence | KenneySurvival | fence.fbx | 2 m (en büyük kenar) | ✅ |
-| Bölge tabelası (ahşap) — korsan paketlerinde tabela yok | Sign | KenneyNature | sign.fbx | 2,4 m (en büyük kenar) | ✅ |
+| Bölge tabelası (ahşap) — korsan paketlerinde tabela yok | Sign | KenneyNature | sign.fbx | 3 m (en büyük kenar) | ✅ |
 | Erzak aşamasında direğin tepesine çıkan korsan bayrağı | ShipFlag | KenneyPirate | flag-pirate-high.fbx | 2,2 m (yükseklik) | ✅ |
 | İskele | Dock | Quaternius | Environment_Dock.fbx | 7 m (en büyük kenar) | ✅ |
 | İskele direği / inşa iskelesi | DockPole | Quaternius | Environment_Dock_Pole.fbx | 2,6 m (en büyük kenar) | ✅ |
@@ -99,6 +99,10 @@
 | Sarı çiçek | FlowerYellow | KenneyNature | flower_yellowA.fbx | 0,45 m (yükseklik) | ✅ |
 | Kırmızı çiçek | FlowerRed | KenneyNature | flower_redA.fbx | 0,45 m (yükseklik) | ✅ |
 | Küçük çalı | Bush | KenneyNature | plant_bushSmall.fbx | 0,9 m (yükseklik) | ✅ |
+| Mor çiçek | FlowerPurple | KenneyNature | flower_purpleA.fbx | 0,45 m (yükseklik) | ✅ |
+| Sarı çiçek öbeği | FlowerYellowB | KenneyNature | flower_yellowB.fbx | 0,5 m (yükseklik) | ✅ |
+| Küçük kaya (doğal öbeklerde) | RockTiny | KenneyNature | rock_smallA.fbx | 0,4 m (en büyük kenar) | ✅ |
+| Yuvarlak çalı (doğal öbeklerde) | BushRound | KenneyNature | plant_bushDetailed.fbx | 1 m (yükseklik) | ✅ |
 | Süs palmiyesi (kenarlarda) | DecorPalm | Quaternius | Environment_PalmTree_1.fbx | 5 m (yükseklik) | ✅ |
 | Kayalık arkasında yamaç | Cliff | Quaternius | Environment_Cliff1.fbx | 3,2 m (yükseklik) | ✅ |
 | Süs kayası | BigRock | Quaternius | Environment_Rock_4.fbx | 1,3 m (yükseklik) | ✅ |
@@ -133,28 +137,7 @@ Yok — tüm modeller yüklendi.
 
 ## Sesler (`Assets/_Game/Data/SoundLibrary.asset`)
 
-Toplama sesleri kısık ve 3-5 çeşitli (her çalışta perde ±%8 değişir); para ve kutlamalar öne çıkar.
+Modern, 8-bit olmayan, hepsi CC0. Her sesin kaynağı, yazarı ve lisansı: **Docs/Lisanslar.md**. Adaylar:
+`Assets/_Game/ThirdParty/Audio/Adaylar/<ihtiyaç>/`; yedek: `ThirdParty/Audio/Claude_Uretim`. Toplama sesleri kısık ve
+3-4 çeşitli (perde ±%8), para ve kutlamalar öne çıkar. Arka plan müziği kutlamalarda kısılır, finalde zafer müziğine geçer.
 
-| Olay | Ses dosyaları |
-|---|---|
-| Odun (balta) | RPG/chop, Impact/impactWood_heavy_000/001/003 |
-| Taş (kazma) | Impact/impactMining_000..002, impactMetal_light_000/002 |
-| Meyve (pop) | Audio/Generated/pop_1..4 (kodla üretildi) |
-| Lif (hışırtı) | RPG/cloth1..4 |
-| Toplama | Interface/pluck_001, pluck_002 |
-| Satış (para) | RPG/handleCoins, handleCoins2 |
-| Para akışı (açma karesi) | Interface/tick_001, tick_002, tick_004 |
-| Alan açıldı | Audio/Generated/whoosh_1..2 + Impact/impactBell_heavy_000/002 + Jingles/STEEL01/04/05 |
-| Çit kapısı | RPG/creak1..3 |
-| Buton | Interface/click_001, click_002 |
-| Adım | Impact/footstep_grass_000..003 |
-| Binaya bırakma / ürün | Impact/impactWood_light_000..002 / impactPlank_medium_000..001 |
-| Geliştirme, yıldız | Interface/maximize_006 |
-| Gemiye malzeme / parça oturdu | Impact/impactWood_medium_000..002 / impactWood_heavy_002/004, impactPlank_medium_002 |
-| Gemi aşaması | Jingles/STEEL07, STEEL02 |
-| Final zafer müziği (sırayla) | Jingles/STEEL06, 03, 14, 12, PIZZI07, STEEL07, 02 |
-| Gemi suya indi / havai fişek | Impact/impactSoft_heavy_000..001 / impactGlass_light_000..002 |
-| Kaçış ekranı | Jingles/SAX07 |
-| Ortam (dalga + kuşlar) | Pakette yok → AudioManager üretir |
-
-Jingles: Kenney "Music Jingles" (CC0), `Assets/_Game/ThirdParty/Audio/Jingles` (+ License.txt). Uzun CC0 arka plan müziği bulunamadı; oyun içinde dalga + kuş ortam sesi çalar.

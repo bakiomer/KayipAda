@@ -30,6 +30,8 @@ namespace KayipAda
         GateOpen = 24,      // çit kapısı açılıyor (gıcırtı)
         Whoosh = 25,        // alan açma "vuuş"
         VictoryMusic = 26,  // final töreni müziği (sesler sırayla çalınır)
-        PartPlace = 27      // gemi parçası yerine oturdu
+        PartPlace = 27,     // gemi parçası yerine oturdu
+        Seagull = 28,       // uzaktan martı sesi
+        ShipSlide = 29      // gemi kızaktan kayıyor (ahşap gıcırtı + sürtünme)
     }
 }

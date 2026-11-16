@@ -413,6 +413,11 @@ namespace KayipAda.EditorTools
             CarryStack stack = root.AddComponent<CarryStack>();
             BuilderUtil.SetField(stack, "config", config);
             BuilderUtil.SetField(stack, "stackRoot", stackRoot);
+            // Görünen sınır aşılınca yığının üstünde "x40" etiketi.
+            TMPro.TextMeshPro count = UiFactory.CreateWorldText("StackCount", root.transform, Vector3.up * 2.4f, "x0", 4.2f, UiFactory.Gold);
+            count.gameObject.AddComponent<Billboard>();
+            count.gameObject.SetActive(false);
+            BuilderUtil.SetField(stack, "countLabel", count);
 
             CharacterVisual visual = root.AddComponent<CharacterVisual>();
             BuilderUtil.SetField(visual, "config", config);
@@ -728,6 +733,112 @@ namespace KayipAda.EditorTools
             return Save(root, Folder + "/Items/Rope.prefab").GetComponent<ResourceItem>();
         }
 
+        // ================================================================ Canlılar (kodla üretilen low-poly modeller)
+
+        // Yengeç: turuncu-kırmızı yassı gövde, iki kıskaç, altı bacak, iki göz. Çarpışması yok.
+        public static GameObject BuildCrab(GameConfig config)
+        {
+            GameObject root = new GameObject("Crab");
+            Transform body = new GameObject("Body").transform;
+            body.SetParent(root.transform, false);
+            Material shell = ArtGenerator.GetLit("M_Crab", null, new Color(0.93f, 0.36f, 0.18f));
+            Material dark = ArtGenerator.GetLit("M_CrabDark", null, new Color(0.18f, 0.1f, 0.08f));
+            Mesh round = ArtGenerator.BuildFruitMesh();
+            MeshPiece(body, "Shell", round, new Vector3(0f, 0.12f, 0f), new Vector3(0.42f, 0.16f, 0.32f), shell);
+            for (int s = -1; s <= 1; s += 2)
+            {
+                // Kıskaç: kol + iki parçalı uç (önde).
+                Box(body, "Arm", new Vector3(s * 0.2f, 0.12f, 0.16f), new Vector3(0.06f, 0.06f, 0.16f), Quaternion.Euler(0f, s * 30f, 0f), shell);
+                MeshPiece(body, "Claw", round, new Vector3(s * 0.26f, 0.13f, 0.27f), new Vector3(0.13f, 0.09f, 0.14f), shell);
+                for (int leg = 0; leg < 3; leg++)
+                {
+                    float z = -0.08f + leg * 0.08f;
+                    Box(body, "Leg", new Vector3(s * 0.24f, 0.06f, z), new Vector3(0.16f, 0.03f, 0.03f), Quaternion.Euler(0f, 0f, s * -35f), shell);
+                }
+                Box(body, "EyeStalk", new Vector3(s * 0.07f, 0.22f, 0.1f), new Vector3(0.025f, 0.08f, 0.025f), Quaternion.identity, shell);
+                MeshPiece(body, "Eye", round, new Vector3(s * 0.07f, 0.27f, 0.1f), Vector3.one * 0.045f, dark);
+            }
+            BuilderUtil.SetShadows(root, false);
+            AddBlobShadow(root.transform, 0.5f);
+            Crab crab = root.AddComponent<Crab>();
+            BuilderUtil.SetField(crab, "config", config);
+            BuilderUtil.SetField(crab, "body", body);
+            return Save(root, Folder + "/Life/Crab.prefab");
+        }
+
+        // Martı: beyaz gövde, gri kanatlar (menteşeli), sarı gaga; yere düşen yumuşak gölge.
+        public static GameObject BuildGull(GameConfig config)
+        {
+            GameObject root = new GameObject("Seagull");
+            Material white = ArtGenerator.GetLit("M_GullWhite", null, new Color(0.96f, 0.96f, 0.94f));
+            Material grey = ArtGenerator.GetLit("M_GullGrey", null, new Color(0.6f, 0.64f, 0.7f));
+            Material beak = ArtGenerator.GetLit("M_GullBeak", null, new Color(1f, 0.75f, 0.2f));
+            Mesh round = ArtGenerator.BuildFruitMesh();
+            MeshPiece(root.transform, "Body", round, Vector3.zero, new Vector3(0.22f, 0.2f, 0.6f), white);
+            MeshPiece(root.transform, "Head", round, new Vector3(0f, 0.08f, 0.3f), Vector3.one * 0.17f, white);
+            Box(root.transform, "Beak", new Vector3(0f, 0.06f, 0.42f), new Vector3(0.04f, 0.04f, 0.12f), Quaternion.identity, beak);
+            Box(root.transform, "Tail", new Vector3(0f, 0.02f, -0.34f), new Vector3(0.16f, 0.03f, 0.14f), Quaternion.identity, grey);
+            Transform left = Wing(root.transform, "LeftWing", -1f, new Vector3(0.62f, 0.03f, 0.24f), grey);
+            Transform right = Wing(root.transform, "RightWing", 1f, new Vector3(0.62f, 0.03f, 0.24f), grey);
+            BuilderUtil.SetShadows(root, false);
+            Transform shadow = AddGroundDecal("Shadow", root.transform, Vector3.zero, new Vector2(1f, 0.6f), new Color(0f, 0f, 0f, 0.18f),
+                                              ArtGenerator.SoftCirclePath, 0f).transform;
+            Flyer flyer = root.AddComponent<Flyer>();
+            BuilderUtil.SetField(flyer, "config", config);
+            BuilderUtil.SetEnum(flyer, "kind", 0);
+            BuilderUtil.SetField(flyer, "leftWing", left);
+            BuilderUtil.SetField(flyer, "rightWing", right);
+            BuilderUtil.SetField(flyer, "shadow", shadow);
+            return Save(root, Folder + "/Life/Seagull.prefab");
+        }
+
+        // Kelebek: iki renkli, menteşeli kanat (çırpar).
+        public static GameObject BuildButterfly(GameConfig config, Color color, string name)
+        {
+            GameObject root = new GameObject(name);
+            Material wing = ArtGenerator.GetLit("M_" + name, null, color);
+            Material dark = ArtGenerator.GetLit("M_CrabDark", null, new Color(0.18f, 0.1f, 0.08f));
+            Box(root.transform, "Body", Vector3.zero, new Vector3(0.025f, 0.025f, 0.12f), Quaternion.identity, dark);
+            Transform left = Wing(root.transform, "LeftWing", -1f, new Vector3(0.12f, 0.008f, 0.13f), wing);
+            Transform right = Wing(root.transform, "RightWing", 1f, new Vector3(0.12f, 0.008f, 0.13f), wing);
+            BuilderUtil.SetShadows(root, false);
+            Flyer flyer = root.AddComponent<Flyer>();
+            BuilderUtil.SetField(flyer, "config", config);
+            BuilderUtil.SetEnum(flyer, "kind", 1);
+            BuilderUtil.SetField(flyer, "leftWing", left);
+            BuilderUtil.SetField(flyer, "rightWing", right);
+            return Save(root, Folder + "/Life/" + name + ".prefab");
+        }
+
+        // Kanat: menteşe gövdenin yanında; kanat menteşeden dışa uzanır (Z ekseninde çırpılır).
+        private static Transform Wing(Transform parent, string name, float side, Vector3 size, Material material)
+        {
+            Transform hinge = new GameObject(name).transform;
+            hinge.SetParent(parent, false);
+            hinge.localPosition = new Vector3(side * 0.05f, 0.04f, 0f);
+            Box(hinge, "Blade", new Vector3(side * size.x * 0.5f, 0f, 0f), size, Quaternion.identity, material);
+            return hinge;
+        }
+
+        private static void MeshPiece(Transform parent, string name, Mesh mesh, Vector3 pos, Vector3 scale, Material material)
+        {
+            GameObject go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            go.transform.localPosition = pos;
+            go.transform.localScale = scale;
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            go.AddComponent<MeshRenderer>().sharedMaterial = material;
+        }
+
+        // Zıplayan balık: Quaternius uskumru modeli (küçük).
+        public static GameObject BuildFish()
+        {
+            GameObject root = new GameObject("JumpFish");
+            CreateModel(ModelCatalog.Fish, root.transform);
+            BuilderUtil.SetShadows(root, false);
+            return Save(root, Folder + "/Life/JumpFish.prefab");
+        }
+
         // ================================================================ Meyve, meyve çalısı, keten tarlası
 
         // Kodla üretilen alçak poligonlu meyve: kırmızı/turuncu yuvarlak + yeşil yaprak + kahverengi sap. Taban y=0.
@@ -986,7 +1097,7 @@ namespace KayipAda.EditorTools
             spawn.localPosition = bodyPos + Vector3.up * 1.2f;
 
             ProgressRing ring = CreateBuildingRing(root.transform, bodyPos + Vector3.up * (spec.Size + 1.3f)); // adın üstünde
-            UiFactory.CreateWorldLabel("Title", root.transform, bodyPos + Vector3.up * (spec.Size + 0.2f), type.DisplayName, 4.5f, Color.white);
+            CreateBoardSign(root.transform, bodyPos + Vector3.up * (spec.Size + 0.55f), type.DisplayName);
 
             ParticleSystem fx = null;
             if (workFxPrefab != null)
@@ -1013,6 +1124,28 @@ namespace KayipAda.EditorTools
             BuilderUtil.SetField(building, "bodyVisual", body);
             BuilderUtil.SetField(building, "workEffect", fx);
             return Save(root, Folder + "/Buildings/" + spec.Key + ".prefab");
+        }
+
+        // Binanın üstündeki ahşap tabela: yazının boyuna göre tahta, üstünde büyük yazı. Kameraya dönük (Billboard),
+        // uzakta yumuşakça kaybolur.
+        public static void CreateBoardSign(Transform parent, Vector3 localPos, string title)
+        {
+            GameObject sign = new GameObject("NameSign");
+            sign.transform.SetParent(parent, false);
+            sign.transform.localPosition = localPos;
+            sign.AddComponent<Billboard>();
+            float width = Mathf.Max(1.6f, title.Length * MapLayout.SignLetterWidth + 0.6f);
+            Material board = ArtGenerator.GetLit("M_SignWood", null, MapLayout.SignWoodColor);
+            Material frame = ArtGenerator.GetLit("M_ShipWood", null, MapLayout.ShipWoodColor);
+            Box(sign.transform, "Board", new Vector3(0f, 0f, 0.06f), new Vector3(width, 0.8f, 0.1f), Quaternion.identity, board);
+            Box(sign.transform, "FrameTop", new Vector3(0f, 0.42f, 0.04f), new Vector3(width + 0.12f, 0.1f, 0.14f), Quaternion.identity, frame);
+            Box(sign.transform, "FrameBottom", new Vector3(0f, -0.42f, 0.04f), new Vector3(width + 0.12f, 0.1f, 0.14f), Quaternion.identity, frame);
+            BuilderUtil.SetShadows(sign, false);
+            TMPro.TextMeshPro text = UiFactory.CreateWorldText("Title", sign.transform, Vector3.zero, title, 6.5f, Color.white);
+            ((RectTransform)text.transform).sizeDelta = new Vector2(width - 0.2f, 0.75f);
+            text.enableAutoSizing = true;
+            text.fontSizeMin = 3f;
+            text.fontSizeMax = 6.5f;
         }
 
         // Giriş/çıkış alanı: yerde daire + büyük kaynak ikonu + ok (giriş: binaya doğru, çıkış: binadan dışarı);
@@ -1137,15 +1270,12 @@ namespace KayipAda.EditorTools
             price.fontSizeMin = 50f;
             price.fontSizeMax = 86f;
             UiFactory.Size(price, new Vector2(48f, -45f), new Vector2(140f, 100f));
-            TMPro.TextMeshProUGUI title = UiFactory.CreateUIText("Name", c, "Alan", 44f, Color.white);
-            UiFactory.Size(title, new Vector2(0f, 125f), new Vector2(400f, 60f));
 
             ProgressRing ring = canvas.gameObject.AddComponent<ProgressRing>();
             BuilderUtil.SetField(ring, "fill", fill);
 
             UnlockPad pad = root.AddComponent<UnlockPad>();
             BuilderUtil.SetField(pad, "config", config);
-            BuilderUtil.SetField(pad, "nameLabel", title);
             BuilderUtil.SetField(pad, "priceLabel", price);
             BuilderUtil.SetField(pad, "ring", ring);
             return Save(root, Folder + "/World/UnlockPad.prefab");

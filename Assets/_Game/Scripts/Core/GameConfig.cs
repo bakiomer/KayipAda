@@ -92,6 +92,18 @@ namespace KayipAda
         [field: Tooltip("Her katın düz duruştan en fazla ne kadar kayabileceği (metre). Küçük = daha dik yığın.")]
         [field: SerializeField, Min(0f)] public float StackMaxLeanPerLevel { get; private set; } = 0.02f;
 
+        [field: Tooltip("Sırttaki yığının genişliği (metre): parça genişliğine göre bu kadar yere 1-3 sütun sığar.")]
+        [field: SerializeField, Min(0.1f)] public float StackBlockWidth { get; private set; } = 0.78f;
+
+        [field: Tooltip("Sırttaki yığının en fazla sütun sayısı.")]
+        [field: SerializeField, Range(1, 4)] public int StackMaxColumns { get; private set; } = 3;
+
+        [field: Tooltip("Yığının görünen en fazla yüksekliği (metre, yığın noktasından). Fazlası \"x40\" etiketiyle gösterilir.")]
+        [field: SerializeField, Min(0.1f)] public float StackMaxHeight { get; private set; } = 0.9f;
+
+        [field: Tooltip("Sayı etiketinin yığının üstünden yüksekliği (metre).")]
+        [field: SerializeField, Min(0f)] public float StackLabelGap { get; private set; } = 0.35f;
+
         [field: Tooltip("Kaynağın yığına/yere/pazara kavis çizerek uçma süresi (saniye).")]
         [field: SerializeField, Min(0.01f)] public float ItemFlyDuration { get; private set; } = 0.3f;
 
@@ -209,6 +221,17 @@ namespace KayipAda
         [field: Tooltip("Müziğin (final töreni) ses seviyesi.")]
         [field: SerializeField, Range(0f, 1f)] public float MusicVolume { get; private set; } = 0.9f;
 
+        [field: Tooltip("Arka plan müziğinin ses seviyesi (döngülü, sakin).")]
+        [field: SerializeField, Range(0f, 1f)] public float BackgroundMusicVolume { get; private set; } = 0.28f;
+
+        [field: Tooltip("Kutlamalarda arka plan müziğinin kısıldığı oran (0.3 = %30), kısık kalma süresi ve kısılıp açılma hızı (saniye).")]
+        [field: SerializeField, Range(0f, 1f)] public float MusicDuckLevel { get; private set; } = 0.3f;
+        [field: SerializeField, Min(0f)] public float MusicDuckTime { get; private set; } = 3f;
+        [field: SerializeField, Min(0.05f)] public float MusicDuckFade { get; private set; } = 0.4f;
+
+        [field: Tooltip("Finalde arka plan müziğinin zafer müziğine geçiş süresi (saniye).")]
+        [field: SerializeField, Min(0.05f)] public float MusicCrossfade { get; private set; } = 1.5f;
+
         [field: Tooltip("Oyuncu kaç metrede bir adım sesi çıkarır.")]
         [field: SerializeField, Min(0.1f)] public float FootstepDistance { get; private set; } = 1.6f;
 
@@ -225,6 +248,33 @@ namespace KayipAda
         [field: Tooltip("Keten/saz bitkilerinin rüzgârda sallanma açısı (derece) ve hızı.")]
         [field: SerializeField, Min(0f)] public float SwayAngle { get; private set; } = 5f;
         [field: SerializeField, Min(0f)] public float SwaySpeed { get; private set; } = 1.8f;
+
+        [field: Header("Canlılar (yengeç, martı, balık, kelebek)")]
+        [field: Tooltip("Sahildeki yengeç sayısı, yürüme hızı, oyuncu bu kadar yaklaşınca kuma gömülür, gömülü kalma süresi.")]
+        [field: SerializeField, Min(0)] public int CrabCount { get; private set; } = 5;
+        [field: SerializeField, Min(0f)] public float CrabSpeed { get; private set; } = 0.6f;
+        [field: SerializeField, Min(0f)] public float CrabFleeDistance { get; private set; } = 2.6f;
+        [field: SerializeField, Min(0f)] public float CrabHideTime { get; private set; } = 4f;
+        [field: Tooltip("Yengeçlerin dolaştığı kum şeridi: kıyıdan içeri en az / en çok uzaklık (metre).")]
+        [field: SerializeField, Min(0f)] public float CrabBeachInner { get; private set; } = 0.6f;
+        [field: SerializeField, Min(0f)] public float CrabBeachOuter { get; private set; } = 2.8f;
+        [field: Tooltip("Martı sayısı, uçuş yüksekliği, hızı, daire yarıçapı; martı sesi aralığı (saniye).")]
+        [field: SerializeField, Min(0)] public int GullCount { get; private set; } = 3;
+        [field: SerializeField] public float GullHeightMin { get; private set; } = 8f;
+        [field: SerializeField] public float GullHeightMax { get; private set; } = 11f;
+        [field: SerializeField, Min(0f)] public float GullSpeed { get; private set; } = 3f;
+        [field: SerializeField, Min(1f)] public float GullCircleMin { get; private set; } = 7f;
+        [field: SerializeField, Min(1f)] public float GullCircleMax { get; private set; } = 13f;
+        [field: SerializeField, Min(1f)] public float GullCallIntervalMin { get; private set; } = 10f;
+        [field: SerializeField, Min(1f)] public float GullCallIntervalMax { get; private set; } = 20f;
+        [field: Tooltip("Kelebek sayısı, uçuş yüksekliği ve hızı.")]
+        [field: SerializeField, Min(0)] public int ButterflyCount { get; private set; } = 3;
+        [field: SerializeField] public float ButterflyHeight { get; private set; } = 1.2f;
+        [field: SerializeField, Min(0f)] public float ButterflySpeed { get; private set; } = 0.6f;
+        [field: Tooltip("Balık zıplama aralığı (saniye), yüksekliği ve süresi.")]
+        [field: SerializeField, Min(1f)] public float FishJumpInterval { get; private set; } = 7f;
+        [field: SerializeField, Min(0f)] public float FishJumpHeight { get; private set; } = 1.2f;
+        [field: SerializeField, Min(0.1f)] public float FishJumpDuration { get; private set; } = 0.8f;
 
         [field: Header("Dünyadaki yazılar")]
         [field: Tooltip("Bu uzaklığa (metre) kadar yazılar tam görünür.")]

@@ -76,6 +76,7 @@ namespace KayipAda.EditorTools
         public static readonly ModelSpec Fiber = M("Fiber", ModelPack.Quaternius, "UI_Wheat", 0.6f, SizeAxis.Largest, true, false, "Lif (sarı keten demeti)");
         public static readonly ModelSpec Cloth = M("Cloth", ModelPack.KenneySurvival, "bedroll-packed", 0.7f, SizeAxis.Largest, true, false, "Yelken bezi (sarılı bez) — Quaternius'ta yok");
         // Halat: hiçbir pakette yok → ArtGenerator kodla halka (simit) şeklinde üretir.
+        public static readonly ModelSpec Fish = M("JumpFish", ModelPack.Quaternius, "Prop_Fish_Mackerel", 0.45f, SizeAxis.Largest, true, false, "Sudan zıplayan küçük balık (canlılık)");
         public static readonly ModelSpec Coin = M("Coin", ModelPack.Quaternius, "UI_Gold", 0.45f, SizeAxis.Largest, true, false, "Uçan/zıplayan para");
 
         // ---------------------------------------------------------------- Kaynak noktaları
@@ -95,7 +96,7 @@ namespace KayipAda.EditorTools
         // Tükenen kaynak noktasının yerinde kalan parça: ağaçlarda kütük, kayalarda kırık taşlar.
         public static readonly ModelSpec Stump = M("Stump", ModelPack.KenneyNature, "stump_round", 0.55f, SizeAxis.Height, true, true, "Kesilen ağacın kütüğü (tükenince)");
         public static readonly ModelSpec Rubble = M("Rubble", ModelPack.KenneyPirate, "rocks-sand-a", 1.1f, SizeAxis.Largest, true, false, "Tükenen kayanın yerinde kalan taşlar");
-        public static readonly ModelSpec FruitTree = M("Node_FruitTree", ModelPack.KenneyNature, "plant_bushLarge", 1.8f, SizeAxis.Height, true, true, "Meyve çalısı (üstünde kodla üretilen kırmızı/turuncu meyveler) — Quaternius'ta yok");
+        public static readonly ModelSpec FruitTree = M("Node_FruitTree", ModelPack.KenneyNature, "tree_default", 2.6f, SizeAxis.Height, true, true, "Meyve ağacı (yuvarlak taçlı; üstünde kodla üretilen kırmızı/turuncu meyveler) — Quaternius'ta yok");
         public const int FruitsPerBush = 8;
         // Keten/saz tarlası (lif): alçak buğday benzeri bitki kümeleri, sarımsı-yeşile boyanır.
         public static readonly ModelSpec FlaxClump = M("FlaxClump", ModelPack.KenneyNature, "crops_wheatStageB", 1.1f, SizeAxis.Height, true, false, "Keten/saz bitkisi (lif tarlası) — sarımsı-yeşile boyanır");
@@ -113,7 +114,7 @@ namespace KayipAda.EditorTools
         public static readonly ModelSpec Tent = M("CampTent", ModelPack.KenneySurvival, "tent-canvas", 2.6f, SizeAxis.Largest, true, true, "Kamp çadırı — Quaternius'ta yok");
         public static readonly ModelSpec Campfire = M("Campfire", ModelPack.KenneySurvival, "campfire-pit", 1.1f, SizeAxis.Largest, true, false, "Kamp ateşi");
         public static readonly ModelSpec ShipFlag = M("ShipFlag", ModelPack.KenneyPirate, "flag-pirate-high", 2.2f, SizeAxis.Height, true, false, "Erzak aşamasında direğin tepesine çıkan korsan bayrağı");
-        public static readonly ModelSpec Sign = M("Sign", ModelPack.KenneyNature, "sign", 2.4f, SizeAxis.Largest, true, true, "Bölge tabelası (ahşap) — korsan paketlerinde tabela yok");
+        public static readonly ModelSpec Sign = M("Sign", ModelPack.KenneyNature, "sign", 3.0f, SizeAxis.Largest, true, true, "Bölge tabelası (ahşap) — korsan paketlerinde tabela yok");
         public static readonly ModelSpec Fence = M("Fence", ModelPack.KenneySurvival, "fence", 2f, SizeAxis.Largest, true, true, "Kapalı bölge çiti — Quaternius'ta yok");
         public static readonly ModelSpec Dock = M("Dock", ModelPack.Quaternius, "Environment_Dock", 7f, SizeAxis.Largest, true, true, "İskele");
         public static readonly ModelSpec DockPole = M("DockPole", ModelPack.Quaternius, "Environment_Dock_Pole", 2.6f, SizeAxis.Largest, true, true, "İskele direği / inşa iskelesi");
@@ -147,6 +148,10 @@ namespace KayipAda.EditorTools
             M("FlowerYellow", ModelPack.KenneyNature, "flower_yellowA", 0.45f, SizeAxis.Height, true, false, "Sarı çiçek"),
             M("FlowerRed", ModelPack.KenneyNature, "flower_redA", 0.45f, SizeAxis.Height, true, false, "Kırmızı çiçek"),
             M("Bush", ModelPack.KenneyNature, "plant_bushSmall", 0.9f, SizeAxis.Height, true, true, "Küçük çalı"),
+            M("FlowerPurple", ModelPack.KenneyNature, "flower_purpleA", 0.45f, SizeAxis.Height, true, false, "Mor çiçek"),
+            M("FlowerYellowB", ModelPack.KenneyNature, "flower_yellowB", 0.5f, SizeAxis.Height, true, false, "Sarı çiçek öbeği"),
+            M("RockTiny", ModelPack.KenneyNature, "rock_smallA", 0.4f, SizeAxis.Largest, true, false, "Küçük kaya (doğal öbeklerde)"),
+            M("BushRound", ModelPack.KenneyNature, "plant_bushDetailed", 1.0f, SizeAxis.Height, true, true, "Yuvarlak çalı (doğal öbeklerde)"),
             Up(M("DecorPalm", ModelPack.Quaternius, "Environment_PalmTree_1", 5f, SizeAxis.Height, false, true, "Süs palmiyesi (kenarlarda)")),
             M("Cliff", ModelPack.Quaternius, "Environment_Cliff1", 3.2f, SizeAxis.Height, true, true, "Kayalık arkasında yamaç"),
             M("BigRock", ModelPack.Quaternius, "Environment_Rock_4", 1.3f, SizeAxis.Height, true, true, "Süs kayası"),

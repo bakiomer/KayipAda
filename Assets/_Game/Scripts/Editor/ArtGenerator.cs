@@ -256,7 +256,7 @@ namespace KayipAda.EditorTools
 
         public static Texture2D BuildIslandTexture(IslandShape island)
         {
-            const int size = 1024;
+            const int size = 2048; // keskin zemin (eğik kamerada bulanık görünmesin)
             Rect rect = IslandTextureRect(island);
             Color wetSand = new Color(0.80f, 0.69f, 0.49f);
             Color sand = new Color(0.97f, 0.88f, 0.66f);
@@ -318,7 +318,8 @@ namespace KayipAda.EditorTools
             importer.textureType = TextureImporterType.Default;
             importer.wrapMode = TextureWrapMode.Clamp;
             importer.mipmapEnabled = true;
-            importer.maxTextureSize = 1024;
+            importer.maxTextureSize = 2048;
+            importer.anisoLevel = 8; // eğik bakışta keskin
             importer.textureCompression = TextureImporterCompression.Compressed;
             importer.SaveAndReimport();
             return BuilderUtil.Load<Texture2D>(IslandTexturePath);
