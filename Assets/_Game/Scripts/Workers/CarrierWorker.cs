@@ -1,6 +1,8 @@
 // CarrierWorker.cs
 // Taşıyıcı işçi: bina çıkışlarından ürün (kalas, tuğla) alır; gemi o ürünü bekliyorsa gemiye, yoksa Pazar'a götürür.
 // Durumlar: çıkış seç → çıkışa git → al → Pazar'a git → sat → (baştan).
+// Bina çıkışlarında ürün yoksa Ambar'a bakar: gemiye ya da bir bina girişine lazım olan malzeme ambarda varsa
+// ambarın alma alanından ihtiyaç kadar alıp oraya götürür.
 // Çıkış boşalınca: başka çıkışta ürün varsa oraya gider, bina hâlâ çalışıyorsa yeni ürünü bekler,
 // yoksa elindekini satmaya gider. Hiç ürün yoksa olduğu yerde bekler.
 
@@ -10,7 +12,7 @@ namespace KayipAda
 {
     public class CarrierWorker : Worker
     {
-        private enum State { FindSource, GoToSource, Collect, GoToMarket, Sell }
+        private enum State { FindSource, GoToSource, Collect, GoToMarket, Sell, GoToStorage, TakeFromStorage, Deliver }
 
         [Tooltip("Ürün alabileceği bina çıkışları (sadece açılmış binalar kullanılır).")]
         [SerializeField] private BuildingOutput[] sources;
@@ -20,6 +22,21 @@ namespace KayipAda
         private State state = State.FindSource;
         private BuildingOutput source;
         private InteractionZone dropZone; // Pazar ya da gemi teslim alanı
+        private StoragePickZone storagePick;
+        private BuildingInput[] inputs = new BuildingInput[0];
+        private ResourceType wantType;
+        private int wantAmount;
+        private InteractionZone deliverTo;
+        private float takeTimer;
+
+        // Ambardan taşıma (test ve görünüm için).
+        public bool IsStorageRun => state == State.GoToStorage || state == State.TakeFromStorage || state == State.Deliver;
+
+        private void Start()
+        {
+            storagePick = FindAnyObjectByType<StoragePickZone>(FindObjectsInactive.Include);
+            inputs = FindObjectsByType<BuildingInput>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        }
 
         protected override void Awake()
         {
@@ -45,7 +62,36 @@ namespace KayipAda
                         state = State.GoToSource;
                     }
                     else if (!Stack.IsEmpty) StartSelling(); // başka ürün yok: elindekini sat
+                    else if (PlanStorageRun())               // ambarda gemiye/binaya lazım olan var
+                    {
+                        GoTo(storagePick);
+                        state = State.GoToStorage;
+                    }
                     else Wait();                             // hiç ürün yok: bekle
+                    break;
+
+                case State.GoToStorage:
+                    if (HasArrived) { state = State.TakeFromStorage; takeTimer = 0f; }
+                    break;
+
+                case State.TakeFromStorage:
+                    if (takeTimer > 0f) { takeTimer -= Time.deltaTime; break; }
+                    if (wantAmount > 0 && storagePick.GiveTo(Stack, wantType))
+                    {
+                        wantAmount--;
+                        takeTimer = (Storage.Instance != null ? Storage.Instance.TransferInterval : 0.1f) * 2f;
+                        break;
+                    }
+                    if (Stack.IsEmpty) { state = State.FindSource; break; }
+                    GoTo(deliverTo);
+                    state = State.Deliver;
+                    break;
+
+                case State.Deliver:
+                    // Teslim alanı / bina girişi sırttakileri kendisi alır.
+                    if (!HasArrived) break;
+                    if (Stack.IsEmpty) state = State.FindSource;
+                    else if (Stack.CountOf(wantType) == 0 || !StillNeeded()) StartSelling(); // kalanı sat
                     break;
 
                 case State.GoToSource:
@@ -84,6 +130,47 @@ namespace KayipAda
             }
         }
 
+        // Ambarda gemiye ya da bir bina girişine lazım olan malzeme var mı? Varsa hedefi ve miktarı seçer.
+        private bool PlanStorageRun()
+        {
+            Storage storage = Storage.Instance;
+            if (storage == null || !storage.IsOpen || storagePick == null || !storagePick.isActiveAndEnabled || storage.Total == 0) return false;
+            ShipBuilder ship = ShipBuilder.Instance;
+            if (ship != null && !ship.IsComplete && ship.Delivery != null && ship.Delivery.isActiveAndEnabled)
+            {
+                foreach (ResourceType t in storage.Types)
+                {
+                    int need = Mathf.Min(ship.Missing(t), storage.CountOf(t));
+                    if (need <= 0) continue;
+                    wantType = t;
+                    wantAmount = Mathf.Min(need, Stack.Capacity);
+                    deliverTo = ship.Delivery;
+                    return true;
+                }
+            }
+            foreach (BuildingInput input in inputs)
+            {
+                if (input == null || !input.isActiveAndEnabled || input.Building == null) continue;
+                ResourceType t = input.Building.Type.Input;
+                ItemPile pile = input.Building.InputPile;
+                int space = pile.Capacity - pile.Count;
+                int need = Mathf.Min(space, storage.CountOf(t));
+                if (need <= 0) continue;
+                wantType = t;
+                wantAmount = Mathf.Min(need, Stack.Capacity);
+                deliverTo = input;
+                return true;
+            }
+            return false;
+        }
+
+        private bool StillNeeded()
+        {
+            if (deliverTo is BuildingInput input) return input.Building != null && !input.Building.InputPile.IsFull;
+            ShipBuilder ship = ShipBuilder.Instance;
+            return ship != null && ship.Needs(wantType);
+        }
+
         private void StartSelling()
         {
             ShipBuilder ship = ShipBuilder.Instance;
@@ -98,11 +185,14 @@ namespace KayipAda
         private bool CarriesShipNeed()
         {
             ShipBuilder ship = ShipBuilder.Instance;
-            if (ship == null || ship.IsComplete || !ship.IsStarted) return false;
+            if (ship == null || ship.IsComplete) return false;
+            if (wantType != null && ship.Needs(wantType) && Stack.CountOf(wantType) > 0) return true; // ambardan getirdiği
+            if (!ship.IsStarted) return false;
             foreach (BuildingOutput s in sources)
             {
                 if (s != null && ship.Needs(s.Building.Type.Output) && Stack.CountOf(s.Building.Type.Output) > 0) return true;
             }
+            if (wantType != null && ship.Needs(wantType) && Stack.CountOf(wantType) > 0) return true;
             return false;
         }
 

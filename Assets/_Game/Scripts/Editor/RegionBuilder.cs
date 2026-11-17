@@ -79,13 +79,14 @@ namespace KayipAda.EditorTools
                     GameObject bush = Prop(decor, key, root.transform, pos, (float)r.NextDouble() * 360f, s);
                     if (bush == null) continue;
                     bush.name = "Bush";
+                    Paint(bush, (ix * 7 + iz * 3) % 3 == 0 ? LeafDark : LeafMid);
                     bushes.Add(bush.transform);
                     // Sarmaşık: bazı çalıların üstüne yapraklı dal / yosun.
                     if (edge && r.NextDouble() < 0.45)
                     {
                         GameObject vine = Prop(decor, r.NextDouble() < 0.5 ? "Vine" : "VineMoss", root.transform,
                                                pos + new Vector3(R(r, 0.3f), 0f, R(r, 0.3f)), (float)r.NextDouble() * 360f, 0.9f + R(r, 0.15f));
-                        if (vine != null) { vine.name = "Vine"; bushes.Add(vine.transform); }
+                        if (vine != null) { vine.name = "Vine"; Paint(vine, LeafVine); bushes.Add(vine.transform); }
                     }
                 }
             }
@@ -128,6 +129,21 @@ namespace KayipAda.EditorTools
         }
 
         private static float R(System.Random r, float amount) => ((float)r.NextDouble() * 2f - 1f) * amount;
+
+        // Çalılık yaprakları doğal, koyu tonlarda (Kenney paletinin parlak yeşili yerine).
+        private static Material LeafMid => ArtGenerator.GetLit("M_ThicketLeaf", null, new Color(0.3f, 0.52f, 0.2f));
+        private static Material LeafDark => ArtGenerator.GetLit("M_ThicketLeafDark", null, new Color(0.22f, 0.42f, 0.17f));
+        private static Material LeafVine => ArtGenerator.GetLit("M_ThicketVine", null, new Color(0.36f, 0.58f, 0.24f));
+
+        private static void Paint(GameObject go, Material m)
+        {
+            foreach (Renderer r in go.GetComponentsInChildren<Renderer>())
+            {
+                Material[] mats = r.sharedMaterials;
+                for (int i = 0; i < mats.Length; i++) mats[i] = m;
+                r.sharedMaterials = mats;
+            }
+        }
 
         // ================================================================ Kayalık = taş ocağı
 
@@ -331,7 +347,7 @@ namespace KayipAda.EditorTools
             float rowH = 74f, width = 560f;
             int lines = rows.Count + (chests > 0 ? 1 : 0);
             float height = 120f + lines * rowH + 96f;
-            Canvas canvas = UiFactory.CreateWorldCanvas("InfoCard", sign.transform, new Vector3(0f, 3.4f, 0f), Quaternion.identity, new Vector2(width, height));
+            Canvas canvas = UiFactory.CreateWorldCanvas("InfoCard", sign.transform, new Vector3(0f, 4.7f, 0f), Quaternion.identity, new Vector2(width, height));
             canvas.gameObject.AddComponent<Billboard>();
             canvas.sortingOrder = 5;
             Image bg = UiFactory.CreateImage("Card", canvas.transform, ArtGenerator.LoadSprite(ArtGenerator.RoundedRectPath), new Color(0.16f, 0.1f, 0.05f, 0.92f));
@@ -405,7 +421,7 @@ namespace KayipAda.EditorTools
 
         public static BuildingUpgradeSign AddUpgradeSign(GameObject building, GameConfig config, Vector3 localPos)
         {
-            ProcessingBuilding pb = building.GetComponentInChildren<ProcessingBuilding>(true);
+            ProcessingBuilding pb = building.GetComponentInChildren<ProcessingBuilding>(true); // Ambar'da yok (null)
             GameObject root = new GameObject("UpgradeSign");
             root.transform.SetParent(building.transform, false);
             root.transform.localPosition = localPos;
@@ -434,6 +450,115 @@ namespace KayipAda.EditorTools
             BuilderUtil.SetField(sign, "building", pb);
             BuilderUtil.SetField(sign, "label", label);
             return sign;
+        }
+
+        // ================================================================ Ambar (depo)
+
+        // Korsan temalı ambar: ahşap taban, üç duvar (önü açık: içindeki kasa/fıçı yığınları görünür), kırmızı-siyah
+        // çatı, korsan bayrağı, "Ambar" tabelası. Önünde solda bırakma alanı (içeri ok), sağda alma alanı (dışarı ok).
+        // Kapalıyken silik zemin + açma karesi (UnlockableArea). Yanında "Yükselt" tabelası (kapasite).
+        public static Storage BuildStorage(Vector3 position, AreaDefinition area, AreaDefinition[] levels, ResourceType[] types,
+                                           GameConfig config, Dictionary<string, GameObject> decor, GameObject flagPrefab)
+        {
+            GameObject root = new GameObject("Storage");
+            root.transform.position = position;
+            GameObject locked = new GameObject("Locked");
+            locked.transform.SetParent(root.transform, false);
+            PrefabFactory.AddGroundDecal("Footprint", locked.transform, new Vector3(0f, 0f, 1.2f), new Vector2(4.6f, 3.6f), new Color(1f, 1f, 1f, 0.22f));
+            GameObject content = new GameObject("Content");
+            content.transform.SetParent(root.transform, false);
+
+            Transform house = new GameObject("House").transform;
+            house.SetParent(content.transform, false);
+            house.localPosition = new Vector3(0f, 0f, 1.5f);
+            Material roofRed = ArtGenerator.GetLit("M_StorageRoof", null, new Color(0.62f, 0.18f, 0.15f));
+            Material roofDark = ArtGenerator.GetLit("M_StorageRoofDark", null, new Color(0.18f, 0.14f, 0.12f));
+            Part(house, PrimitiveType.Cube, "Floor", new Vector3(0f, 0.1f, 0f), new Vector3(4.0f, 0.2f, 2.8f), Quaternion.identity, PlankDark);
+            Part(house, PrimitiveType.Cube, "Back", new Vector3(0f, 1.25f, 1.3f), new Vector3(4.0f, 2.1f, 0.16f), Quaternion.identity, Plank);
+            for (int sx = -1; sx <= 1; sx += 2)
+            {
+                Part(house, PrimitiveType.Cube, "Side", new Vector3(sx * 1.92f, 1.25f, 0f), new Vector3(0.16f, 2.1f, 2.8f), Quaternion.identity, Plank);
+                Part(house, PrimitiveType.Cube, "FrontPost", new Vector3(sx * 1.92f, 1.25f, -1.36f), new Vector3(0.24f, 2.3f, 0.24f), Quaternion.identity, Wood);
+            }
+            for (int i = 0; i < 4; i++)
+                Part(house, PrimitiveType.Cube, "Batten", new Vector3(-1.5f + i, 1.25f, 1.2f), new Vector3(0.07f, 2.1f, 0.05f), Quaternion.identity, Wood);
+            Part(house, PrimitiveType.Cube, "Lintel", new Vector3(0f, 2.3f, -1.36f), new Vector3(4.1f, 0.22f, 0.24f), Quaternion.identity, Wood);
+            for (int sz = -1; sz <= 1; sz += 2)
+                Part(house, PrimitiveType.Cube, "Roof", new Vector3(0f, 2.75f, sz * 0.78f), new Vector3(4.5f, 0.14f, 1.85f), Quaternion.Euler(sz * 28f, 0f, 0f), sz < 0 ? roofRed : roofDark);
+            Part(house, PrimitiveType.Cube, "Ridge", new Vector3(0f, 3.18f, 0f), new Vector3(4.6f, 0.16f, 0.2f), Quaternion.identity, Wood);
+            for (int i = 0; i < 3; i++)
+                Part(house, PrimitiveType.Cube, "Stripe", new Vector3(-1.4f + i * 1.4f, 2.77f, -0.8f), new Vector3(0.35f, 0.16f, 1.86f), Quaternion.Euler(-28f, 0f, 0f), roofDark);
+            if (flagPrefab != null)
+            {
+                GameObject flag = (GameObject)PrefabUtility.InstantiatePrefab(flagPrefab);
+                flag.transform.SetParent(house, false);
+                flag.transform.localPosition = new Vector3(1.6f, 3.1f, 0f);
+                flag.transform.localScale = Vector3.one * 0.6f;
+            }
+            PrefabFactory.CreateBoardSign(house, new Vector3(0f, 2.3f, -1.52f), "Ambar");
+            BuilderUtil.SetShadows(house.gameObject, true);
+            GameObject body = new GameObject("Block");
+            body.transform.SetParent(content.transform, false);
+            body.transform.localPosition = new Vector3(0f, 0f, 1.5f);
+            NavObstacle obstacle = body.AddComponent<NavObstacle>();
+            BuilderUtil.SetVector2(obstacle, "size", new Vector2(4.2f, 3.0f));
+            BuilderUtil.SetFloat(obstacle, "cornerRadius", 0.4f);
+
+            // Doluluğa göre görünen yığınlar (içeride).
+            string[] keys = { "Crate", "Barrel", "CrateBottles", "Barrel", "Crate", "Chest", "Barrel", "Crate" };
+            List<Transform> fill = new List<Transform>();
+            for (int i = 0; i < keys.Length; i++)
+            {
+                Vector3 local = new Vector3(-1.35f + (i % 4) * 0.9f, 0.2f, 2.35f - (i / 4) * 0.95f);
+                GameObject item = Prop(decor, keys[i], house, root.transform.TransformPoint(local), i * 33f, 0.85f);
+                if (item != null) fill.Add(item.transform);
+            }
+
+            StorageDropZone drop = CreateStorageZone<StorageDropZone>(content.transform, "DropZone", new Vector3(-1.45f, 0f, -0.75f), new Color(0.45f, 0.85f, 1f), true, "Bırak");
+            StoragePickZone pick = CreateStorageZone<StoragePickZone>(content.transform, "PickZone", new Vector3(1.45f, 0f, -0.75f), new Color(1f, 0.82f, 0.25f), false, "Al");
+            Transform door = new GameObject("Door").transform;
+            door.SetParent(content.transform, false);
+            door.localPosition = new Vector3(0f, 1.0f, 1.0f);
+
+            Storage storage = root.AddComponent<Storage>();
+            BuilderUtil.SetField(storage, "config", config);
+            BuilderUtil.SetField(storage, "area", area);
+            BuilderUtil.SetArray(storage, "levelAreas", levels);
+            BuilderUtil.SetArray(storage, "types", types);
+            BuilderUtil.SetField(storage, "door", door);
+            BuilderUtil.SetArray(storage, "fillVisuals", fill.ToArray());
+            BuilderUtil.SetField(drop, "config", config);
+            BuilderUtil.SetField(drop, "storage", storage);
+            BuilderUtil.SetField(pick, "config", config);
+            BuilderUtil.SetField(pick, "storage", storage);
+
+            BuildingUpgradeSign sign = AddUpgradeSign(content, config, new Vector3(2.95f, 0f, 0.4f));
+            BuilderUtil.SetField(sign, "storage", storage);
+
+            content.SetActive(false);
+            UnlockableArea unlockable = root.AddComponent<UnlockableArea>();
+            BuilderUtil.SetField(unlockable, "config", config);
+            BuilderUtil.SetField(unlockable, "area", area);
+            BuilderUtil.SetField(unlockable, "content", content);
+            BuilderUtil.SetField(unlockable, "lockedVisual", locked);
+            return storage;
+        }
+
+        private static T CreateStorageZone<T>(Transform parent, string name, Vector3 localPos, Color color, bool inward, string text) where T : InteractionZone
+        {
+            GameObject go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            go.transform.localPosition = localPos;
+            PrefabFactory.AddGroundDecal("Glow", go.transform, Vector3.zero, new Vector2(2.1f, 2.1f), new Color(color.r, color.g, color.b, 0.4f), ArtGenerator.CirclePath, 0f);
+            PrefabFactory.AddGroundDecal("Ring", go.transform, Vector3.up * 0.004f, new Vector2(2.2f, 2.2f), new Color(1f, 1f, 1f, 0.85f), ArtGenerator.RingPath, 0f);
+            PrefabFactory.AddGroundDecal("Arrow", go.transform, Vector3.up * 0.008f, new Vector2(0.9f, 0.9f), new Color(1f, 1f, 1f, 0.9f), ArtGenerator.ArrowPath, inward ? 0f : 180f);
+            TMPro.TextMeshPro label = UiFactory.CreateWorldLabel("Label", go.transform, new Vector3(0f, 1.6f, 0f), text, 4.2f, color);
+            ((RectTransform)label.transform).sizeDelta = new Vector2(2f, 0.8f);
+            SphereCollider trigger = go.AddComponent<SphereCollider>();
+            trigger.isTrigger = true;
+            trigger.radius = 1.0f;
+            trigger.center = new Vector3(0f, 0.6f, 0f);
+            return go.AddComponent<T>();
         }
 
         // ================================================================ Denize uzanan iskele

@@ -3,7 +3,9 @@
 // - Köşe dalgaları: yüzey yavaşça kabarıp iner.
 // - Renk: kıyıya yaklaştıkça açılır, açıkta koyulaşır. Kıyıya uzaklık, sahne kurma komutunun ürettiği
 //   küçük bir dokudan (_ShoreTex) okunur; derinlik dokusu gerekmez (telefonda ucuz).
-// - Kıyıda nefes alan köpük şeridi ve dışa doğru açılan köpük halkası, açıkta küçük parıltılar.
+// - Kıyıda nefes alan köpük şeridi ve dışa doğru açılan köpük halkası (kıyıya vuran dalga ayrı: Shore.shader).
+// - Yüzeyde hafif ışık dalgalanması, açıkta seyrek ve çok küçük güneş parıltıları.
+// Yoğunluklar GameConfig > "Deniz ve kıyı" (SeaSettings global değişkenleri ayarlar).
 Shader "KayipAda/Water"
 {
     Properties
@@ -59,6 +61,19 @@ Shader "KayipAda/Water"
                 float _Sparkle;
             CBUFFER_END
 
+            // GameConfig'ten (SeaSettings).
+            float _KA_ShoreFoam;
+            float _KA_SeaGlint;
+            float _KA_SeaGlintDensity;
+            float _KA_SeaRipple;
+
+            float Hash21(float2 p)
+            {
+                p = frac(p * float2(123.34, 456.21));
+                p += dot(p, p + 45.32);
+                return frac(p.x * p.y);
+            }
+
             struct Attributes
             {
                 float4 positionOS : POSITION;
@@ -103,10 +118,21 @@ Shader "KayipAda/Water"
                 float cycle = frac(t * 0.22);
                 float ringPos = band * 0.6 + cycle * _FoamWidth * 2.0;
                 float ring = (1.0 - smoothstep(0.0, 0.2, abs(d - ringPos + n * 0.1))) * (1.0 - cycle) * 0.7;
-                foam = saturate(foam + ring);
+                foam = saturate(foam + ring) * _KA_ShoreFoam;
 
-                // Açık denizde küçük parıltılar.
-                float sparkle = pow(saturate(sin(ws.x * 3.1 + t * 2.0) * sin(ws.z * 2.7 - t * 1.7)), 20.0) * _Sparkle * depthT;
+                // Yüzeyde hafif ışık dalgalanması (iki kayan dalga deseni).
+                float r1 = sin(ws.x * 0.9 + ws.z * 0.35 + t * 1.2) * sin(ws.z * 1.1 - ws.x * 0.2 - t * 0.9);
+                float r2 = sin((ws.x - ws.z) * 2.3 + t * 2.1) * 0.5;
+                col.rgb *= 1.0 + (r1 * 0.07 + r2 * 0.035) * _KA_SeaRipple * (0.3 + 0.7 * depthT);
+
+                // Seyrek, çok küçük güneş parıltıları: hücre başına rastgele bir nokta, kısa süre yanıp söner.
+                float2 cellP = ws.xz * 1.6;
+                float2 cell = floor(cellP);
+                float h = Hash21(cell);
+                float on = step(1.0 - _KA_SeaGlintDensity, h);
+                float2 spot = frac(cellP) - (0.25 + 0.5 * float2(Hash21(cell + 7.1), Hash21(cell + 3.7)));
+                float twinkle = pow(saturate(sin(t * (2.0 + h * 3.0) + h * 40.0)), 8.0);
+                float sparkle = on * twinkle * (1.0 - smoothstep(0.0, 0.05, length(spot))) * _KA_SeaGlint * depthT;
 
                 col.rgb = lerp(col.rgb, _FoamColor.rgb, foam * _FoamColor.a) + sparkle;
                 col.a = max(col.a, foam * _FoamColor.a);

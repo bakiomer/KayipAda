@@ -147,7 +147,7 @@ namespace KayipAda
                     have[i] = Delivered(requirements[i].Resource);
                     need[i] = requirements[i].Amount;
                 }
-                progressView.Show(displayName.ToUpperInvariant(), types, have, need);
+                progressView.Show(TextUtil.UpperTr(displayName), types, have, need);
                 return;
             }
             if (progressLabel == null) return;

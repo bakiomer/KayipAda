@@ -527,6 +527,55 @@ namespace KayipAda.EditorTools
             });
         }
 
+        // Kıyı şeridi ağı (Shore.shader): ana ada ve adacıkların kıyı çizgisi boyunca, karaya doğru 2.6 m, denize
+        // doğru 0.7 m. UV: x = kıyı boyunca uzaklık (m), y = kıyıdan uzaklık (m; eksi = kara).
+        public static Mesh BuildShoreStripMesh(IslandShape island)
+        {
+            const float inland = 2.6f, seaward = 0.7f;
+            System.Collections.Generic.List<Vector3> v = new System.Collections.Generic.List<Vector3>();
+            System.Collections.Generic.List<Vector2> uv = new System.Collections.Generic.List<Vector2>();
+            System.Collections.Generic.List<int> tris = new System.Collections.Generic.List<int>();
+            for (int lobe = -1; lobe < island.IsletCount; lobe++)
+            {
+                int segments = lobe < 0 ? 220 : 90;
+                Vector2 center = island.LobeCenter(lobe);
+                int start = v.Count;
+                float along = lobe * 500f + 1000f; // her kara parçası farklı dalga zamanlaması
+                Vector2 prev = island.CoastPoint(lobe, 0f);
+                for (int i = 0; i <= segments; i++)
+                {
+                    float angle = i * Mathf.PI * 2f / segments;
+                    Vector2 coast = island.CoastPoint(lobe, angle);
+                    along += Vector2.Distance(prev, coast);
+                    prev = coast;
+                    Vector2 n = (coast - center).normalized;
+                    Vector2 a = coast - n * inland, m = coast, b = coast + n * seaward;
+                    v.Add(new Vector3(a.x, 0.025f, a.y)); uv.Add(new Vector2(along, -inland));
+                    v.Add(new Vector3(m.x, 0.025f, m.y)); uv.Add(new Vector2(along, 0f));
+                    v.Add(new Vector3(b.x, -0.07f, b.y)); uv.Add(new Vector2(along, seaward));
+                    if (i == 0) continue;
+                    int p0 = start + (i - 1) * 3, p1 = start + i * 3;
+                    for (int r = 0; r < 2; r++)
+                    {
+                        tris.Add(p0 + r); tris.Add(p0 + r + 1); tris.Add(p1 + r);
+                        tris.Add(p0 + r + 1); tris.Add(p1 + r + 1); tris.Add(p1 + r);
+                    }
+                }
+            }
+            Mesh mesh = new Mesh { name = "ShoreStrip" };
+            mesh.SetVertices(v);
+            mesh.SetUVs(0, uv);
+            mesh.SetTriangles(tris, 0);
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            return BuilderUtil.SaveAsset(mesh, GeneratedFolder + "/ShoreStrip.asset");
+        }
+
+        public static Material GetShore()
+        {
+            return GetMaterial("M_Shore", "KayipAda/Shore", m => m.renderQueue = 2999);
+        }
+
         public static Material GetWater(IslandShape island, Texture shoreTexture)
         {
             Rect rect = WaterRect(island);

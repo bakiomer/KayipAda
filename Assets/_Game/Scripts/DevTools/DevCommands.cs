@@ -66,6 +66,15 @@ namespace KayipAda
                 }
                 Unlock(area.Area);
             }
+            if (Storage.Instance != null) Unlock(Storage.Instance.Area); // Ambar da bir bina
+        }
+
+        // Ambarı aç ve her kaynaktan biraz koy (kapasiteye kadar).
+        public static void FillStorage()
+        {
+            if (!Use() || Storage.Instance == null) return;
+            Unlock(Storage.Instance.Area);
+            foreach (ResourceType t in Storage.Instance.Types) Storage.Instance.Add(t, 10);
         }
 
         // Her işçi türünden en az 1 tane tutar (gereken bina kapalı olsa da; para harcamaz).

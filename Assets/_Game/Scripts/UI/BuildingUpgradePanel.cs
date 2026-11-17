@@ -98,42 +98,32 @@ namespace KayipAda
 
         public void Refresh()
         {
-            if (sign == null || sign.Building == null) return;
-            ProcessingBuilding b = sign.Building;
-            int level = b.Level, max = b.MaxLevel;
-            title.text = b.Type.DisplayName;
+            if (sign == null) return;
+            int level = sign.Level, max = sign.MaxLevel;
+            title.text = sign.Title;
             levelText.text = "Seviye " + level + "/" + max;
             for (int i = 0; i < levelDots.Length; i++)
             {
                 levelDots[i].gameObject.SetActive(i < max);
                 levelDots[i].color = i < level ? dotOn : dotOff;
             }
-            float speedNow = Value(config.BuildingLevelSpeed, level), capNow = Value(config.BuildingLevelCapacity, level);
+            sign.Lines(config, out string first, out string second);
+            speedText.text = first;
+            capacityText.text = second;
             bool maxed = sign.NextLevelArea == null;
             if (maxed)
             {
-                speedText.text = "Hız ×" + speedNow.ToString("0.00");
-                capacityText.text = "Kapasite +" + capNow.ToString("0");
                 priceText.text = "MAKS SEVİYE";
                 if (priceIcon != null) priceIcon.SetActive(false);
                 buyButton.interactable = false;
                 return;
             }
-            float speedNext = Value(config.BuildingLevelSpeed, level + 1), capNext = Value(config.BuildingLevelCapacity, level + 1);
-            speedText.text = "Hız ×" + speedNow.ToString("0.00") + "  →  <color=#8CF266>×" + speedNext.ToString("0.00") + "</color>";
-            capacityText.text = "Kapasite +" + capNow.ToString("0") + "  →  <color=#8CF266>+" + capNext.ToString("0") + "</color>";
             int price = sign.NextPrice;
             priceText.text = "Yükselt  " + price;
             if (priceIcon != null) priceIcon.SetActive(true);
             bool afford = CurrencyManager.Instance != null && (CurrencyManager.Instance.IsInfinite || CurrencyManager.Instance.Coins >= price);
             buyButton.interactable = true;
             ((Graphic)buyButton.targetGraphic).color = afford ? new Color(0.36f, 0.75f, 0.3f) : new Color(0.45f, 0.45f, 0.45f);
-        }
-
-        private static float Value(float[] values, int level)
-        {
-            if (values == null || values.Length == 0) return 0f;
-            return values[Mathf.Clamp(level - 1, 0, values.Length - 1)];
         }
 
         private void Slide(float from, float to, System.Action done = null)

@@ -81,7 +81,8 @@ namespace KayipAda
         {
             IsPreviewing = true;
             Vector3 look = Vector3.Lerp(EndB, FarShore, 0.6f);
-            Vector3 pos = look + new Vector3(0f, config.BridgeShotHeight, -config.BridgeShotDistance);
+            // Önizleme biraz daha geniş: karşı kıyının tamamı (batık, Demirci iskeleti, hurda) kadraja girsin.
+            Vector3 pos = look + new Vector3(0f, config.BridgeShotHeight * 1.45f, -config.BridgeShotDistance * 1.45f);
             cam.SetShot(pos, Quaternion.LookRotation(look - pos), 2.6f);
             yield return new WaitForSeconds(config.BridgePreviewTime);
             if (cam.HasShot && !IsRevealing) cam.ClearShot();
@@ -118,7 +119,7 @@ namespace KayipAda
                 }
             }
             if (islandArea != null && CelebrationBanner.Instance != null)
-                CelebrationBanner.Instance.Show(islandArea.DisplayName.ToUpperInvariant() + " AÇILDI!", "", config.BridgeRevealHold + 0.8f);
+                CelebrationBanner.Instance.Show(TextUtil.UpperTr(islandArea.DisplayName) + " AÇILDI!", "", config.BridgeRevealHold + 0.8f);
             if (Effects.Instance != null) Effects.Instance.Confetti(FarShore + Vector3.up);
             Haptics.Vibrate();
             yield return new WaitForSeconds(config.BridgeRevealHold);

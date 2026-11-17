@@ -1,7 +1,8 @@
 // Duzeltme3Tests.cs
 // Oyuncu testi düzeltme turu: koleksiyon eşyası kaybolur, uzun iskele yürünebilir, köprülerde takılma yok,
 // yükseltme tabelası paneli, ağacın yeniden büyümesi (kütük → gömülür → fidan → genç → tam), tanıtım kartı,
-// bölge kimlikleri ve bina girişlerinin açık kalması. Ekran görüntüleri Docs/Screenshots/<önek>_D3_*.png.
+// bölge kimlikleri ve bina girişlerinin açık kalması, Ambar (bırakma, alma, kapasite, taşıyıcı, kayıt), görev kartının
+// küçülmesi, onarım göstergesi, final töreni (kalabalık dağınık, kızakta raylar). Ekran görüntüleri <önek>_D3_*.png.
 
 using System.Collections;
 using NUnit.Framework;
@@ -12,6 +13,8 @@ namespace KayipAda.Tests
 {
     public class Duzeltme3Tests : GameTestBase
     {
+        private GameConfig Config => FindAny<DevMenu>().Config;
+
         private static BridgeBuilder Bridge(string id)
         {
             foreach (ConstructionSite s in ConstructionSite.All) if (s is BridgeBuilder b && s.Id == id) return b;
@@ -54,6 +57,7 @@ namespace KayipAda.Tests
             Assert.IsNotNull(spyglass);
             Assert.Less(Vector3.Distance(spyglass.transform.position, pier.EndB), 2f, "Dürbün iskelenin ucunda değil");
             Shot("D3_iskele_ucu");
+            yield return WaitFor(() => !CollectionPopup.Instance.IsShown, 6f);
             Teleport(pier.EndA - dir * 4f);
             yield return new WaitForSeconds(1f);
             Shot("D3_uzun_iskele");
@@ -99,7 +103,7 @@ namespace KayipAda.Tests
             yield return new WaitForSeconds(0.8f);
             BuildingUpgradeSign sign = null;
             foreach (BuildingUpgradeSign s in Object.FindObjectsByType<BuildingUpgradeSign>(FindObjectsSortMode.None))
-                if (s.Building.Type.Output.Id == "plank") sign = s;
+                if (s.Building != null && s.Building.Type.Output.Id == "plank") sign = s;
             Assert.IsNotNull(sign, "Bıçkıhane'nin Yükselt tabelası yok");
             ProcessingBuilding sawmill = sign.Building;
             // Tabela girişlerin önünde değil (binanın yanında).
@@ -261,6 +265,201 @@ namespace KayipAda.Tests
             Vector2 p = new Vector2(slot.position.x, slot.position.z);
             foreach (NavObstacle o in NavObstacle.Active)
                 Assert.IsFalse(o.Contains(p, 0.45f), slot.parent.name + "/" + slot.name + " bir engelle kapanıyor: " + o.name);
+        }
+            private static ResourceType Resource(string id)
+        {
+            foreach (ResourceType t in Resources.FindObjectsOfTypeAll<ResourceType>()) if (t.Id == id) return t;
+            return null;
+        }
+
+        // Ambar: bırakma alanında sırttakiler ambara akar; alma alanında panel açılır, seçilen kaynaktan alınır.
+        [UnityTest]
+        public IEnumerator Storage_DropAndPick()
+        {
+            Storage storage = Storage.Instance;
+            Assert.IsNotNull(storage, "Ambar yok");
+            Assert.IsFalse(storage.IsOpen, "Ambar başta açık olmamalı");
+            Assert.IsNotNull(Find<UnlockPad>("Pad Storage"), "Ambarın açma karesi yok");
+            AreaManager.Instance.Unlock(PadArea("Pad Rocky"));
+            AreaManager.Instance.Unlock(storage.Area);
+            yield return new WaitForSeconds(1f);
+            Assert.IsTrue(storage.IsOpen);
+            StorageDropZone drop = FindAny<StorageDropZone>();
+            StoragePickZone pick = FindAny<StoragePickZone>();
+            Assert.IsNotNull(drop);
+            Assert.IsNotNull(pick);
+
+            ResourceType plank = Resource("plank");
+            DevCommands.FillPlayerStack(plank);
+            int carried = PlayerStack.Count;
+            Assert.Greater(carried, 3);
+            Teleport(drop.transform.position);
+            yield return WaitFor(() => PlayerStack.IsEmpty, 6f);
+            Assert.IsTrue(PlayerStack.IsEmpty, "Sırttakiler ambara akmadı");
+            Assert.AreEqual(carried, storage.CountOf(plank), "Ambara giden kalas sayısı yanlış");
+            Shot("D3_ambar_birakma");
+
+            Teleport(pick.transform.position);
+            StoragePanel panel = StoragePanel.Instance;
+            yield return WaitFor(() => panel.IsOpen, 2f);
+            Assert.IsTrue(panel.IsOpen, "Alma alanında Ambar paneli açılmadı");
+            Assert.AreEqual(plank, panel.Selected, "Ambardaki kaynak seçili gelmedi");
+            yield return new WaitForSeconds(0.4f);
+            Shot("D3_ambar_paneli");
+            panel.Take();
+            yield return WaitFor(() => PlayerStack.Count >= carried, 6f);
+            Assert.AreEqual(carried, PlayerStack.Count, "\"Al\" ile ambardan alınamadı");
+            Assert.AreEqual(0, storage.CountOf(plank));
+            Teleport(pick.transform.position + Vector3.back * 6f);
+            yield return WaitFor(() => !panel.IsOpen, 2f);
+            Assert.IsFalse(panel.IsOpen, "Uzaklaşınca Ambar paneli kapanmadı");
+        }
+
+        // Ambar kapasitesi: dolunca bırakma durur (sırttakiler kalır); Yükselt tabelası kapasiteyi artırır.
+        [UnityTest]
+        public IEnumerator Storage_CapacityAndUpgrade()
+        {
+            Storage storage = Storage.Instance;
+            AreaManager.Instance.Unlock(storage.Area);
+            yield return new WaitForSeconds(0.8f);
+            int cap = storage.Capacity;
+            Assert.AreEqual(Config.StorageCapacity[0], cap);
+            storage.Add(Resource("stone"), cap + 50);
+            Assert.AreEqual(cap, storage.Total, "Kapasite aşıldı");
+            Assert.IsTrue(storage.IsFull);
+            DevCommands.FillPlayerStack(Resource("wood"));
+            int carried = PlayerStack.Count;
+            Teleport(FindAny<StorageDropZone>().transform.position);
+            yield return new WaitForSeconds(1.5f);
+            Assert.AreEqual(carried, PlayerStack.Count, "Ambar doluyken bırakma durmadı");
+            Assert.AreEqual(cap, storage.Total);
+            Shot("D3_ambar_dolu");
+
+            BuildingUpgradeSign sign = null;
+            foreach (BuildingUpgradeSign s in Object.FindObjectsByType<BuildingUpgradeSign>(FindObjectsSortMode.None)) if (s.Storage == storage) sign = s;
+            Assert.IsNotNull(sign, "Ambarın Yükselt tabelası yok");
+            CurrencyManager.Instance.Add(5000);
+            Assert.IsTrue(sign.TryUpgrade(), "Ambar yükseltilemedi");
+            Assert.AreEqual(Config.StorageCapacity[1], storage.Capacity, "Ambar kapasitesi artmadı");
+            yield return WaitFor(() => storage.Total > cap, 4f);
+            Assert.Greater(storage.Total, cap, "Kapasite artınca bırakma devam etmedi");
+        }
+
+        // Taşıyıcı işçi ambardan gemi teslim alanına ihtiyaç olan malzemeyi taşır.
+        [UnityTest]
+        public IEnumerator Storage_CarrierDeliversToShip()
+        {
+            Storage storage = Storage.Instance;
+            AreaManager.Instance.Unlock(storage.Area);
+            ResourceType plank = Resource("plank");
+            Assert.IsTrue(ShipBuilder.Instance.Needs(plank), "Gemi ilk aşamada kalas istemeli");
+            storage.Add(plank, 12);
+            int before = ShipBuilder.Instance.Delivered(plank);
+            AreaManager.Instance.Unlock(PadArea("Pad Sawmill")); // Taşıyıcı Bıçkıhane'den sonra tutulur
+            Hire("carrier");
+            CarrierWorker carrier = null;
+            yield return WaitFor(() => (carrier = Object.FindAnyObjectByType<CarrierWorker>()) != null, 8f); // sadece sahnedeki (aktif)
+            Assert.IsNotNull(carrier, "Taşıyıcı çıkmadı");
+            yield return WaitFor(() => carrier.IsStorageRun, 15f);
+            Assert.IsTrue(carrier.IsStorageRun, "Taşıyıcı ambara gitmedi");
+            Time.timeScale = 3f;
+            yield return WaitFor(() => ShipBuilder.Instance.Delivered(plank) > before, 30f);
+            Time.timeScale = 1f;
+            Assert.Greater(ShipBuilder.Instance.Delivered(plank), before, "Taşıyıcı ambardan gemiye kalas götürmedi");
+            Assert.Less(storage.CountOf(plank), 12, "Ambardaki kalas azalmadı");
+            Shot("D3_tasiyici_ambar");
+        }
+
+        // Ambar içeriği kayda yazılır; ada sıfırlanınca (kaçış) boşalır.
+        [UnityTest]
+        public IEnumerator Storage_SavedAndClearedOnReset()
+        {
+            yield return null;
+            Storage storage = Storage.Instance;
+            AreaManager.Instance.Unlock(storage.Area);
+            storage.Add(Resource("rope"), 7);
+            SaveData data = new SaveData();
+            storage.Collect(data.Storage);
+            Assert.AreEqual(1, data.Storage.Count);
+            Assert.AreEqual(7, data.Storage[0].Value);
+            storage.Clear();
+            storage.Restore(data.Storage);
+            Assert.AreEqual(7, storage.CountOf(Resource("rope")), "Ambar kayıttan geri yüklenmedi");
+            data.ResetRun();
+            Assert.AreEqual(0, data.Storage.Count, "Kaçışta ambar boşalmadı");
+        }
+
+        // Görev kartı: büyük yazı + ikon; dokununca tek satıra iner, tekrar dokununca açılır.
+        [UnityTest]
+        public IEnumerator QuestCard_CollapsesOnTap()
+        {
+            yield return new WaitForSeconds(0.6f);
+            QuestCard card = null;
+            foreach (QuestCard c in Object.FindObjectsByType<QuestCard>(FindObjectsSortMode.None)) if (c.Quest != null) { card = c; break; }
+            Assert.IsNotNull(card, "Görev kartı yok");
+            float tall = ((RectTransform)card.transform).rect.height;
+            card.Toggle();
+            yield return new WaitForSeconds(0.3f);
+            Assert.IsTrue(card.IsCollapsed);
+            Assert.Less(((RectTransform)card.transform).rect.height, tall * 0.7f, "Kart küçülmedi");
+            StringAssert.Contains("/", card.TitleText, "Tek satırda ilerleme yok");
+            Shot("D3_gorev_karti_kucuk");
+            card.Toggle();
+            yield return new WaitForSeconds(0.3f);
+            Assert.IsFalse(card.IsCollapsed);
+            Shot("D3_gorev_karti");
+        }
+
+        // Onarım/inşa göstergeleri gemi göstergesi gibi: kutusuz ikon + sayı + ince çubuk (eski "Kuyu: 0/14" yazısı yok).
+        [UnityTest]
+        public IEnumerator Sites_ShowIconCountBars()
+        {
+            AreaManager.Instance.Unlock(PadArea("Pad Sawmill"));
+            yield return new WaitForSeconds(0.5f);
+            foreach (ConstructionSite site in ConstructionSite.All)
+            {
+                Assert.IsNotNull(site.ProgressView, site.name + " kutusuz göstergeye geçmemiş");
+            }
+            ConstructionSite well = null;
+            foreach (ConstructionSite site in ConstructionSite.All) if (site.Id == "well") well = site;
+            Teleport(well.transform.position + Vector3.back * 3f);
+            yield return new WaitForSeconds(0.8f);
+            Shot("D3_kuyu_gostergesi");
+        }
+
+        // Final: kalabalık sahil boyunca dağılır (tek noktada yığılmaz), farklı yönlere bakar; gemi iki rayın üstünde.
+        [UnityTest]
+        public IEnumerator Ceremony_CrowdSpreadAndRails()
+        {
+            Assert.IsNotNull(GameObject.Find("Shipyard/Slipway"), "Kızak yok");
+            Assert.AreEqual(2, CountRails(), "Kızakta iki ray olmalı");
+            DevCommands.HireAllWorkers();
+            yield return new WaitForSeconds(2f);
+            DevCommands.SkipToCeremony();
+            yield return WaitFor(() => LaunchCeremony.Instance.IsRunning, 5f);
+            yield return new WaitForSeconds(1.6f);
+            Shot("D3_final_genis");
+            Vector3 min = Vector3.positiveInfinity, max = Vector3.negativeInfinity;
+            int count = 0;
+            foreach (CharacterVisual v in Object.FindObjectsByType<CharacterVisual>(FindObjectsSortMode.None))
+            {
+                Vector3 p = v.transform.position;
+                min = Vector3.Min(min, p);
+                max = Vector3.Max(max, p);
+                count++;
+            }
+            Assert.Greater(count, 3);
+            Assert.Greater(Vector3.Distance(min, max), 8f, "Kalabalık tek noktaya yığıldı");
+            yield return WaitFor(() => LaunchCeremony.Instance.Phase == "uzaklasma", 20f);
+            yield return new WaitForSeconds(2.5f);
+            Shot("D3_final_adadan_takip");
+        }
+
+        private static int CountRails()
+        {
+            int n = 0;
+            foreach (Transform t in GameObject.Find("Shipyard/Slipway").transform) if (t.name == "Rail") n++;
+            return n;
         }
     }
 }

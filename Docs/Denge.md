@@ -78,12 +78,13 @@ Geliştirmeler (~5.000 para, isteğe bağlı) adım 6-12 arasında para birikirk
 | İçerik | Ne ister | Ödül | Tahmini ek süre |
 |---|---|---|---|
 | 15 yan görev (en fazla 2 tanesi aynı anda) | topla / sat / üret / onar / sandık / keşif / figür | toplam ~1.000 para + ~34 kristal | ana yola gömülü, +6-10 dk |
-| Kuyu, Çit, İskele onarımı | 8 kalas + 6 taş · 6 kalas · 10 kalas + 4 halat | görev ödülü | +2 dk |
+| Kuyu, Çit, Sandal onarımı | 8 kalas + 6 taş · 6 kalas · 10 kalas + 4 halat | görev ödülü | +2 dk |
 | Kayıp Tapınak köprüsü | 30 kalas + 12 halat | adacık, 2 sandık, altın kafatası, altın figür | +3 dk |
 | 8 gizli sandık | yürüyerek bulmak | toplam 660 para + 26 kristal (+3 nadir kostüm) | +2-3 dk |
 | 5 koleksiyon eşyası | yürüyerek bulmak | 5/5 → +15 kristal (bir kez) | +1-2 dk |
 | 3 altın figür parçası | tapınakta | gemide altın figür, "EFSANEVİ GEMİ!", kaçışta +20 kristal | +1 dk |
-| Bina seviyeleri (5 bina × 2) | 350-1.700 para | hız ×1,35 / ×1,75, kapasite +6 / +12, bina büyür | para birikirken |
+| Bina seviyeleri (5 bina × 2) | 350-1.700 para ("Yükselt" tabelası) | hız ×1,35 / ×1,75, kapasite +6 / +12, bina büyür | para birikirken |
+| Ambar (Kayalık'tan sonra) | 450 para (+ seviye 700 / 1.300) | 100 / 160 / 240 birim saklama; Taşıyıcı ambardan gemiye/binalara taşır | 0 (zaman kazandırır) |
 
 Ana yolu ve keşfi birlikte yapan oyuncu için tahmin **~50 dakika** (hedef 45-60).
 
@@ -91,6 +92,14 @@ Ana yolu ve keşfi birlikte yapan oyuncu için tahmin **~50 dakika** (hedef 45-6
 - Sadece sandık, görev, koleksiyon ve kaçıştan gelir (kaçış: 10, efsanevi gemiyle +20). "Tekrar oyna" ile sıfırlanmaz.
 - Kostümler: 7 karakter + 4 yelken/bayrak; fiyatlar 30-120 kristal; İskelet Korsan, Altın Kaptan ve Altın Yelken sadece
   sandıktan çıkar. İlk adada ~60-80 kristal toplanır → 1-2 kostüm. Bu turda mağaza ekranı yok (Test Menüsü'nden giyilir).
+
+## Ambar ve ilk kaçış süresi
+- Ambar isteğe bağlıdır: rehber oku göstermez, ana yolun fiyatları ve miktarları değişmedi. Bu yüzden ilk kaçış tahmini
+  (sadece ana yol) yine **~38 dakika** (hedef 30-45).
+- Ambarı alan oyuncu fazla kaynağı satmadan saklar; Taşıyıcı işçi ambardaki gemi malzemesini teslim alanına kendisi götürür.
+  Bu, Gövde/Direk aşamalarında oyuncunun yürüme süresini ~1-2 dk kısaltabilir (450 para ~1 dk'lık kazanç), yani ilk kaçış
+  en hızlı ~35 dakikaya iner; 30 dakikanın altına düşmez.
+- Ambar doluyken bırakma durur ("Ambar dolu!"); kaçışta ambar boşalır.
 
 ## Boş bekleme kontrolü
 - Her an en az bir iş var: toplanacak kaynak, gemiye taşınacak malzeme ya da satılacak ürün.
@@ -113,7 +122,8 @@ Ana yolu ve keşfi birlikte yapan oyuncu için tahmin **~50 dakika** (hedef 45-6
 | İşçi tutma | Tayfa Barakası: Oduncu 400/950/1.700, Taşıyıcı 600/1.300/2.200, Lifçi 500/1.100/1.900, Demirci Çırağı 700/1.400 | İlk fiyatlar eski karelerle aynı; Lifçi artık Halat Atölyesi açılınca |
 | Gövde / Direk | +8 / +10 çivi | Batık Koyu ve Demirci ana yola girdi |
 | Köprüler | Batık Koyu 40 kalas; Kayıp Tapınak 30 kalas + 12 halat | Köprü bitince adacık bulutu dağılır |
-| Bina seviyesi | `GameConfig` > Bina seviyeleri; fiyatlar `Data/Areas/*Lv2, *Lv3` | Kare, binanın yanında küçük |
+| Bina seviyesi | `GameConfig` > Bina seviyeleri; fiyatlar `Data/Areas/*Lv2, *Lv3` | Kare yerine binanın yanında "Yükselt" tabelası + alt panel |
+| Ambar | `Data/Areas/Storage` 450, `StorageLv2/Lv3` 700/1.300; kapasite `GameConfig.StorageCapacity` 100/160/240 | İsteğe bağlı (rehber göstermez) |
 | Son gece, toplar | **kaldırıldı** | Oyun saf üretim oyunu |
 
 > Bu tablo tahmindir; asıl doğrulama telefonda gerçek oyuncularla yapılmalı (Plan Adım 5).

@@ -1,11 +1,13 @@
 // LaunchCeremony.cs
 // Final anı: gemi bitince ~20-25 saniyelik suya indirme töreni (sinematik).
-// 1) Oyuncu ve işçiler iskelede toplanıp sevinir (Cheer animasyonu), "GEMİ HAZIR!" bandı.
-// 2) Kamera geminin etrafında yavaşça döner.
-// 3) Gemi kızaktan denize doğru yana kayar; suya girince büyük su sıçraması; zafer müziği başlar,
-//    havai fişekler art arda gökyüzünde patlar, ekranı konfeti kaplar, telefon titrer.
-// 4) Gemi burnunu açık denize çevirir, yelken açıp uzaklaşır; kamera arkadan takip eder; ardından "KAÇTIN!".
-// Bütün süreler ShipConfig'tedir.
+// 1) Geniş açı: ada, uzun iskele ve gemi birlikte görünür. Oyuncu ve işçiler sahil boyunca dağılır (tek noktaya
+//    yığılmaz); kimi kameraya dönüp zıplar / şapkasını havaya atar / el sallar, kimi gemiye el sallar; herkes farklı
+//    yöne bakar, animasyonlar farklı zamanlarda başlar. "GEMİ HAZIR!" bandı.
+// 2) Kamera gemiye geçer ve etrafında yavaşça döner.
+// 3) Gemi iki rayın üstünde beşiğiyle birlikte kayarak suya iner; büyük su sıçraması; zafer müziği, havai fişekler,
+//    ekranı kaplayan konfeti, titreşim.
+// 4) Gemi burnunu açık denize çevirip uzaklaşır; kamera adanın üstünden (kalabalık önde) takip eder; "KAÇTIN!".
+// Kamerayı kapatan yüksek nesneler (palmiye, kaya...) tören boyunca gizlenir. Bütün süreler ShipConfig'tedir.
 
 using System.Collections;
 using UnityEngine;
@@ -32,6 +34,10 @@ namespace KayipAda
         [Tooltip("Güneş: törende gün batımı tonuna döner.")]
         [SerializeField] private Light sun;
         [SerializeField] private EscapePanel escapePanel;
+        [Tooltip("Havaya atılan şapka (törende bazı karakterler atar).")]
+        [SerializeField] private GameObject hatPrefab;
+        [Tooltip("Uzun iskelenin ortası (geniş açıda görünsün).")]
+        [SerializeField] private Transform pierFocus;
 
         public bool IsRunning { get; private set; }
         public bool IsFinished { get; private set; }
@@ -39,6 +45,9 @@ namespace KayipAda
 
         private int fireworks;
         private float nextFirework;
+        private readonly System.Collections.Generic.List<Renderer> occluders = new System.Collections.Generic.List<Renderer>();
+        private float occlusionTimer;
+        private Vector3 cameraFacing = Vector3.back; // geniş açıda kameraya dönük karakterlerin baktığı yön
 
         private void Awake()
         {
@@ -68,27 +77,29 @@ namespace KayipAda
             PlayerController.InputBlocked = true;
             Vector3 center = ShipCenter();
 
-            // 1) Toplanma ve sevinç.
+            // 1) Geniş açı: ada, iskele ve gemi birlikte; kalabalık sahil boyunca dağılır ve sevinir.
             Phase = "toplanma";
-            if (CelebrationBanner.Instance != null) CelebrationBanner.Instance.Show("GEMİ HAZIR!", "Herkes iskeleye!", ship.GatherTime);
+            if (CelebrationBanner.Instance != null) CelebrationBanner.Instance.Show("GEMİ HAZIR!", "Herkes sahile!", ship.GatherTime);
+            Vector3 bow = Flat(shipRoot.forward);
+            Vector3 sea = Flat(slideDirection);
+            Vector3 crowd = GatherCenter();
+            Vector3 wideLook = (center + crowd + (pierFocus != null ? pierFocus.position : center)) / 3f;
+            wideLook.y = 0.5f;
+            Vector3 widePos = wideLook + new Vector3(0f, ship.WideShotHeight, -ship.WideShotDistance);
+            cameraFacing = Flat(widePos - crowd);
             GatherEveryone();
             yield return null; // oyuncu ışınlandı: kalabalığın yeri güncel
             Haptics.Vibrate();
             StartCoroutine(Sunset());
-            // Kamera kara tarafında, kalabalığın gerisinden gemiye doğru çapraz bakar: toplanan sıra derinliğe uzanır
-            // (dikey ekrana sığar), arkasında gemi.
-            Vector3 bow = Flat(shipRoot.forward);
-            Vector3 sea = Flat(slideDirection);
-            Vector3 crowd = GatherCenter();
-            Vector3 view = (sea * ship.GatherShotSide + bow * ship.GatherShotBack).normalized; // kameranın baktığı yön (yatay)
-            Vector3 shotPos = crowd - view * ship.GatherShotDistance + Vector3.up * ship.GatherShotHeight;
-            Vector3 shotLook = crowd + view * 1.6f + Vector3.up * 0.9f;
-            float gatherYaw = YawOf(shotPos - center);
+            CollectOccluders();
+            if (cameraFollow != null) cameraFollow.SetShot(widePos, Quaternion.LookRotation(wideLook - widePos), 2.2f);
             for (float t = 0f; t < ship.GatherTime; t += Time.deltaTime)
             {
-                if (cameraFollow != null) cameraFollow.SetShot(shotPos, Quaternion.LookRotation(shotLook - shotPos), 2.5f);
+                if (cameraFollow != null) cameraFollow.SetShot(widePos, Quaternion.LookRotation(wideLook - widePos), 2.2f);
+                HideOccluders(center, crowd);
                 yield return null;
             }
+            float gatherYaw = YawOf(widePos - center);
 
             // 2) Kamera alçaktan, burun tarafından deniz tarafına doğru yavaşça döner (sonunda ada arkada kalır).
             Phase = "kamera";
@@ -97,6 +108,7 @@ namespace KayipAda
             {
                 float yaw = Mathf.LerpAngle(gatherYaw, endYaw, Mathf.SmoothStep(0f, 1f, t / ship.OrbitDuration));
                 Orbit(center, yaw, ship.OrbitDistance, ship.OrbitHeight, 2.5f);
+                HideOccluders(center, crowd);
                 yield return null;
             }
 
@@ -118,6 +130,7 @@ namespace KayipAda
                 shipRoot.position = Vector3.Lerp(start, end, k);
                 shipRoot.rotation = Quaternion.AngleAxis(Mathf.Sin(t * Mathf.PI) * 7f, tiltAxis) * baseRotation;
                 Orbit(ShipCenter(), endYaw, ship.OrbitDistance, ship.OrbitHeight, 2f); // denizden adaya bakar
+                HideOccluders(ShipCenter(), crowd);
                 if (!splashed && t > 0.65f)
                 {
                     splashed = true;
@@ -141,7 +154,8 @@ namespace KayipAda
                 position += Flat(rot * Vector3.forward) * (speed * Time.deltaTime);
                 shipRoot.position = position + Vector3.up * (Mathf.Sin(time * 1.6f) * 0.08f);
                 shipRoot.rotation = Quaternion.AngleAxis(Mathf.Sin(time * 1.1f) * 2.5f, Flat(rot * Vector3.forward)) * rot;
-                Follow(rot);
+                FollowFromIsland(crowd, time / (ship.TurnDuration + ship.SailDuration));
+                HideOccluders(ShipCenter(), crowd);
                 TickFireworks(true);
                 yield return null;
             }
@@ -150,6 +164,7 @@ namespace KayipAda
             IsRunning = false;
             IsFinished = true;
             SetCheer(false);
+            foreach (Renderer r in occluders) if (r != null) r.enabled = true;
             if (escapePanel != null) escapePanel.Show();
         }
 
@@ -187,6 +202,56 @@ namespace KayipAda
             Vector3 pos = center + forward * (ship.FollowDistance * 0.55f) + side * (ship.FollowDistance * 0.75f) + Vector3.up * ship.FollowHeight;
             Vector3 look = Vector3.Lerp(center, island, 0.25f) + Vector3.up * 1.5f;
             cameraFollow.SetShot(pos, Quaternion.LookRotation(look - pos), 2f);
+        }
+
+        // Uzaklaşan gemi adanın üstünden takip edilir: kamera kalabalığın gerisinde ve yukarıda, gemiye bakar
+        // (kalabalık önde el sallar). Gemi uzaklaştıkça kamera biraz yükselir.
+        private void FollowFromIsland(Vector3 crowd, float progress)
+        {
+            if (cameraFollow == null) return;
+            Vector3 shipPos = ShipCenter();
+            Vector3 toShip = Flat(shipPos - crowd);
+            float k = Mathf.Clamp01(progress);
+            Vector3 pos = crowd - toShip * Mathf.Lerp(ship.IslandFollowBack, ship.IslandFollowBack * 0.6f, k)
+                          + Vector3.up * Mathf.Lerp(ship.IslandFollowHeight, ship.IslandFollowHeight * 1.35f, k);
+            Vector3 look = Vector3.Lerp(crowd, shipPos, 0.6f) + Vector3.up * 0.8f;
+            cameraFollow.SetShot(pos, Quaternion.LookRotation(look - pos), 2.2f);
+        }
+
+        // Kamerayı kapatabilecek yüksek nesneler (palmiye, kaya, yamaç, bina): tören boyunca, kameradan gemiye ve
+        // kalabalığa giden çizgiyi kesenler gizlenir.
+        private void CollectOccluders()
+        {
+            occluders.Clear();
+            foreach (Renderer r in FindObjectsByType<Renderer>(FindObjectsSortMode.None))
+            {
+                if (r == null || !r.enabled || r is ParticleSystemRenderer) continue;
+                Bounds b = r.bounds;
+                if (b.size.y < 1.3f || b.size.x > 14f || b.size.z > 14f) continue; // küçük süs / zemin / su değil
+                if (r.transform.IsChildOf(shipRoot) || r.GetComponentInParent<CharacterVisual>() != null) continue;
+                if (r.gameObject.layer == 5) continue; // arayüz
+                occluders.Add(r);
+            }
+        }
+
+        private void HideOccluders(Vector3 shipCenter, Vector3 crowd)
+        {
+            if (cameraFollow == null || occluders.Count == 0) return;
+            occlusionTimer -= Time.deltaTime;
+            if (occlusionTimer > 0f) return;
+            occlusionTimer = 0.1f;
+            Vector3 cam = cameraFollow.transform.position;
+            Vector3 crowdEye = crowd + Vector3.up * 1f;
+            Ray toShip = new Ray(cam, shipCenter - cam), toCrowd = new Ray(cam, crowdEye - cam);
+            float dShip = Vector3.Distance(cam, shipCenter), dCrowd = Vector3.Distance(cam, crowdEye);
+            foreach (Renderer r in occluders)
+            {
+                if (r == null) continue;
+                Bounds b = r.bounds;
+                b.Expand(0.4f);
+                bool blocks = (b.IntersectRay(toShip, out float a) && a < dShip - 1.5f) || (b.IntersectRay(toCrowd, out float c) && c < dCrowd - 1.2f);
+                if (r.enabled == blocks) r.enabled = !blocks;
+            }
         }
 
         private static Vector3 IslandCenter()
@@ -228,36 +293,101 @@ namespace KayipAda
 
         private void GatherEveryone()
         {
-            // Oyuncu iskeleye (toplanma yerinin ortasına), gemiye bakarak.
+            if (gatherPoints.Length == 0) return;
+            // Oyuncu kalabalığın ortasında; işçiler sahil boyunca dağılır (tek noktaya yığılmaz).
             PlayerController player = FindAnyObjectByType<PlayerController>();
-            if (player != null && gatherPoints.Length > 0)
+            int middle = gatherPoints.Length / 2;
+            if (player != null)
             {
-                Vector3 spot = gatherPoints[gatherPoints.Length / 2].position - Flat(slideDirection) * 1.2f;
+                Vector3 spot = gatherPoints[middle].position;
                 Rigidbody body = player.GetComponent<Rigidbody>();
                 if (body != null) body.position = spot;
                 player.transform.position = spot;
+                StartCoroutine(Celebrate(player.GetComponent<CharacterVisual>(), 0, 0.2f, true));
             }
-            // İşçiler toplanma yerine ışınlanır (adanın öbür ucundan yürümesin; kalabalık kadrajda olsun).
             int i = 0;
             Vector3 back = -Flat(slideDirection);
-            foreach (Worker worker in FindObjectsByType<Worker>(FindObjectsSortMode.None))
+            Worker[] all = FindObjectsByType<Worker>(FindObjectsSortMode.None);
+            foreach (Worker worker in all)
             {
-                if (gatherPoints.Length == 0) break;
-                Transform point = gatherPoints[i % gatherPoints.Length];
-                Vector3 spot = point.position + back * ((i / gatherPoints.Length) * 0.9f);
+                // İşçiler bütün sahil boyunca eşit aralıklarla (oyuncunun yeri hariç) dağılır.
+                int slot = Mathf.Clamp(Mathf.RoundToInt((i + 0.5f) * gatherPoints.Length / Mathf.Max(1, all.Length)), 0, gatherPoints.Length - 1);
+                if (slot == middle) slot = (slot + 1) % gatherPoints.Length;
+                Vector3 spot = gatherPoints[slot].position + back * ((i / (gatherPoints.Length - 1)) * 1.1f);
                 Rigidbody wb = worker.GetComponent<Rigidbody>();
                 if (wb != null) wb.position = spot;
                 worker.transform.position = spot;
                 worker.Gather(spot);
+                StartCoroutine(Celebrate(worker.GetComponent<CharacterVisual>(), i + 1, Random.Range(0.1f, 1.4f), false));
                 i++;
             }
-            SetCheer(true);
         }
 
-        // Oyuncu ve işçiler sevinç animasyonu yapar (toplanma noktasına varınca da devam eder).
+        // Her karakter farklı kutlar: kameraya dönüp zıplar / şapka atar / el sallar ya da gemiye el sallar.
+        // Hepsi farklı zamanda başlar; bakış yönleri biraz rastgele.
+        private IEnumerator Celebrate(CharacterVisual visual, int index, float delay, bool isPlayer)
+        {
+            if (visual == null) yield break;
+            int style = isPlayer ? 0 : index % 4; // 0: zıpla + şapka, 1: gemiye el salla, 2: kameraya el salla, 3: evet (gemiye)
+            bool faceCamera = style == 0 || style == 2;
+            Vector3 face = faceCamera ? cameraFacing : Flat(slideDirection);
+            face = Quaternion.Euler(0f, Random.Range(-28f, 28f), 0f) * face;
+            yield return new WaitForSeconds(delay);
+            visual.Face(face);
+            visual.SetCheer(true, style == 0 ? 2 : style == 3 ? 0 : 1);
+            if (style == 0 || (style == 2 && index % 3 == 0)) StartCoroutine(TossHat(visual.transform, Random.Range(0f, 0.8f)));
+            if (style == 0) StartCoroutine(Hop(visual));
+            // Kutlama sürerken arada bir yön değiştirir (hep aynı yöne bakmasın).
+            while (IsRunning)
+            {
+                yield return new WaitForSeconds(Random.Range(2.5f, 4.5f));
+                if (!IsRunning) break;
+                face = Quaternion.Euler(0f, Random.Range(-35f, 35f), 0f) * (faceCamera ? cameraFacing : Flat(slideDirection));
+                visual.Face(face);
+            }
+        }
+
+        // Zıplama: modeli kısa aralıklarla yukarı sıçratır.
+        private IEnumerator Hop(CharacterVisual visual)
+        {
+            Transform model = visual.Model;
+            if (model == null) yield break;
+            Vector3 basePos = model.localPosition;
+            float t = 0f;
+            while (IsRunning && model != null)
+            {
+                t += Time.deltaTime;
+                model.localPosition = basePos + Vector3.up * (Mathf.Abs(Mathf.Sin(t * Mathf.PI * 1.4f)) * 0.45f);
+                yield return null;
+            }
+            if (model != null) model.localPosition = basePos;
+        }
+
+        // Şapka havaya atılır, dönerek yükselir ve tekrar yakalanır (birkaç kez).
+        private IEnumerator TossHat(Transform who, float delay)
+        {
+            if (hatPrefab == null || who == null) yield break;
+            yield return new WaitForSeconds(delay);
+            GameObject hat = Instantiate(hatPrefab);
+            while (IsRunning && who != null)
+            {
+                Vector3 head = who.position + Vector3.up * 1.9f;
+                for (float t = 0f; t < 1f && IsRunning; t += Time.deltaTime / 1.1f)
+                {
+                    hat.transform.position = head + Vector3.up * (Mathf.Sin(t * Mathf.PI) * 2.6f);
+                    hat.transform.rotation = Quaternion.Euler(t * 40f, t * 720f, 0f);
+                    yield return null;
+                }
+                hat.transform.position = head;
+                yield return new WaitForSeconds(Random.Range(0.9f, 1.8f));
+            }
+            Destroy(hat);
+        }
+
+        // Tören bitince sevinç durur.
         private void SetCheer(bool on)
         {
-            foreach (CharacterVisual visual in FindObjectsByType<CharacterVisual>(FindObjectsSortMode.None)) visual.SetCheer(on);
+            foreach (CharacterVisual visual in FindObjectsByType<CharacterVisual>(FindObjectsSortMode.None)) visual.SetCheer(on, 0);
         }
 
         private void TickFireworks(bool active)

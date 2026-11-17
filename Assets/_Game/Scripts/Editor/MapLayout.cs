@@ -140,6 +140,9 @@ namespace KayipAda.EditorTools
         public static readonly Vector3 BrokenFence = new Vector3(-10.2f, 0f, -12f);
 
         // Denize uzanan uzun iskele (kuzey kıyı, geminin batısında): x, karadaki başlangıcı kıyıdan ne kadar içeride, boyu.
+        // Ambar (depo): gemi teslim alanının doğusunda, bahçenin kuzeyinde (kök = bırakma/alma alanlarının hizası).
+        public static readonly Vector3 Storage = new Vector3(10.6f, 0f, 17.0f);
+
         public const float PierX = -2.2f;
         public const float PierInland = 2.0f;
         public const float PierLength = 13f;

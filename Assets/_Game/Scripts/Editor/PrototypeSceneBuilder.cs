@@ -200,6 +200,10 @@ namespace KayipAda.EditorTools
             CreateShipConfigIfMissing();
             EnsureShipNails();
             CreateQuestsIfMissing();
+            // Ambar (depo) ve seviyeleri (kapasite).
+            CreateAreaIfMissing("Storage", "storage", "Ambar", 450);
+            CreateAreaIfMissing("StorageLv2", "storage_lv2", "Ambar Seviye 2", 700);
+            CreateAreaIfMissing("StorageLv3", "storage_lv3", "Ambar Seviye 3", 1300);
             // Eski kırık iskele görevi artık iskelenin yanındaki sandal (kimlik aynı: "pier").
             QuestDefinition q13 = BuilderUtil.Load<QuestDefinition>(QuestsFolder + "/Q13.asset");
             if (q13 != null && q13.Title == "İskeleyi Onar")
@@ -783,6 +787,7 @@ namespace KayipAda.EditorTools
             BuilderUtil.SetField(effects, "confettiPrefab", p.Confetti.GetComponent<ParticleSystem>());
             BuilderUtil.SetField(effects, "coinPrefab", p.Coin);
             BuilderUtil.SetField(effects, "floatingTextPrefab", p.FloatingText.GetComponent<FloatingText>());
+            BuilderUtil.SetField(managers.AddComponent<SeaSettings>(), "config", config);
             AudioManager audio = managers.AddComponent<AudioManager>();
             BuilderUtil.SetField(audio, "config", config);
             BuilderUtil.SetField(audio, "library", BuilderUtil.Load<SoundLibrary>(SoundLibraryPath));
@@ -1103,6 +1108,18 @@ namespace KayipAda.EditorTools
             AreaDefinition sawmillArea = Data<AreaDefinition>(AreasFolder, "Sawmill"), ropeArea = Data<AreaDefinition>(AreasFolder, "RopeWorkshop");
             DiscoveryBuilder.BuildRepairSite(DiscoveryBuilder.RepairKind.Well, "well", "Kuyu", MapLayout.Well, 90f, plank, 8, stone, 6, sawmillArea, config, reserved);
             DiscoveryBuilder.BuildRepairSite(DiscoveryBuilder.RepairKind.Fence, "fence", "Çit", MapLayout.BrokenFence, 180f, plank, 6, null, 0, sawmillArea, config, reserved);
+            // Ambar: gemi teslim alanının doğusunda; Kayalık açılınca karesi belirir (isteğe bağlı: rehber göstermez).
+            AreaDefinition storageArea = Data<AreaDefinition>(AreasFolder, "Storage");
+            List<ResourceType> storeTypes = new List<ResourceType>();
+            foreach (string id in DevResourceOrder) storeTypes.Add(Data<ResourceType>(ResourceTypesFolder, id));
+            RegionBuilder.BuildStorage(MapLayout.Storage, storageArea,
+                new[] { Data<AreaDefinition>(AreasFolder, "StorageLv2"), Data<AreaDefinition>(AreasFolder, "StorageLv3") },
+                storeTypes.ToArray(), config, p.Decor, p.Decor[ModelCatalog.ShipFlag.Key]);
+            CreatePad(p.UnlockPad, pads, "Pad Storage", MapLayout.Storage + MapLayout.BuildingPadOffset, storageArea, Data<AreaDefinition>(AreasFolder, "Rocky"), reserved);
+            BuilderUtil.SetBool(pads.Find("Pad Storage").GetComponent<UnlockPad>(), "guideIgnore", true);
+            Reserve(reserved, MapLayout.Storage + new Vector3(0f, 0f, 1f), 3.6f);
+            UiBuilder.CreateStoragePanel(config, storeTypes.Count);
+
             // Sandal: uzun iskelenin yanında, karada teslim alanı (yan görev "pier" kimliğiyle; eski kayıtlar uyumlu).
             DiscoveryBuilder.BuildRepairSite(DiscoveryBuilder.RepairKind.Pier, "pier", "Sandal", pierStart + new Vector3(2.6f, 0f, -0.6f), 0f,
                                              plank, 10, rope, 4, ropeArea, config, reserved);
@@ -1117,7 +1134,7 @@ namespace KayipAda.EditorTools
             // Kristal ve görev kartları para panelinin hemen arkasında: paneller, kaçış ekranı ve Test Menüsü üstte kalır.
             int hudIndex = GameObject.Find("Canvas/SafeArea/CoinPanel").transform.GetSiblingIndex() + 1;
             crystalPanel.transform.SetSiblingIndex(hudIndex);
-            for (int i = 0; i < cards.Count; i++) ((Component)cards[i]).transform.SetSiblingIndex(hudIndex + 1 + i);
+            if (cards.Count > 0) ((Component)cards[0]).transform.parent.SetSiblingIndex(hudIndex + 1);
             BuilderUtil.SetArray(Object.FindAnyObjectByType<QuestManager>(), "cards", cards.ToArray());
             CreateShowcase(config, mainCamera);
 
@@ -1336,6 +1353,14 @@ namespace KayipAda.EditorTools
             water.AddComponent<MeshFilter>().sharedMesh = ArtGenerator.BuildWaterMesh(island);
             MeshRenderer renderer = water.AddComponent<MeshRenderer>();
             renderer.sharedMaterial = ArtGenerator.GetWater(island, ArtGenerator.BuildShoreTexture(island));
+
+            // Kıyıya vuran dalgalar, köpük şeridi ve ıslak kum izi (kıyı çizgisi boyunca ince şerit).
+            GameObject shore = new GameObject("ShoreWaves");
+            shore.AddComponent<MeshFilter>().sharedMesh = ArtGenerator.BuildShoreStripMesh(island);
+            MeshRenderer shoreRenderer = shore.AddComponent<MeshRenderer>();
+            shoreRenderer.sharedMaterial = ArtGenerator.GetShore();
+            shoreRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            shoreRenderer.receiveShadows = false;
             renderer.shadowCastingMode = ShadowCastingMode.Off;
             renderer.receiveShadows = false;
         }
@@ -1787,17 +1812,36 @@ namespace KayipAda.EditorTools
             Reserve(reserved, shipCenter, sb.size.z * 0.5f + 1.5f);
             Reserve(reserved, delivery.transform.position, 2.4f);
 
-            // Final töreni: oyuncu ve işçiler teslim alanının kara tarafında toplanır.
+            // Final töreni: oyuncu ve işçiler geminin kara tarafında sahil boyunca dağılır (tek noktaya yığılmaz).
             Transform gatherRoot = new GameObject("GatherPoints").transform;
             gatherRoot.SetParent(root, false);
             List<Object> gatherPoints = new List<Object>();
-            for (int i = 0; i < 5; i++)
+            System.Random gatherRandom = new System.Random(5);
+            for (float off = -11f; off <= 11.01f && gatherPoints.Count < 12; off += 1.8f)
             {
-                Transform t = new GameObject("Gather " + i).transform;
+                Vector3 pos = new Vector3(shipCenter.x, 0f, shipCenter.z) - slideDir * (halfWidth + 2.3f + (float)gatherRandom.NextDouble() * 1.6f) + bowDir * off;
+                if (island.SignedDistance(new Vector2(pos.x, pos.z)) > -0.9f) continue; // suda değil
+                if (Mathf.Abs(pos.x - pierStart.x) < MapLayout.PierHalfWidth + 0.8f) continue; // iskelenin üstünde değil
+                Transform t = new GameObject("Gather " + gatherPoints.Count).transform;
                 t.SetParent(gatherRoot, false);
-                t.position = delivery.transform.position - slideDir * ((i % 2) * 0.9f - 0.3f) + bowDir * (-1.6f + i * 0.8f);
+                t.position = pos;
                 gatherPoints.Add(t);
             }
+            Transform pierFocus = new GameObject("PierFocus").transform;
+            pierFocus.SetParent(root, false);
+            pierFocus.position = pierStart + Vector3.forward * (MapLayout.PierLength * 0.5f);
+
+            // Havaya atılan şapka (törende).
+            Material felt = ArtGenerator.GetLit("M_HatFelt", null, new Color(0.18f, 0.14f, 0.12f));
+            Material band = ArtGenerator.GetLit("M_Gold", null, new Color(1f, 0.78f, 0.22f));
+            GameObject hatGo = new GameObject("TossHat");
+            MachineBuilder.Part(hatGo.transform, PrimitiveType.Cylinder, "Brim", Vector3.zero, new Vector3(0.62f, 0.02f, 0.62f), Quaternion.identity, felt);
+            MachineBuilder.Part(hatGo.transform, PrimitiveType.Cylinder, "Crown", new Vector3(0f, 0.12f, 0f), new Vector3(0.34f, 0.12f, 0.34f), Quaternion.identity, felt);
+            MachineBuilder.Part(hatGo.transform, PrimitiveType.Cylinder, "Band", new Vector3(0f, 0.05f, 0f), new Vector3(0.36f, 0.03f, 0.36f), Quaternion.identity, band);
+            BuilderUtil.SetShadows(hatGo, false);
+            BuilderUtil.EnsureFolder("Assets/_Game/Prefabs/FX");
+            GameObject hatPrefab = PrefabUtility.SaveAsPrefabAsset(hatGo, "Assets/_Game/Prefabs/FX/TossHat.prefab");
+            Object.DestroyImmediate(hatGo);
 
             GameObject ceremonyGo = new GameObject("LaunchCeremony");
             LaunchCeremony ceremony = ceremonyGo.AddComponent<LaunchCeremony>();
@@ -1808,6 +1852,8 @@ namespace KayipAda.EditorTools
             BuilderUtil.SetVector3(ceremony, "slideDirection", slideDir);
             BuilderUtil.SetVector3(ceremony, "sailDirection", sailDir);
             BuilderUtil.SetArray(ceremony, "gatherPoints", gatherPoints.ToArray());
+            BuilderUtil.SetField(ceremony, "hatPrefab", hatPrefab);
+            BuilderUtil.SetField(ceremony, "pierFocus", pierFocus);
             BuilderUtil.SetField(ceremony, "cameraFollow", follow);
             BuilderUtil.SetField(ceremony, "sun", RenderSettings.sun);
             BuilderUtil.SetField(ceremony, "escapePanel", UiBuilder.CreateEscapePanel(config));

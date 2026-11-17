@@ -118,6 +118,7 @@ namespace KayipAda
         private void RestoreLate()
         {
             if (ShipBuilder.Instance != null) ShipBuilder.Instance.Restore(data.ShipStage, SaveData.ToDictionary(data.ShipDelivered));
+            if (KayipAda.Storage.Instance != null) KayipAda.Storage.Instance.Restore(data.Storage);
             Dictionary<string, int> sites = SaveData.ToDictionary(data.Sites);
             foreach (ConstructionSite site in ConstructionSite.All) site.Restore(sites, data.SitesDone.Contains(site.Id));
             if (QuestManager.Instance != null) QuestManager.Instance.Restore(data);
@@ -161,6 +162,7 @@ namespace KayipAda
             }
             if (ProfileManager.Instance != null) ProfileManager.Instance.Collect(data);
             if (QuestManager.Instance != null) QuestManager.Instance.Collect(data);
+            if (KayipAda.Storage.Instance != null) KayipAda.Storage.Instance.Collect(data.Storage);
             data.Sites.Clear();
             data.SitesDone.Clear();
             foreach (ConstructionSite site in ConstructionSite.All)

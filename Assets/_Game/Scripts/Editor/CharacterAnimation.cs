@@ -65,8 +65,45 @@ namespace KayipAda.EditorTools
             return controller;
         }
 
-        // Sevinç (final töreni): "Cheer" açıkken "Yes" klibi döngüde çalar. Eski denetleyiciye de eklenir.
+        // Sevinç (final töreni): "Cheer" açıkken CheerKind'e göre "Yes" / "Wave" / "Jump" klibi döngüde çalar.
+        // Eski denetleyiciye de eklenir.
         private static void EnsureCheer(AnimatorController controller, string sourceFbx)
+        {
+            EnsureCheerBase(controller, sourceFbx);
+            EnsureCheerKinds(controller, sourceFbx);
+        }
+
+        private static void EnsureCheerKinds(AnimatorController controller, string sourceFbx)
+        {
+            foreach (AnimatorControllerParameter p in controller.parameters) if (p.name == "CheerKind") return;
+            AnimatorStateMachine sm = controller.layers[0].stateMachine;
+            AnimatorState move = sm.defaultState, yes = null;
+            foreach (ChildAnimatorState c in sm.states) if (c.state.name == "Cheer") yes = c.state;
+            if (move == null || yes == null) return;
+            controller.AddParameter("CheerKind", AnimatorControllerParameterType.Int);
+            foreach (AnimatorStateTransition t in move.transitions)
+                if (t.destinationState == yes) t.AddCondition(AnimatorConditionMode.Equals, 0f, "CheerKind");
+            string[] clips = { "Wave", "Jump" };
+            for (int k = 0; k < clips.Length; k++)
+            {
+                AnimationClip clip = FindClip(sourceFbx, clips[k]);
+                if (clip == null) continue;
+                AnimatorState state = sm.AddState("Cheer" + clips[k]);
+                state.motion = clip;
+                AnimatorStateTransition to = move.AddTransition(state);
+                to.AddCondition(AnimatorConditionMode.If, 0f, "Cheer");
+                to.AddCondition(AnimatorConditionMode.Equals, k + 1, "CheerKind");
+                to.duration = 0.15f;
+                to.hasExitTime = false;
+                AnimatorStateTransition back = state.AddTransition(move);
+                back.AddCondition(AnimatorConditionMode.IfNot, 0f, "Cheer");
+                back.duration = 0.15f;
+                back.hasExitTime = false;
+            }
+            EditorUtility.SetDirty(controller);
+        }
+
+        private static void EnsureCheerBase(AnimatorController controller, string sourceFbx)
         {
             foreach (AnimatorControllerParameter p in controller.parameters) if (p.name == "Cheer") return;
             AnimationClip cheer = FindClip(sourceFbx, "Yes") ?? FindClip(sourceFbx, "Wave");

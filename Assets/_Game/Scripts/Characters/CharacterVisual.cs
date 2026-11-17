@@ -13,6 +13,7 @@ namespace KayipAda
     {
         private static readonly int SpeedHash = Animator.StringToHash("Speed");
         private static readonly int CheerHash = Animator.StringToHash("Cheer");
+        private static readonly int CheerKindHash = Animator.StringToHash("CheerKind");
 
         [SerializeField] private GameConfig config;
         [SerializeField] private Animator animator;
@@ -35,14 +36,27 @@ namespace KayipAda
         private Vector3 lastPosition;
         private float smoothedSpeed;
 
-        // Sevinç animasyonu (final töreni). Denetleyicide "Cheer" yoksa bir şey yapmaz.
-        public void SetCheer(bool on)
+        // Sevinç animasyonu (final töreni): kind 0 = "evet", 1 = el sallama, 2 = zıplama. Denetleyicide yoksa bir şey yapmaz.
+        public void SetCheer(bool on) => SetCheer(on, 0);
+
+        public void SetCheer(bool on, int kind)
         {
             if (animator == null || animator.runtimeAnimatorController == null) return;
             foreach (AnimatorControllerParameter p in animator.parameters)
             {
-                if (p.nameHash == CheerHash) { animator.SetBool(CheerHash, on); return; }
+                if (p.nameHash == CheerKindHash) animator.SetInteger(CheerKindHash, kind);
+                if (p.nameHash == CheerHash) animator.SetBool(CheerHash, on);
             }
+        }
+
+        public Transform Model => model;
+
+        // Yerinde dururken verilen yöne döner (tören).
+        public void Face(Vector3 direction)
+        {
+            direction.y = 0f;
+            if (direction.sqrMagnitude < 0.0001f || model == null) return;
+            model.rotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
         }
         private float carryWeight;
         private float stepDistance;

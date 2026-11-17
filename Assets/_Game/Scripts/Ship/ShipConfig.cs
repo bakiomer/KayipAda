@@ -84,6 +84,12 @@ namespace KayipAda
         [Min(0.1f)] public float SailSpeed = 3.5f;
         [Tooltip("Uzaklaşırken kameranın gemiyi arkadan takip uzaklığı ve yüksekliği (metre).")]
         [Min(1f)] public float FollowDistance = 15f;
+        [Tooltip("Törenin başındaki geniş açı: kameranın yüksekliği ve gerideki uzaklığı (ada, iskele ve gemi birlikte).")]
+        [Min(1f)] public float WideShotHeight = 34f;
+        [Min(1f)] public float WideShotDistance = 30f;
+        [Tooltip("Uzaklaşan gemi adanın üstünden takip edilir: kameranın yüksekliği ve kalabalığın ne kadar gerisinde.")]
+        [Min(1f)] public float IslandFollowHeight = 14f;
+        [Min(1f)] public float IslandFollowBack = 12f;
         public float FollowHeight = 3.5f;
         [Header("Gün batımı (final)")]
         [Tooltip("Törende ışığın gün batımına dönme süresi (saniye), güneşin rengi, gücü ve açısı; ortam ışığı renkleri.")]

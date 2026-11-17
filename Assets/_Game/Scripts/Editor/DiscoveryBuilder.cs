@@ -205,7 +205,7 @@ namespace KayipAda.EditorTools
             PrefabFactory.AddGroundDecal("Ring", zone.transform, Vector3.up * 0.004f, new Vector2(3.1f, 3.1f), new Color(1f, 1f, 1f, 0.85f), ArtGenerator.RingPath, 0f);
             for (int i = 0; i < 2; i++)
                 PrefabFactory.AddGroundDecal("Arrow " + i, zone.transform, Vector3.forward * (1.9f + i * 0.6f), new Vector2(0.6f, 0.6f), new Color(1f, 1f, 1f, 0.7f), ArtGenerator.ArrowPath, 0f);
-            ShipProgressView view = PrototypeSceneBuilder.CreateShipProgressView(zone.transform, 3.4f, 0.8f);
+            ShipProgressView view = PrototypeSceneBuilder.CreateShipProgressView(zone.transform, 2.7f, 0.7f);
 
             // Köprü: iki kıyı arasında yan kirişler ve direkler (hep görünür = inşaat), tahtalar ve halatlar sırayla belirir.
             Transform deck = new GameObject("Deck").transform;

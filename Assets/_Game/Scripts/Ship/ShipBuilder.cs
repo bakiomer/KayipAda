@@ -136,6 +136,15 @@ namespace KayipAda
         }
 
         public int Delivered(ResourceType type) => delivered.TryGetValue(type.Id, out int n) ? n : 0;
+
+        // Bu aşamada bu kaynaktan daha kaç tane gerekiyor (Taşıyıcı ambardan bu kadar alır).
+        public int Missing(ResourceType type)
+        {
+            if (IsComplete || type == null) return 0;
+            foreach (ShipConfig.Requirement req in ship.Stages[StageIndex].Requirements)
+                if (req.Resource == type) return Mathf.Max(0, Required(req) - Delivered(type));
+            return 0;
+        }
         private int Required(ShipConfig.Requirement req) => config.ScaleAmount(req.Amount);
 
         // Teslim alanı bir parça teslim edince çağırır.

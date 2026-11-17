@@ -32,6 +32,7 @@ namespace KayipAda
         public List<string> FigureParts = new List<string>();
         public int ShipStage;
         public List<IdValue> ShipDelivered = new List<IdValue>();
+        public List<IdValue> Storage = new List<IdValue>(); // Ambar içeriği (kaynak → adet)
         public float PlayTime;
         public int EarnedCoins; // bu adada kazanılan toplam para (kaçış ekranında sayılır)
 
@@ -61,6 +62,7 @@ namespace KayipAda
             FigureParts.Clear();
             ShipStage = 0;
             ShipDelivered.Clear();
+            Storage.Clear();
             PlayTime = 0f;
             EarnedCoins = 0;
         }

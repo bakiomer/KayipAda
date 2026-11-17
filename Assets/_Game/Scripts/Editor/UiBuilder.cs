@@ -4,6 +4,7 @@
 
 using System.Collections.Generic;
 using TMPro;
+using UnityEditor;
 using UnityEditor.Events;
 using UnityEngine;
 using UnityEngine.UI;
@@ -237,51 +238,85 @@ namespace KayipAda.EditorTools
         // Sol üstte (TEST butonunun altında) en fazla iki yan görev kartı.
         public static List<Object> CreateQuestCards(int count, Sprite crystalIcon)
         {
+            // Kartlar sol üstte alt alta (küçülen kartın altındaki yukarı kayar).
+            GameObject list = new GameObject("QuestCards", typeof(RectTransform));
+            list.transform.SetParent(Safe, false);
+            Anchor((RectTransform)list.transform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(14f, -118f), new Vector2(404f, 300f));
+            VerticalLayoutGroup group = list.AddComponent<VerticalLayoutGroup>();
+            group.spacing = 10f;
+            group.childAlignment = TextAnchor.UpperLeft;
+            group.childControlHeight = true;
+            group.childControlWidth = true;
+            group.childForceExpandHeight = false;
+            group.childForceExpandWidth = true;
+            Sprite sell = ArtGenerator.LoadSprite(ArtGenerator.CoinIconPath), plank = IconGenerator.Create("plank");
+            Sprite chest = IconGenerator.Create("chest"), figure = IconGenerator.Create("figure");
             List<Object> cards = new List<Object>();
             for (int i = 0; i < count; i++)
             {
                 GameObject holder = new GameObject("QuestCard " + i, typeof(RectTransform));
-                holder.transform.SetParent(Safe, false);
-                RectTransform rt = (RectTransform)holder.transform;
-                Anchor(rt, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(16f, -124f - i * 150f), new Vector2(390f, 136f));
+                holder.transform.SetParent(list.transform, false);
+                LayoutElement layout = holder.AddComponent<LayoutElement>();
+                layout.preferredHeight = 132f;
                 GameObject bodyGo = new GameObject("Body", typeof(RectTransform));
                 bodyGo.transform.SetParent(holder.transform, false);
                 RectTransform body = (RectTransform)bodyGo.transform;
                 UiFactory.Stretch(body);
-                Image bg = UiFactory.CreateImage("Back", body, ArtGenerator.LoadSprite(ArtGenerator.RoundedRectPath), new Color(0.1f, 0.13f, 0.19f, 0.88f));
+                Image bg = UiFactory.CreateImage("Back", body, ArtGenerator.LoadSprite(ArtGenerator.RoundedRectPath), new Color(0.1f, 0.13f, 0.19f, 0.9f));
                 bg.type = Image.Type.Sliced;
+                bg.raycastTarget = true; // dokununca küçülür
                 UiFactory.Stretch(bg.rectTransform);
-                Image badge = UiFactory.CreateImage("Badge", body, ArtGenerator.LoadSprite(ArtGenerator.StarPath), UiFactory.Gold);
-                Anchor(badge.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(10f, -10f), new Vector2(40f, 40f));
-                TextMeshProUGUI title = UiFactory.CreateUIText("Title", body, "Görev", 34f, Color.white);
+                Button toggle = bodyGo.AddComponent<Button>();
+                toggle.targetGraphic = bg;
+                toggle.transition = Selectable.Transition.None;
+                // Görev türü ikonu (solda, net).
+                Image kind = UiFactory.CreateImage("Icon", body, sell, Color.white);
+                kind.preserveAspect = true;
+                Anchor(kind.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0.5f, 0.5f), new Vector2(50f, -33f), new Vector2(76f, 76f));
+                Image badge = UiFactory.CreateImage("Badge", kind.transform, ArtGenerator.LoadSprite(ArtGenerator.StarPath), UiFactory.Gold);
+                Anchor(badge.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(-4f, -4f), new Vector2(26f, 26f));
+                TextMeshProUGUI title = UiFactory.CreateUIText("Title", body, "Görev", 40f, Color.white);
                 title.alignment = TextAlignmentOptions.MidlineLeft;
                 title.enableAutoSizing = true;
-                title.fontSizeMin = 22f;
-                title.fontSizeMax = 34f;
-                Anchor(title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 1f), new Vector2(56f, -8f), new Vector2(-64f, 46f));
-                Image barBack = UiFactory.CreateImage("BarBack", body, ArtGenerator.LoadSprite(ArtGenerator.RoundedRectPath), new Color(0f, 0f, 0f, 0.45f));
+                title.fontSizeMin = 26f;
+                title.fontSizeMax = 40f;
+                title.richText = true;
+                Anchor(title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 1f), new Vector2(98f, -8f), new Vector2(-108f, 50f));
+                GameObject details = new GameObject("Details", typeof(RectTransform));
+                details.transform.SetParent(body, false);
+                UiFactory.Stretch((RectTransform)details.transform);
+                Transform d = details.transform;
+                Image barBack = UiFactory.CreateImage("BarBack", d, ArtGenerator.LoadSprite(ArtGenerator.RoundedRectPath), new Color(0f, 0f, 0f, 0.45f));
                 barBack.type = Image.Type.Sliced;
-                Anchor(barBack.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(16f, 52f), new Vector2(200f, 18f));
-                Image fill = UiFactory.CreateImage("Fill", body, ArtGenerator.LoadSprite(ArtGenerator.SquarePath), new Color(0.55f, 0.9f, 0.35f));
+                Anchor(barBack.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(98f, -64f), new Vector2(170f, 18f));
+                Image fill = UiFactory.CreateImage("Fill", d, ArtGenerator.LoadSprite(ArtGenerator.SquarePath), new Color(0.55f, 0.9f, 0.35f));
                 fill.type = Image.Type.Filled;
                 fill.fillMethod = Image.FillMethod.Horizontal;
-                Anchor(fill.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(20f, 56f), new Vector2(192f, 10f));
-                TextMeshProUGUI countText = UiFactory.CreateUIText("Count", body, "0/10", 30f, UiFactory.Gold);
+                Anchor(fill.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(102f, -68f), new Vector2(162f, 10f));
+                TextMeshProUGUI countText = UiFactory.CreateUIText("Count", d, "0/10", 36f, UiFactory.Gold);
                 countText.alignment = TextAlignmentOptions.MidlineLeft;
-                Anchor(countText.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(226f, 42f), new Vector2(140f, 40f));
-                Image coin = UiFactory.CreateImage("Coin", body, ArtGenerator.LoadSprite(ArtGenerator.CoinIconPath), Color.white);
-                Anchor(coin.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(16f, 8f), new Vector2(34f, 34f));
-                TextMeshProUGUI coinText = UiFactory.CreateUIText("CoinText", body, "", 28f, Color.white);
+                Anchor(countText.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(280f, -52f), new Vector2(120f, 46f));
+                Image coin = UiFactory.CreateImage("Coin", d, ArtGenerator.LoadSprite(ArtGenerator.CoinIconPath), Color.white);
+                Anchor(coin.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(98f, 8f), new Vector2(38f, 38f));
+                TextMeshProUGUI coinText = UiFactory.CreateUIText("CoinText", d, "", 32f, Color.white);
                 coinText.alignment = TextAlignmentOptions.MidlineLeft;
-                Anchor(coinText.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(54f, 6f), new Vector2(100f, 38f));
-                Image gem = UiFactory.CreateImage("Crystal", body, crystalIcon, Color.white);
+                Anchor(coinText.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(140f, 6f), new Vector2(100f, 42f));
+                Image gem = UiFactory.CreateImage("Crystal", d, crystalIcon, Color.white);
                 gem.preserveAspect = true;
-                Anchor(gem.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(160f, 8f), new Vector2(34f, 34f));
-                TextMeshProUGUI gemText = UiFactory.CreateUIText("CrystalText", body, "", 28f, new Color(0.88f, 0.78f, 1f));
+                Anchor(gem.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(236f, 8f), new Vector2(38f, 38f));
+                TextMeshProUGUI gemText = UiFactory.CreateUIText("CrystalText", d, "", 32f, new Color(0.88f, 0.78f, 1f));
                 gemText.alignment = TextAlignmentOptions.MidlineLeft;
-                Anchor(gemText.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(198f, 6f), new Vector2(100f, 38f));
+                Anchor(gemText.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(278f, 6f), new Vector2(100f, 42f));
 
                 QuestCard card = holder.AddComponent<QuestCard>();
+                BuilderUtil.SetField(card, "icon", kind);
+                BuilderUtil.SetField(card, "details", details);
+                BuilderUtil.SetField(card, "layout", layout);
+                BuilderUtil.SetField(card, "sellIcon", sell);
+                BuilderUtil.SetField(card, "repairIcon", plank);
+                BuilderUtil.SetField(card, "chestIcon", chest);
+                BuilderUtil.SetField(card, "exploreIcon", ArtGenerator.LoadSprite(ArtGenerator.ArrowPath));
+                BuilderUtil.SetField(card, "figureIcon", figure);
                 BuilderUtil.SetField(card, "body", body);
                 BuilderUtil.SetField(card, "background", bg);
                 BuilderUtil.SetField(card, "title", title);
@@ -569,6 +604,67 @@ namespace KayipAda.EditorTools
             BuilderUtil.SetField(panel, "buyButton", buy);
             BuilderUtil.SetField(panel, "priceText", priceText);
             BuilderUtil.SetField(panel, "priceIcon", coin.gameObject);
+            return panel;
+        }
+    
+        // ---------------------------------------------------------------- Ambar paneli
+
+        // Alttan kayan, yürümeyi engellemeyen panel: "AMBAR 37/100", 5 × 2 kaynak kutusu (ikon + miktar), "Al" butonu.
+        public static StoragePanel CreateStoragePanel(GameConfig config, int slotCount)
+        {
+            GameObject root = new GameObject("StoragePanel", typeof(RectTransform));
+            root.transform.SetParent(Safe, false);
+            UiFactory.Stretch((RectTransform)root.transform);
+            Image sheet = UiFactory.CreateImage("Sheet", root.transform, ArtGenerator.LoadSprite(ArtGenerator.RoundedRectPath), PanelColor);
+            sheet.type = Image.Type.Sliced;
+            sheet.raycastTarget = true;
+            Anchor(sheet.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 24f), new Vector2(-48f, 560f));
+            TextMeshProUGUI title = UiFactory.CreateUIText("Title", sheet.transform, "AMBAR  0/100", 56f, UiFactory.Gold);
+            Anchor(title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -20f), new Vector2(0f, 76f));
+            const int columns = 5;
+            const float cell = 176f, gap = 16f;
+            float startX = -(columns * cell + (columns - 1) * gap) * 0.5f + cell * 0.5f;
+            SerializedObject so;
+            List<StoragePanel.Slot> slots = new List<StoragePanel.Slot>();
+            for (int i = 0; i < slotCount; i++)
+            {
+                int cx = i % columns, cy = i / columns;
+                Image frame = UiFactory.CreateImage("Slot " + i, sheet.transform, ArtGenerator.LoadSprite(ArtGenerator.RoundedRectPath), new Color(1f, 1f, 1f, 0.12f));
+                frame.type = Image.Type.Sliced;
+                frame.raycastTarget = true;
+                Anchor(frame.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), new Vector2(startX + cx * (cell + gap), -190f - cy * (cell * 0.86f + gap)), new Vector2(cell, cell * 0.86f));
+                Button button = frame.gameObject.AddComponent<Button>();
+                button.targetGraphic = frame;
+                button.transition = Selectable.Transition.None;
+                Image icon = UiFactory.CreateImage("Icon", frame.transform, null, Color.white);
+                icon.preserveAspect = true;
+                Anchor(icon.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 14f), new Vector2(90f, 90f));
+                TextMeshProUGUI count = UiFactory.CreateUIText("Count", frame.transform, "0", 40f, Color.white);
+                Anchor(count.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 4f), new Vector2(0f, 48f));
+                slots.Add(new StoragePanel.Slot { Button = button, Icon = icon, Count = count, Frame = frame });
+            }
+            Button take = CreateButton("Take", sheet.transform, "Al", Vector2.zero, new Vector2(560f, 100f), Green, 48f);
+            Anchor((RectTransform)take.transform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 26f), new Vector2(620f, 100f));
+            TextMeshProUGUI takeText = take.GetComponentInChildren<TextMeshProUGUI>();
+
+            StoragePanel panel = root.AddComponent<StoragePanel>();
+            BuilderUtil.SetField(panel, "config", config);
+            BuilderUtil.SetField(panel, "sheet", sheet.rectTransform);
+            BuilderUtil.SetField(panel, "title", title);
+            BuilderUtil.SetField(panel, "takeButton", take);
+            BuilderUtil.SetField(panel, "takeText", takeText);
+            so = new SerializedObject(panel);
+            SerializedProperty list = so.FindProperty("slots");
+            list.arraySize = slots.Count;
+            for (int i = 0; i < slots.Count; i++)
+            {
+                SerializedProperty e = list.GetArrayElementAtIndex(i);
+                e.FindPropertyRelative("Button").objectReferenceValue = slots[i].Button;
+                e.FindPropertyRelative("Icon").objectReferenceValue = slots[i].Icon;
+                e.FindPropertyRelative("Count").objectReferenceValue = slots[i].Count;
+                e.FindPropertyRelative("Frame").objectReferenceValue = slots[i].Frame;
+            }
+            so.ApplyModifiedPropertiesWithoutUndo();
             return panel;
         }
     }
