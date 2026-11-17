@@ -17,6 +17,9 @@ namespace KayipAda
         [SerializeField] private Camera cam;
         [Tooltip("Tayfa Barakası: açılmış ama hiç tutulmamış işçi türü varsa (ve en ucuz hedefse) ok buraya bakar.")]
         [SerializeField] private Transform crewStation;
+        [Tooltip("Gemi bu malzemeyi isteyip köprü bitmemişse ok köprüyü gösterir (çivi → Batık Koyu köprüsü).")]
+        [SerializeField] private BridgeBuilder keyBridge;
+        [SerializeField] private ResourceType keyResource;
 
         private UnlockPad[] pads = new UnlockPad[0];
         private UnlockPad current;
@@ -51,7 +54,7 @@ namespace KayipAda
             int bestPrice = int.MaxValue;
             foreach (UnlockPad pad in pads)
             {
-                if (pad == null || !pad.IsAvailable) continue;
+                if (pad == null || !pad.IsAvailable || pad.GuideIgnore) continue;
                 int price = AreaManager.Instance.GetRemaining(pad.Area);
                 if (price < bestPrice)
                 {
@@ -82,6 +85,10 @@ namespace KayipAda
             }
             if (crewFirst) return crewStation;
             if (best != null) return best.transform;
+
+            ShipBuilder needs = ShipBuilder.Instance;
+            if (keyBridge != null && keyResource != null && !keyBridge.IsCompleted && keyBridge.IsAvailable && needs != null && needs.Needs(keyResource))
+                return keyBridge.transform;
 
             ShipBuilder ship = ShipBuilder.Instance;
             if (ship != null && !ship.IsComplete && ship.Delivery != null) return ship.Delivery.transform;

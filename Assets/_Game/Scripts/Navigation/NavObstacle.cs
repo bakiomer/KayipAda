@@ -107,6 +107,12 @@ namespace KayipAda
             return point;
         }
 
+        // Engel dışı bir değişiklik (köprü açıldı): NavMesh yeniden kurulsun.
+        public static void Touch()
+        {
+            Version++;
+        }
+
         private void OnEnable()
         {
             active.Add(this);

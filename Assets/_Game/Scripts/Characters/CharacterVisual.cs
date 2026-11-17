@@ -59,10 +59,21 @@ namespace KayipAda
             lastPosition = transform.position;
         }
 
-        private Transform FindBone(string boneName)
+        // Kostüm değişti: yeni modelin animatörü ve taşıma pozu kemikleri.
+        public void SetAnimator(Animator newAnimator)
+        {
+            animator = newAnimator;
+            Transform root = newAnimator != null ? newAnimator.transform : model;
+            upperL = FindBone(upperArmLeft, root);
+            lowerL = FindBone(lowerArmLeft, root);
+            upperR = FindBone(upperArmRight, root);
+            lowerR = FindBone(lowerArmRight, root);
+        }
+
+        private Transform FindBone(string boneName, Transform root = null)
         {
             if (string.IsNullOrEmpty(boneName)) return null;
-            foreach (Transform t in model.GetComponentsInChildren<Transform>(true))
+            foreach (Transform t in (root != null ? root : model).GetComponentsInChildren<Transform>(true))
             {
                 if (t.name == boneName) return t;
             }

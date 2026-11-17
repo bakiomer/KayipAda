@@ -14,8 +14,8 @@ Bu projede şu an **CC-BY içerik yok**; aşağıdaki seslerin hepsi CC0 (atıf 
 | aday | final_zafer_muzik | `final_zafer_muzik/springspring_fanfare.ogg` | Spring Spring | CC0 1.0 | https://opengameart.org/content/just-a-random-fanfare |  |
 | evet | asama_jingle | `asama_jingle/fupi_WinSteelDrums.ogg` | Fupi | CC0 1.0 | https://opengameart.org/content/win-jingle |  |
 | evet | asama_jingle | `asama_jingle/fupi_WinBrass.ogg` | Fupi | CC0 1.0 | https://opengameart.org/content/win-jingle |  |
-| aday | asama_jingle | `asama_jingle/fupi_WinGrandPiano.ogg` | Fupi | CC0 1.0 | https://opengameart.org/content/win-jingle |  |
-| aday | asama_jingle | `asama_jingle/mintodog_cozy_clear.ogg` | MintoDog | CC0 1.0 | https://opengameart.org/content/cozy-puzzle-jingle-result |  |
+| evet | asama_jingle | `asama_jingle/fupi_WinGrandPiano.ogg` | Fupi | CC0 1.0 | https://opengameart.org/content/win-jingle | yan görev tamamlandı |
+| evet | asama_jingle | `asama_jingle/mintodog_cozy_clear.ogg` | MintoDog | CC0 1.0 | https://opengameart.org/content/cozy-puzzle-jingle-result | bulut dağıldı / bölge keşfedildi |
 | evet | alan_acma | `alan_acma/fupi_whoosh.ogg` | Fupi | CC0 1.0 | https://opengameart.org/content/erase-escape |  |
 | evet | alan_acma | `alan_acma/pwl_bell_ding3.ogg` | PWL | CC0 1.0 | https://opengameart.org/content/bell-dingschimes |  |
 | evet | alan_acma | `alan_acma/pwl_bell_ding2.ogg` | PWL | CC0 1.0 | https://opengameart.org/content/bell-dingschimes |  |
@@ -51,9 +51,9 @@ Bu projede şu an **CC-BY içerik yok**; aşağıdaki seslerin hepsi CC0 (atıf 
 
 | Klasör | Kaynak | Lisans | Kullanım |
 |---|---|---|---|
-| Impact | Kenney "Impact Sounds" — https://kenney.nl/assets/impact-sounds | CC0 | adım, bırakma, ürün, gemi parçası |
+| Impact | Kenney "Impact Sounds" — https://kenney.nl/assets/impact-sounds | CC0 | adım, bırakma, ürün, gemi parçası, dokuma tezgahı "tık-tak" (impactWood_light), Demirci örsü ve hurda (impactMetal_heavy) |
 | Interface | Kenney "Interface Sounds" — https://kenney.nl/assets/interface-sounds | CC0 | buton, para akışı, toplama |
-| RPG | Kenney "RPG Audio" — https://kenney.nl/assets/rpg-audio | CC0 | para (handleCoins), balta (chop), gıcırtı (creak: kapı, kızak) |
+| RPG | Kenney "RPG Audio" — https://kenney.nl/assets/rpg-audio | CC0 | para (handleCoins), balta (chop), gıcırtı (creak: kapı, kızak, halat çarkı), lif sürtünmesi (cloth), sandık kapağı (doorOpen) |
 | Adaylar/para | Kenney "Casino Audio" — https://kenney.nl/assets/casino-audio | CC0 | para yığını |
 | Claude_Uretim | Proje için üretilmiş yedek sesler | proje malı | bir ses bulunamazsa yedek |
 | Audio/Generated | Kodla üretilmiş pop ve vuuş | proje malı | artık kullanılmıyor (yerine CC0 kayıtlar) |
@@ -64,7 +64,9 @@ Kaldırılan: Kenney "Music Jingles" (8-bit/chiptune tınısı nedeniyle tamamen
 
 - Quaternius "Pirate Kit" — CC0 — https://quaternius.com
 - Kenney "Pirate Kit", "Nature Kit", "Survival Kit" — CC0 — https://kenney.nl
-- Kodla üretilenler (yengeç, martı, kelebek, meyve, ikonlar, gemi parçaları, iskele) — proje malı
+- Kenney "Nature Kit" heykel/sütun modelleri (Kayıp Tapınak: statue_column, statue_obelisk, statue_ring, statue_head) — CC0
+- Kodla üretilenler (yengeç, martı, kelebek, meyve, ikonlar, gemi parçaları, inşa iskelesi, halat çarkı, dokuma tezgahı, Demirci ocağı, Pazar tezgahı, köprüler, kuyu, bulutlar, hurda/çivi, koleksiyon eşyalarından pusula ve dürbün) — proje malı
+- İşçi kartı resimleri (`Art/Generated/Portrait_*.png`): Quaternius karakterlerinden kodla çekildi — CC0 kaynaktan
 
 ## Font
 

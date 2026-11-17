@@ -17,6 +17,8 @@ namespace KayipAda
         public static IslandNavMesh Instance { get; private set; }
 
         [SerializeField] private MeshFilter ground;
+        [Tooltip("Adacıkların zeminleri (köprüyle bağlanınca yürünebilir).")]
+        [SerializeField] private MeshFilter[] extraGrounds = new MeshFilter[0];
         [Tooltip("İşçinin yarıçapı (engellerden bu kadar uzak durur).")]
         [SerializeField] private float agentRadius = 0.4f;
         [Tooltip("Yürünebilen en dik eğim (derece). Ada kenarındaki suya inen etek bundan diktir.")]
@@ -74,6 +76,7 @@ namespace KayipAda
             settings.overrideVoxelSize = true;
             settings.voxelSize = voxelSize;
             Bounds bounds = ground != null ? ground.GetComponent<Renderer>().bounds : new Bounds(Vector3.zero, Vector3.one * 100f);
+            foreach (MeshFilter extra in extraGrounds) if (extra != null) bounds.Encapsulate(extra.GetComponent<Renderer>().bounds);
             bounds.Expand(new Vector3(2f, 6f, 2f));
             int version = NavObstacle.Version;
             if (async)
@@ -98,6 +101,33 @@ namespace KayipAda
                     shape = NavMeshBuildSourceShape.Mesh,
                     sourceObject = ground.sharedMesh,
                     transform = ground.transform.localToWorldMatrix,
+                    area = 0
+                });
+            }
+            foreach (MeshFilter extra in extraGrounds)
+            {
+                if (extra == null || extra.sharedMesh == null) continue;
+                sources.Add(new NavMeshBuildSource
+                {
+                    shape = NavMeshBuildSourceShape.Mesh,
+                    sourceObject = extra.sharedMesh,
+                    transform = extra.transform.localToWorldMatrix,
+                    area = 0
+                });
+            }
+            // Tamamlanmış köprüler: üstü yürünebilir şerit (iki kıyıya biraz taşar).
+            foreach (BridgeBuilder bridge in BridgeBuilder.Open)
+            {
+                if (bridge == null) continue;
+                Vector3 a = bridge.EndA, b = bridge.EndB;
+                Vector3 mid = (a + b) * 0.5f;
+                Vector3 d = b - a;
+                d.y = 0f;
+                sources.Add(new NavMeshBuildSource
+                {
+                    shape = NavMeshBuildSourceShape.Box,
+                    transform = Matrix4x4.TRS(new Vector3(mid.x, -0.1f, mid.z), Quaternion.LookRotation(d.normalized), Vector3.one),
+                    size = new Vector3(bridge.HalfWidth * 2f - 0.3f, 0.2f, d.magnitude + 1f),
                     area = 0
                 });
             }

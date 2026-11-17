@@ -867,7 +867,7 @@ namespace KayipAda.EditorTools
             return model;
         }
 
-        private static void Box(Transform parent, string name, Vector3 pos, Vector3 size, Quaternion rot, Material material)
+        public static void Box(Transform parent, string name, Vector3 pos, Vector3 size, Quaternion rot, Material material)
         {
             GameObject go = GameObject.CreatePrimitive(PrimitiveType.Cube);
             Object.DestroyImmediate(go.GetComponent<Collider>());
@@ -888,6 +888,80 @@ namespace KayipAda.EditorTools
         }
 
         // Taşınan kaynağın rengi tek renge boyanır (sırttaki yığında kolay ayırt edilsin: gri taş, turuncu tuğla, krem bez).
+        // Hurda metal: üst üste iki paslı levha ve bir cıvata (kodla).
+        public static ResourceItem BuildScrapItem()
+        {
+            GameObject root = new GameObject("Scrap");
+            Transform model = new GameObject("Model").transform;
+            model.SetParent(root.transform, false);
+            Material rust = ArtGenerator.GetLit("M_Rust", null, new Color(0.62f, 0.4f, 0.28f));
+            Material iron = ArtGenerator.GetLit("M_MachineIron", null, new Color(0.3f, 0.3f, 0.32f));
+            Material steel = ArtGenerator.GetLit("M_Steel", null, new Color(0.6f, 0.62f, 0.66f));
+            Box(model, "PlateA", new Vector3(0f, 0.05f, 0f), new Vector3(0.5f, 0.08f, 0.32f), Quaternion.Euler(0f, 20f, 6f), rust);
+            Box(model, "PlateB", new Vector3(0.04f, 0.14f, 0.02f), new Vector3(0.42f, 0.06f, 0.26f), Quaternion.Euler(0f, -25f, -8f), steel);
+            Box(model, "Bolt", new Vector3(-0.12f, 0.2f, 0.05f), new Vector3(0.08f, 0.1f, 0.08f), Quaternion.identity, iron);
+            BuilderUtil.SetShadows(root, false);
+            root.AddComponent<ResourceItem>();
+            return Save(root, Folder + "/Items/Scrap.prefab").GetComponent<ResourceItem>();
+        }
+
+        // Çivi demeti: bağlanmış birkaç çivi (kodla).
+        public static ResourceItem BuildNailItem()
+        {
+            GameObject root = new GameObject("Nail");
+            Transform model = new GameObject("Model").transform;
+            model.SetParent(root.transform, false);
+            Material steel = ArtGenerator.GetLit("M_Steel", null, new Color(0.6f, 0.62f, 0.66f));
+            Material band = ArtGenerator.GetLit("M_Leather", null, new Color(0.45f, 0.27f, 0.15f));
+            for (int i = 0; i < 5; i++)
+            {
+                float x = (i - 2) * 0.07f;
+                Box(model, "Shaft", new Vector3(x, 0.05f, 0f), new Vector3(0.04f, 0.04f, 0.42f), Quaternion.Euler(0f, (i - 2) * 3f, 0f), steel);
+                Box(model, "Head", new Vector3(x, 0.05f, 0.22f), new Vector3(0.09f, 0.09f, 0.03f), Quaternion.identity, steel);
+            }
+            Box(model, "Band", new Vector3(0f, 0.05f, -0.02f), new Vector3(0.4f, 0.08f, 0.08f), Quaternion.identity, band);
+            BuilderUtil.SetShadows(root, false);
+            root.AddComponent<ResourceItem>();
+            return Save(root, Folder + "/Items/Nail.prefab").GetComponent<ResourceItem>();
+        }
+
+        // Sandık/koleksiyon eşyası üstünde süzülen birkaç altın ışıltı (döngüde, az parçacık).
+        public static GameObject BuildGlintPrefab()
+        {
+            ParticleSystem ps = NewParticles("Glint", "M_Particle", ArtGenerator.SoftCirclePath, out GameObject root);
+            ParticleSystem.MainModule main = ps.main;
+            main.loop = true;
+            main.playOnAwake = true;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.8f, 1.4f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(0.3f, 0.7f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.08f, 0.16f);
+            main.startColor = new ParticleSystem.MinMaxGradient(new Color(1f, 0.9f, 0.45f), new Color(1f, 1f, 0.8f));
+            main.maxParticles = 10;
+            ParticleSystem.EmissionModule emission = ps.emission;
+            emission.rateOverTime = 5f;
+            ParticleSystem.ShapeModule shape = ps.shape;
+            shape.shapeType = ParticleSystemShapeType.Circle;
+            shape.radius = 0.5f;
+            shape.rotation = new Vector3(-90f, 0f, 0f);
+            FadeOut(ps);
+            return Save(root, Folder + "/FX/Glint.prefab");
+        }
+
+        // Kostüm modeli: karakter modeli + kendi animasyon denetleyicisi (oyuncunun gövdesine takılır).
+        public static GameObject BuildCostumeModel(ModelSpec spec, RuntimeAnimatorController controller, string key)
+        {
+            BuilderUtil.EnsureFolder(Folder + "/Costumes");
+            GameObject root = new GameObject("Costume_" + key);
+            ModelSpec sized = new ModelSpec { Key = spec.Key, Pack = spec.Pack, File = spec.File, Size = ModelCatalog.Player.Size, Axis = SizeAxis.Height, CenterXZ = false, CastShadows = true };
+            GameObject model = CreateModel(sized, root.transform);
+            Animator animator = model.GetComponent<Animator>();
+            if (animator == null) animator = model.AddComponent<Animator>();
+            animator.runtimeAnimatorController = controller;
+            animator.applyRootMotion = false;
+            animator.cullingMode = AnimatorCullingMode.CullUpdateTransforms;
+            return Save(root, Folder + "/Costumes/Costume_" + key + ".prefab");
+        }
+
         public static ResourceItem BuildTintedItem(ModelSpec spec, Color tint)
         {
             GameObject root = new GameObject(spec.Key);

@@ -14,6 +14,9 @@ namespace KayipAda
 
         private float timer;
 
+        // Herhangi bir parça satılınca (yan görevler): tür, oyuncu mu sattı.
+        public static event System.Action<ResourceType, bool> Sold;
+
         private void Update()
         {
             if (timer > 0f)
@@ -39,6 +42,7 @@ namespace KayipAda
         private void Sell(ResourceItem item, bool byPlayer)
         {
             int price = item.Type.SellPrice;
+            Sold?.Invoke(item.Type, byPlayer);
             Vector3 target = dropPoint != null ? dropPoint.position : transform.position;
             item.FlyToAndDestroy(target, config.ItemFlyHeight, config.ItemFlyDuration, () =>
             {

@@ -4,6 +4,8 @@
 //   kalınlaşır); her turda ahşap gıcırtısı, arada lif sürtünme sesi, lif tozu.
 // - Dokuma tezgahı (Loom): mekik sağa-sola gider, tarak (çerçeve) inip kalkar, ön silindir döner ve kumaş uzar;
 //   mekik her uca varınca ritmik "tık-tak" sesi.
+// - Örs (Anvil, Demirci): çekiç kalkıp örse iner; her vuruşta kıvılcım ve çınlama, ocak kor gibi parlar.
+// Bina seviyesi arttıkça (ProcessingBuilding.SpeedMultiplier) makine de hızlanır.
 // Sesler oyuncuya yakınken duyulur (GameConfig > Bina tarifleri ve makineler).
 
 using UnityEngine;
@@ -12,7 +14,7 @@ namespace KayipAda
 {
     public class Machine : MonoBehaviour
     {
-        public enum Kind { RopeWheel, Loom }
+        public enum Kind { RopeWheel, Loom, Anvil }
 
         [SerializeField] private GameConfig config;
         [SerializeField] private ProcessingBuilding building;
@@ -32,6 +34,11 @@ namespace KayipAda
         [SerializeField] private Transform roller;
         [SerializeField] private Transform cloth;
 
+        [Header("Örs")]
+        [SerializeField] private Transform hammer;
+        [SerializeField] private ParticleSystem sparks;
+        [SerializeField] private Transform ember;
+
         [Header("Ortak")]
         [Tooltip("İşlerken çıkan lif tozu (boş olabilir).")]
         [SerializeField] private ParticleSystem dust;
@@ -41,7 +48,8 @@ namespace KayipAda
         private float speed;     // 0..1: yumuşak hızlanma/durma
         private float phase;     // tur sayacı
         private Quaternion wheelBase, crankBase, spoolBase, rollerBase;
-        private Vector3 shuttleBase, beaterBase, strandBase, spoolScale, clothScale;
+        private Vector3 shuttleBase, beaterBase, strandBase, spoolScale, clothScale, emberScale;
+        private Quaternion hammerBase;
         private Transform listener;
         private bool dustOn;
 
@@ -57,6 +65,8 @@ namespace KayipAda
             if (beater != null) beaterBase = beater.localPosition;
             if (roller != null) rollerBase = roller.localRotation;
             if (cloth != null) clothScale = cloth.localScale;
+            if (hammer != null) hammerBase = hammer.localRotation;
+            if (ember != null) emberScale = ember.localScale;
         }
 
         private void Start()
@@ -74,13 +84,14 @@ namespace KayipAda
             SetDust(working);
             if (speed <= 0f) return;
 
-            float rate = config.MachineSpeed * UpgradeManager.Multiplier(UpgradeStat.BuildingSpeed) / Mathf.Max(0.1f, cycleTime);
+            float rate = config.MachineSpeed * building.SpeedMultiplier / Mathf.Max(0.1f, cycleTime);
             float before = phase;
             phase += Time.deltaTime * speed * rate;
             float progress = building.Progress;
 
             if (kind == Kind.RopeWheel) AnimateRope(before, progress);
-            else AnimateLoom(before, progress);
+            else if (kind == Kind.Loom) AnimateLoom(before, progress);
+            else AnimateAnvil(before);
         }
 
         private void AnimateRope(float before, float progress)
@@ -111,6 +122,18 @@ namespace KayipAda
 
             // Mekik uca vardı (sinüs tepe/dip): yarım tur sınırları 0.5, 1.5, 2.5...
             if (Mathf.FloorToInt(phase + 0.5f) != Mathf.FloorToInt(before + 0.5f)) PlayNear(SoundId.LoomTick, 0.7f);
+        }
+
+        // Çekiç: turun çoğunda yavaşça kalkar, sonunda hızla iner (vuruş = tur sonu).
+        private void AnimateAnvil(float before)
+        {
+            float t = phase - Mathf.Floor(phase);
+            float lift = t < 0.8f ? Mathf.SmoothStep(0f, 1f, t / 0.8f) : 1f - (t - 0.8f) / 0.2f;
+            if (hammer != null) hammer.localRotation = hammerBase * Quaternion.Euler(-lift * 70f, 0f, 0f);
+            if (ember != null) ember.localScale = emberScale * (1f + Mathf.Sin(Time.time * 7f) * 0.06f * speed);
+            if (Mathf.FloorToInt(phase) == Mathf.FloorToInt(before)) return;
+            if (sparks != null) sparks.Emit(14);
+            PlayNear(SoundId.Anvil, 0.6f);
         }
 
         private void SetDust(bool on)

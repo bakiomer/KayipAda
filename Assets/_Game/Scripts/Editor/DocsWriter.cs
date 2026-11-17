@@ -39,6 +39,13 @@ namespace KayipAda.EditorTools
                 ModelCatalog.Campfire, ModelCatalog.Fence, ModelCatalog.Sign, ModelCatalog.ShipFlag, ModelCatalog.Dock, ModelCatalog.DockPole, ModelCatalog.ShipWreck,
                 ModelCatalog.UpgradeBench, ModelCatalog.Ship
             });
+            Section(sb, "Keşif (adacıklar, sandık, koleksiyon, tapınak, Demirci)", new[]
+            {
+                ModelCatalog.ChestClosed, ModelCatalog.ChestGold, ModelCatalog.BottleLetter, ModelCatalog.GoldenSkull, ModelCatalog.MapPiece,
+                ModelCatalog.StatueHead, ModelCatalog.TempleColumn, ModelCatalog.TempleColumnBroken, ModelCatalog.TempleRing, ModelCatalog.TempleObelisk,
+                ModelCatalog.TempleBlock, ModelCatalog.ScrapWreck, ModelCatalog.IsletWreck, ModelCatalog.Forge, ModelCatalog.Anvil, ModelCatalog.Hammer,
+                ModelCatalog.BrokenPier, ModelCatalog.Smith
+            });
             Section(sb, "Süsler", ModelCatalog.Decor);
 
             sb.AppendLine("## Bulunamayan / içe aktarılamayan modeller");

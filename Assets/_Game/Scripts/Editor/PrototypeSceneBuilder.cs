@@ -29,7 +29,9 @@ namespace KayipAda.EditorTools
         private const string ConfigPath = Root + "/Data/GameConfig.asset";
         private const string ResourceTypesFolder = Root + "/Data/ResourceTypes";
         // Test Menüsü'nde yığını doldurma seçenekleri (sırayla).
-        public static readonly string[] DevResourceOrder = { "Plank", "Brick", "Rope", "Cloth", "Fruit", "Wood", "Stone", "Fiber" };
+        public static readonly string[] DevResourceOrder = { "Plank", "Brick", "Rope", "Cloth", "Nail", "Fruit", "Wood", "Stone", "Fiber", "Scrap" };
+        private const string QuestsFolder = Root + "/Data/Quests";
+        private const string CostumesFolder = Root + "/Data/Costumes";
         private const string NodeTypesFolder = Root + "/Data/NodeTypes";
         private const string AreasFolder = Root + "/Data/Areas";
         private const string BuildingTypesFolder = Root + "/Data/Buildings";
@@ -133,11 +135,14 @@ namespace KayipAda.EditorTools
             CreateResourceTypeIfMissing("Fiber", "fiber", "Lif",   new Color(0.86f, 0.76f, 0.46f), 3);
             CreateResourceTypeIfMissing("Rope",  "rope",  "Halat", new Color(0.74f, 0.55f, 0.32f), 14);       // 3 lif (9) → 1 halat (14)
             CreateResourceTypeIfMissing("Cloth", "cloth", "Yelken Bezi", new Color(0.96f, 0.94f, 0.86f), 20); // 4 lif (12) → 1 bez (20)
+            CreateResourceTypeIfMissing("Scrap", "scrap", "Hurda Metal", new Color(0.62f, 0.45f, 0.32f), 6);
+            CreateResourceTypeIfMissing("Nail",  "nail",  "Çivi",  new Color(0.66f, 0.68f, 0.72f), 18);       // 2 hurda (12) → 1 çivi (18)
             //                      dosya        kaynak   stok  toplama aralığı  yeniden dolma (sn)
             CreateNodeTypeIfMissing("Tree",      "Wood",  8,    0.35f,           10f);
             CreateNodeTypeIfMissing("Rock",      "Stone", 6,    0.6f,            15f);
             CreateNodeTypeIfMissing("FruitBush", "Fruit", 5,    0.4f,            12f);
             CreateNodeTypeIfMissing("FiberPalm", "Fiber", 8,    0.35f,           10f);
+            CreateNodeTypeIfMissing("Scrap",     "Scrap", 6,    0.5f,            14f);
             //                  dosya             kimlik             ad               fiyat
             CreateAreaIfMissing("Rocky",          "rocky",           "Kayalık",       150);
             CreateAreaIfMissing("Orchard",        "orchard",         "Meyve Bahçesi", 600);
@@ -154,20 +159,38 @@ namespace KayipAda.EditorTools
             CreateAreaIfMissing("ShipStage2",     "ship_stage_2",    "Gövde bitti",   1);
             CreateAreaIfMissing("ShipStage3",     "ship_stage_3",    "Direk bitti",   1);
             CreateAreaIfMissing("ShipStage4",     "ship_stage_4",    "Yelken bitti",  1);
+            // Keşif: adacıklar (köprü bitince açılır), Demirci, bina seviyeleri (küçük kareler)
+            CreateAreaIfMissing("Islet1",         "islet_wreck",     "Batık Koyu",    1);
+            CreateAreaIfMissing("Islet2",         "islet_temple",    "Kayıp Tapınak", 1);
+            CreateAreaIfMissing("Forge",          "forge",           "Demirci",       600);
+            //                  dosya              kimlik                  ad                        fiyat
+            CreateAreaIfMissing("SawmillLv2",       "sawmill_lv2",          "Bıçkıhane Sv.2",          350);
+            CreateAreaIfMissing("SawmillLv3",       "sawmill_lv3",          "Bıçkıhane Sv.3",          800);
+            CreateAreaIfMissing("StoneWorkshopLv2", "stone_workshop_lv2",   "Taş Atölyesi Sv.2",       600);
+            CreateAreaIfMissing("StoneWorkshopLv3", "stone_workshop_lv3",   "Taş Atölyesi Sv.3",       1300);
+            CreateAreaIfMissing("RopeWorkshopLv2",  "rope_workshop_lv2",    "Halat Atölyesi Sv.2",     700);
+            CreateAreaIfMissing("RopeWorkshopLv3",  "rope_workshop_lv3",    "Halat Atölyesi Sv.3",     1500);
+            CreateAreaIfMissing("LoomLv2",          "loom_lv2",             "Dokuma Tezgahı Sv.2",     800);
+            CreateAreaIfMissing("LoomLv3",          "loom_lv3",             "Dokuma Tezgahı Sv.3",     1700);
+            CreateAreaIfMissing("ForgeLv2",         "forge_lv2",            "Demirci Sv.2",            700);
+            CreateAreaIfMissing("ForgeLv3",         "forge_lv3",            "Demirci Sv.3",            1500);
             //                          dosya            ad              girdi    adet  çıktı    adet  süre  giriş kap. çıkış kap.
             CreateBuildingTypeIfMissing("Sawmill",       "Bıçkıhane",    "Wood",  2,    "Plank", 1,    2f,   10,        10);
             CreateBuildingTypeIfMissing("StoneWorkshop", "Taş Atölyesi", "Stone", 2,    "Brick", 1,    3f,   10,        10);
             CreateBuildingTypeIfMissing("RopeWorkshop",  "Halat Atölyesi", "Fiber", 3,  "Rope",  1,    3f,   12,        10);
             CreateBuildingTypeIfMissing("Loom",          "Dokuma Tezgahı", "Fiber", 4,  "Cloth", 1,    4f,   12,        10);
+            CreateBuildingTypeIfMissing("Forge",         "Demirci",      "Scrap", 2,    "Nail",  1,    3f,   12,        10);
             //                        dosya            ad          hız   kapasite
             CreateWorkerTypeIfMissing("Lumberjack",    "Oduncu",   3.2f, 6);
             CreateWorkerTypeIfMissing("Carrier",       "Taşıyıcı", 3.6f, 8);
             CreateWorkerTypeIfMissing("FiberGatherer", "Lifçi",    3.2f, 6);
+            CreateWorkerTypeIfMissing("Smith",         "Demirci Çırağı", 3.2f, 6);
             // Tayfa Barakası (eski dosyalarda yoksa bir kez yazılır). İlk fiyatlar eski açma kareleriyle aynı (ekonomi korunur).
             //                 dosya            kimlik         tutma fiyatları (sırayla)      gereken bina      kilit yazısı               eski açma karesi
             EnsureCrewSetup("Lumberjack",    "lumberjack",   new[] { 400, 950, 1700 },     "Sawmill",        "Bıçkıhane gerekli",       "HireLumberjack");
             EnsureCrewSetup("Carrier",       "carrier",      new[] { 600, 1300, 2200 },    "Sawmill",        "Bıçkıhane gerekli",       "HireCarrier");
             EnsureCrewSetup("FiberGatherer", "fiber",        new[] { 500, 1100, 1900 },    "RopeWorkshop",   "Halat Atölyesi gerekli",  "HireFiber");
+            EnsureCrewSetup("Smith",         "smith",        new[] { 700, 1400 },          "Forge",          "Demirci gerekli",         null);
             //                     dosya             kimlik             ad                    etkilediği                      fiyatlar (5 seviye)                  toplam etki (5 seviye)
             CreateUpgradeIfMissing("PlayerCapacity", "player_capacity", "Taşıma Kapasitesi", UpgradeStat.PlayerCapacity, new[] { 120, 280, 520, 840, 1300 },  new[] { 2f, 4f, 6f, 9f, 12f });
             CreateUpgradeIfMissing("PlayerSpeed",    "player_speed",    "Koşu Hızı",         UpgradeStat.PlayerSpeed,    new[] { 140, 320, 600, 960, 1440 },  new[] { 0.08f, 0.16f, 0.24f, 0.32f, 0.4f });
@@ -175,6 +198,9 @@ namespace KayipAda.EditorTools
             CreateUpgradeIfMissing("WorkerCapacity", "worker_capacity", "İşçi Kapasitesi",   UpgradeStat.WorkerCapacity, new[] { 180, 400, 720, 1120, 1640 },  new[] { 1f, 2f, 3f, 5f, 7f });
             CreateUpgradeIfMissing("BuildingSpeed",  "building_speed",  "Bina Hızı",         UpgradeStat.BuildingSpeed,  new[] { 220, 480, 840, 1300, 1900 }, new[] { 0.15f, 0.3f, 0.5f, 0.7f, 1f });
             CreateShipConfigIfMissing();
+            EnsureShipNails();
+            CreateQuestsIfMissing();
+            CreateCostumesIfMissing();
             CreateSoundLibraryIfMissing();
             AssetDatabase.SaveAssets();
         }
@@ -192,7 +218,7 @@ namespace KayipAda.EditorTools
         // Kamptaki tezgah: oyuncu geliştirmeleri; Tayfa Barakası: işçi geliştirmeleri.
         private static readonly string[] BenchUpgrades = { "PlayerCapacity", "PlayerSpeed", "BuildingSpeed" };
         private static readonly string[] CrewUpgrades = { "WorkerSpeed", "WorkerCapacity" };
-        private static readonly string[] CrewFiles = { "Lumberjack", "Carrier", "FiberGatherer" };
+        private static readonly string[] CrewFiles = { "Lumberjack", "Carrier", "FiberGatherer", "Smith" };
 
         // Gemi aşamaları: her biri bitince bir sonraki hedefin kilidini açar.
         private static void CreateShipConfigIfMissing()
@@ -278,11 +304,103 @@ namespace KayipAda.EditorTools
             AssetDatabase.CreateAsset(type, path);
         }
 
+        // Gövde ve Direk aşamaları biraz çivi de ister (Batık Koyu'ndaki Demirci). Eski dosyaya bir kez eklenir.
+        private static void EnsureShipNails()
+        {
+            ShipConfig ship = BuilderUtil.Load<ShipConfig>(ShipConfigPath);
+            ResourceType nail = Data<ResourceType>(ResourceTypesFolder, "Nail");
+            if (ship == null || nail == null || ship.Stages.Length < 3) return;
+            bool changed = AddRequirement(ship.Stages[1], nail, 8);
+            changed |= AddRequirement(ship.Stages[2], nail, 10);
+            if (ship.Stages[2].UnlockMessage != null && ship.Stages[2].UnlockMessage.Contains("Lifçi"))
+            {
+                ship.Stages[2].UnlockMessage = "Yeni: Dokuma Tezgahı açılabilir!";
+                changed = true;
+            }
+            if (changed) EditorUtility.SetDirty(ship);
+        }
+
+        private static bool AddRequirement(ShipConfig.Stage stage, ResourceType type, int amount)
+        {
+            foreach (ShipConfig.Requirement r in stage.Requirements) if (r.Resource == type) return false;
+            List<ShipConfig.Requirement> list = new List<ShipConfig.Requirement>(stage.Requirements) { Req(type, amount) };
+            stage.Requirements = list.ToArray();
+            return true;
+        }
+
+        // Yan görevler (sıra önemli: QuestManager baştan dener). Dosya varsa dokunulmaz.
+        private static void CreateQuestsIfMissing()
+        {
+            BuilderUtil.EnsureFolder(QuestsFolder);
+            //    dosya    kimlik          başlık                   tür                  kaynak   hedef     keşif      miktar para kristal gereken
+            Quest("Q01", "wood_20",      "Odun Topla",            QuestKind.Collect,   "Wood",  "",       null,      20,   60,  0,  null);
+            Quest("Q02", "sell_15",      "İlk Satışlar",          QuestKind.Sell,      null,    "",       null,      15,   50,  2,  null);
+            Quest("Q03", "well",         "Kuyuyu Onar",           QuestKind.Repair,    null,    "well",   null,      1,    80,  3,  "Sawmill");
+            Quest("Q04", "plank_10",     "Kalas Ustası",          QuestKind.Produce,   "Plank", "",       null,      10,   90,  0,  "Sawmill");
+            Quest("Q05", "chest_1",      "Gizli Sandık",          QuestKind.FindChest, null,    "",       null,      1,    0,   3,  null);
+            Quest("Q06", "stone_25",     "Taş Ocağı",             QuestKind.Collect,   "Stone", "",       null,      25,   90,  0,  "Rocky");
+            Quest("Q07", "fence",        "Çiti Onar",             QuestKind.Repair,    null,    "fence",  null,      1,    60,  2,  "Sawmill");
+            Quest("Q08", "islet_wreck",  "Batık Koyu'na Geç",     QuestKind.Explore,   null,    "",       "Islet1",  1,    100, 3,  "Sawmill");
+            Quest("Q09", "brick_8",      "Tuğla Fırını",          QuestKind.Produce,   "Brick", "",       null,      8,    120, 0,  "StoneWorkshop");
+            Quest("Q10", "cove",         "Palmiye Koyu'nu Keşfet", QuestKind.Explore,  null,    "",       "Cove",    1,    80,  2,  "ShipStage1");
+            Quest("Q11", "nail_10",      "Çivi Dövücü",           QuestKind.Produce,   "Nail",  "",       null,      10,   150, 2,  "Forge");
+            Quest("Q12", "rope_6",       "Halat Bükücü",          QuestKind.Produce,   "Rope",  "",       null,      6,    140, 0,  "RopeWorkshop");
+            Quest("Q13", "pier",         "İskeleyi Onar",         QuestKind.Repair,    null,    "pier",   null,      1,    0,   4,  "RopeWorkshop");
+            Quest("Q14", "islet_temple", "Kayıp Tapınak",         QuestKind.Explore,   null,    "",       "Islet2",  1,    0,   5,  "RopeWorkshop");
+            Quest("Q15", "figure",       "Altın Figür",           QuestKind.FigurePart, null,   "",       null,      3,    0,   5,  "Islet2");
+        }
+
+        private static void Quest(string file, string id, string title, QuestKind kind, string resource, string target, string explore,
+                                  int amount, int coins, int crystals, string required)
+        {
+            string path = QuestsFolder + "/" + file + ".asset";
+            if (BuilderUtil.Load<QuestDefinition>(path) != null) return;
+            QuestDefinition q = ScriptableObject.CreateInstance<QuestDefinition>();
+            q.EditorSetup(id, title, kind, resource != null ? Data<ResourceType>(ResourceTypesFolder, resource) : null, target,
+                          explore != null ? Data<AreaDefinition>(AreasFolder, explore) : null, amount, coins, crystals,
+                          required != null ? Data<AreaDefinition>(AreasFolder, required) : null);
+            AssetDatabase.CreateAsset(q, path);
+        }
+
+        private static readonly string[] QuestFiles = { "Q01", "Q02", "Q03", "Q04", "Q05", "Q06", "Q07", "Q08", "Q09", "Q10", "Q11", "Q12", "Q13", "Q14", "Q15" };
+
+        // Kostümler: 7 karakter + 4 yelken/bayrak. Nadir olanlar sadece sandıktan (ChestOnly).
+        private static void CreateCostumesIfMissing()
+        {
+            BuilderUtil.EnsureFolder(CostumesFolder);
+            Color w = Color.white;
+            //       dosya             kimlik          ad                  yuva                    fiyat nadirlik                    sandık varsayılan ton
+            Costume("C_Captain",      "kaptan",       "Kaptan",           CostumeSlot.Character, 0,    CostumeRarity.Common,    false, true,  w);
+            Costume("C_Sailor",       "denizci",      "Denizci Henry",    CostumeSlot.Character, 40,   CostumeRarity.Common,    false, false, w);
+            Costume("C_Anne",         "anne",         "Kaptan Anne",      CostumeSlot.Character, 60,   CostumeRarity.Rare,      false, false, w);
+            Costume("C_Mako",         "mako",         "Mako",             CostumeSlot.Character, 60,   CostumeRarity.Rare,      false, false, w);
+            Costume("C_Sharky",       "sharky",       "Köpekbalığı",      CostumeSlot.Character, 120,  CostumeRarity.Epic,      false, false, w);
+            Costume("C_Skeleton",     "iskelet",      "İskelet Korsan",   CostumeSlot.Character, 0,    CostumeRarity.Epic,      true,  false, w);
+            Costume("C_GoldCaptain",  "altin_kaptan", "Altın Kaptan",     CostumeSlot.Character, 0,    CostumeRarity.Legendary, true,  false, new Color(1f, 0.84f, 0.35f));
+            Costume("S_Classic",      "yelken_klasik", "Klasik Yelken",   CostumeSlot.Sail,      0,    CostumeRarity.Common,    false, true,  w);
+            Costume("S_Red",          "yelken_kirmizi", "Kızıl Yelken",   CostumeSlot.Sail,      30,   CostumeRarity.Common,    false, false, new Color(1f, 0.55f, 0.5f));
+            Costume("S_Black",        "yelken_siyah", "Kara Bayrak",      CostumeSlot.Sail,      50,   CostumeRarity.Rare,      false, false, new Color(0.3f, 0.3f, 0.33f));
+            Costume("S_Gold",         "yelken_altin", "Altın Yelken",     CostumeSlot.Sail,      0,    CostumeRarity.Legendary, true,  false, new Color(1f, 0.85f, 0.35f));
+        }
+
+        private static readonly string[] CostumeFiles = { "C_Captain", "C_Sailor", "C_Anne", "C_Mako", "C_Sharky", "C_Skeleton", "C_GoldCaptain",
+                                                          "S_Classic", "S_Red", "S_Black", "S_Gold" };
+
+        private static void Costume(string file, string id, string name, CostumeSlot slot, int price, CostumeRarity rarity, bool chestOnly, bool owned, Color tint)
+        {
+            string path = CostumesFolder + "/" + file + ".asset";
+            if (BuilderUtil.Load<CostumeDefinition>(path) != null) return;
+            CostumeDefinition c = ScriptableObject.CreateInstance<CostumeDefinition>();
+            c.EditorSetup(id, name, slot, price, rarity, chestOnly, owned, tint);
+            AssetDatabase.CreateAsset(c, path);
+        }
+
         private static void EnsureCrewSetup(string file, string id, int[] prices, string requiredArea, string lockedText, string legacyArea)
         {
             WorkerType type = Data<WorkerType>(WorkerTypesFolder, file);
             if (type == null || !string.IsNullOrEmpty(type.Id)) return; // senin ayarların korunur
-            type.EditorSetupCrew(id, prices, Data<AreaDefinition>(AreasFolder, requiredArea), lockedText, Data<AreaDefinition>(AreasFolder, legacyArea));
+            type.EditorSetupCrew(id, prices, Data<AreaDefinition>(AreasFolder, requiredArea), lockedText,
+                                 legacyArea != null ? Data<AreaDefinition>(AreasFolder, legacyArea) : null);
             EditorUtility.SetDirty(type);
         }
 
@@ -332,7 +450,11 @@ namespace KayipAda.EditorTools
                       A + "marti/rangomango_seagull_ambient_5"),
                 Sound(SoundId.MachineCreak, 0.22f, 0.1f, "RPG/creak1", "RPG/creak2", "RPG/creak3"),
                 Sound(SoundId.MachineFriction, 0.16f, 0.12f, "RPG/cloth1", "RPG/cloth2", "RPG/cloth3", "RPG/cloth4"),
-                Sound(SoundId.LoomTick, 0.3f, 0.06f, "Impact/impactWood_light_003", "Impact/impactWood_light_004")
+                Sound(SoundId.LoomTick, 0.3f, 0.06f, "Impact/impactWood_light_003", "Impact/impactWood_light_004"),
+                Sound(SoundId.Discovery, 0.9f, 0f, A + "asama_jingle/mintodog_cozy_clear||" + Y + "acilma"),
+                Sound(SoundId.ChestOpen, 0.8f, normal, "RPG/doorOpen_1", "RPG/doorOpen_2"),
+                Sound(SoundId.Anvil, 0.35f, 0.08f, "Impact/impactMetal_heavy_000", "Impact/impactMetal_heavy_001", "Impact/impactMetal_heavy_002"),
+                Sound(SoundId.QuestDone, 0.85f, 0f, A + "asama_jingle/fupi_WinGrandPiano||" + Y + "asama_tamam")
             };
             AudioClip ambient = LoadSound(A + "ortam_dalga_kus/dalga_kus_dongu");
             AudioClip music = LoadSound(A + "arka_plan_muzik/dizzycrow_pirates_orchestra");
@@ -405,6 +527,8 @@ namespace KayipAda.EditorTools
             public GameObject FruitTree, Sawmill, Workshop;
             public GameObject Sparkle, Splash, Firework, Puff, GoldBurst, ScreenConfetti, UpgradeStation, FiberWorker, RopeWorkshop, Loom;
             public GameObject Barracks, Footprint, Ripple, Leaves;
+            public GameObject ScrapNode, Forge, Smith, Chest;
+            public readonly Dictionary<string, GameObject> Collectibles = new Dictionary<string, GameObject>();
             public GameObject[] FiberPalms;
             public readonly Dictionary<string, GameObject> Decor = new Dictionary<string, GameObject>();
         }
@@ -424,6 +548,8 @@ namespace KayipAda.EditorTools
             LinkItem("Fiber", PrefabFactory.BuildTintedItem(ModelCatalog.Fiber, MapLayout.ItemFiberColor));
             LinkItem("Rope", PrefabFactory.BuildRopeItem());
             LinkItem("Cloth", PrefabFactory.BuildTintedItem(ModelCatalog.Cloth, MapLayout.ItemClothColor));
+            LinkItem("Scrap", PrefabFactory.BuildScrapItem());
+            LinkItem("Nail", PrefabFactory.BuildNailItem());
             p.Coin = PrefabFactory.BuildCoin();
 
             // Efektler
@@ -450,6 +576,19 @@ namespace KayipAda.EditorTools
             SetPortrait("Lumberjack", CampBuilder.RenderPortrait(p.Lumberjack, ModelCatalog.Lumberjack));
             SetPortrait("Carrier", CampBuilder.RenderPortrait(p.Carrier, ModelCatalog.Carrier));
             SetPortrait("FiberGatherer", CampBuilder.RenderPortrait(p.FiberWorker, ModelCatalog.FiberWorker));
+            RuntimeAnimatorController skeleton = CharacterAnimation.GetEnemyController(ModelCatalog.Smith.Path, "Enemy_Skeleton");
+            p.Smith = PrefabFactory.BuildCharacter(ModelCatalog.Smith, skeleton, config, dust, false);
+            SetPortrait("Smith", CampBuilder.RenderPortrait(p.Smith, ModelCatalog.Smith));
+            // Kostüm modelleri (oyuncunun yerine geçer).
+            SetCostumeModel("C_Sailor", PrefabFactory.BuildCostumeModel(ModelCatalog.Lumberjack,
+                CharacterAnimation.GetOverride(baseController, ModelCatalog.Lumberjack.Path, ModelCatalog.Lumberjack.Key), "sailor"));
+            SetCostumeModel("C_Anne", PrefabFactory.BuildCostumeModel(ModelCatalog.Carrier,
+                CharacterAnimation.GetOverride(baseController, ModelCatalog.Carrier.Path, ModelCatalog.Carrier.Key), "anne"));
+            SetCostumeModel("C_Mako", PrefabFactory.BuildCostumeModel(ModelCatalog.FiberWorker,
+                CharacterAnimation.GetOverride(baseController, ModelCatalog.FiberWorker.Path, ModelCatalog.FiberWorker.Key), "mako"));
+            ModelSpec sharky = ModelCatalog.Enemies[2];
+            SetCostumeModel("C_Sharky", PrefabFactory.BuildCostumeModel(sharky, CharacterAnimation.GetOverride(baseController, sharky.Path, sharky.Key), "sharky"));
+            SetCostumeModel("C_Skeleton", PrefabFactory.BuildCostumeModel(ModelCatalog.Smith, skeleton, "skeleton"));
             // Karakter izleri (ayak izi, su halkası, yaprak).
             p.Footprint = PrefabFactory.BuildFootprint();
             p.Ripple = PrefabFactory.BuildRipple();
@@ -514,7 +653,38 @@ namespace KayipAda.EditorTools
 
             p.UpgradeStation = PrefabFactory.BuildUpgradeStation(config);
             p.Barracks = CampBuilder.BuildBarracks(config, p.Decor[ModelCatalog.ShipFlag.Key]);
+
+            // Keşif: hurda yığını (Batık Koyu), Demirci, sandık, koleksiyon ve altın figür eşyaları.
+            ResourceNodeType scrapType = Data<ResourceNodeType>(NodeTypesFolder, "Scrap");
+            scrapType.EditorSetHitSound(SoundId.Anvil);
+            EditorUtility.SetDirty(scrapType);
+            p.ScrapNode = PrefabFactory.BuildNode(ModelCatalog.ScrapWreck, scrapType, config, 1.9f, new Vector2(1.7f, 1.3f), 1.7f,
+                                                  null, 0, new Color(0.55f, 0.45f, 0.35f), null);
+            p.Forge = PrefabFactory.BuildBuilding(ModelCatalog.Forge, Data<BuildingType>(BuildingTypesFolder, "Forge"), config,
+                                                  smoke, FindDecor("Barrel"), new Vector3(-2.3f, 0f, 1.4f), MachineBuilder.Kind.Anvil);
+            p.Chest = DiscoveryBuilder.BuildChestPrefab(config);
+            string[,] items =
+            {
+                { "compass", "collect_compass", "Eski Pusula" }, { "bottle", "collect_bottle", "Şişede Mektup" },
+                { "skull", "collect_skull", "Altın Kafatası" }, { "spyglass", "collect_spyglass", "Kaptan Dürbünü" },
+                { "map", "collect_map", "Hazine Haritası Parçası" },
+                { "figure_head", "figure_head", "Altın Figür: Baş" }, { "figure_wing", "figure_wing", "Altın Figür: Kanat" },
+                { "figure_tail", "figure_tail", "Altın Figür: Kuyruk" }
+            };
+            for (int i = 0; i < items.GetLength(0); i++)
+            {
+                Collectible.Kind kind = items[i, 0].StartsWith("figure") ? Collectible.Kind.FigurePart : Collectible.Kind.Collection;
+                p.Collectibles[items[i, 0]] = DiscoveryBuilder.BuildCollectiblePrefab(config, items[i, 0], kind, items[i, 1], items[i, 2], out _);
+            }
             return p;
+        }
+
+        private static void SetCostumeModel(string costumeFile, GameObject model)
+        {
+            CostumeDefinition c = BuilderUtil.Load<CostumeDefinition>(CostumesFolder + "/" + costumeFile + ".asset");
+            if (c == null) return;
+            c.EditorSetModel(model);
+            EditorUtility.SetDirty(c);
         }
 
         private static void SetPortrait(string workerFile, Sprite portrait)
@@ -557,13 +727,14 @@ namespace KayipAda.EditorTools
             // Ada şekli (zemin, su ve yerleşim bunu kullanır)
             GameObject islandGo = new GameObject("Island");
             IslandShape island = islandGo.AddComponent<IslandShape>();
-            island.EditorSetup(MapLayout.IslandCenter, MapLayout.IslandRadius);
+            island.EditorSetup(MapLayout.IslandCenter, MapLayout.IslandRadius, MapLayout.Islets);
 
             CreateLighting();
             CreateGroundAndWater(islandGo, island);
             // İşçilerin yürüme alanı (NavMesh): ada zemininden, engeller oyularak; açılışlarda kendini günceller.
             IslandNavMesh navMesh = islandGo.AddComponent<IslandNavMesh>();
             BuilderUtil.SetField(navMesh, "ground", islandGo.GetComponent<MeshFilter>());
+            BuilderUtil.SetArray(navMesh, "extraGrounds", DiscoveryBuilder.BuildIslets(island).ToArray());
 
             // Yöneticiler
             GameObject managers = new GameObject("Managers");
@@ -587,6 +758,16 @@ namespace KayipAda.EditorTools
             BuilderUtil.SetField(trails, "ripplePrefab", p.Ripple.GetComponent<Renderer>());
             BuilderUtil.SetField(trails, "leaves", Object.Instantiate(p.Leaves, managers.transform).GetComponent<ParticleSystem>());
             BuilderUtil.SetFloat(trails, "sandWidth", MapLayout.SandWidth);
+            ProfileManager profile = managers.AddComponent<ProfileManager>();
+            BuilderUtil.SetField(profile, "config", config);
+            List<Object> costumes = new List<Object>();
+            foreach (string file in CostumeFiles) costumes.Add(BuilderUtil.Load<CostumeDefinition>(CostumesFolder + "/" + file + ".asset"));
+            BuilderUtil.SetArray(profile, "costumes", costumes.ToArray());
+            QuestManager questManager = managers.AddComponent<QuestManager>();
+            BuilderUtil.SetField(questManager, "config", config);
+            List<Object> quests = new List<Object>();
+            foreach (string file in QuestFiles) quests.Add(BuilderUtil.Load<QuestDefinition>(QuestsFolder + "/" + file + ".asset"));
+            BuilderUtil.SetArray(questManager, "quests", quests.ToArray());
             Effects effects = managers.AddComponent<Effects>();
             BuilderUtil.SetField(effects, "sparklePrefab", p.Sparkle.GetComponent<ParticleSystem>());
             BuilderUtil.SetField(effects, "splashPrefab", p.Splash.GetComponent<ParticleSystem>());
@@ -702,6 +883,7 @@ namespace KayipAda.EditorTools
                 ropeWorkshop.GetComponentInChildren<BuildingOutput>(true), loom.GetComponentInChildren<BuildingOutput>(true)
             });
             BuilderUtil.SetField(carrier, "market", market);
+            carrierTemplate = carrier;
             CreateSpawner("Carriers", workers, Data<WorkerType>(WorkerTypesFolder, "Carrier"), carrier, config);
 
             // Lifçi: koydaki palmiyelerden lif toplar, Halat Atölyesi'ne götürür (Oduncu ile aynı davranış).
@@ -710,6 +892,7 @@ namespace KayipAda.EditorTools
             BuilderUtil.SetArray(fiberWorker, "trees", fiberPalms);
             BuilderUtil.SetField(fiberWorker, "buildingInput", ropeWorkshop.GetComponentInChildren<BuildingInput>(true));
             CreateSpawner("FiberGatherers", workers, fiberType, fiberWorker, config);
+            workersRoot = workers;
 
             // Oyuncu ve kamera
             GameObject player = Place(p.Player, null, MapLayout.PlayerStart, 0f);
@@ -728,7 +911,8 @@ namespace KayipAda.EditorTools
             CreateShipyard(p, island, config, follow, reserved);
             UiBuilder.CreateConfettiOverlay(); // kaçış ekranının da önünde
             CreateIslandLife(config);
-            CreateGuide(config, follow.GetComponent<Camera>(), crewStation);
+            DiscoveryRefs discovery = BuildDiscovery(p, island, config, reserved, follow.GetComponent<Camera>(), player.transform);
+            CreateGuide(config, follow.GetComponent<Camera>(), crewStation, discovery);
 
             // Süsler (yolları ve oyun alanlarını kapatmadan)
             foreach (Vector3 rock in MapLayout.Rocks) Reserve(reserved, rock, 2.4f);
@@ -740,6 +924,236 @@ namespace KayipAda.EditorTools
             // Kaydet ve proje ayarları
             EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene(), ScenePath);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
+        }
+
+        private class DiscoveryRefs
+        {
+            public BridgeBuilder FirstBridge;
+        }
+
+        // Keşif içeriği: adacık içerikleri (Demirci, hurda, tapınak, batık), köprüler, bulutlar, sandıklar, koleksiyon,
+        // kırık yapılar, bina seviye kareleri, kristal/görev/koleksiyon arayüzü, oyuncu kostümü.
+        private static DiscoveryRefs BuildDiscovery(Prefabs p, IslandShape island, GameConfig config, List<Vector3> reserved, Camera mainCamera, Transform player)
+        {
+            DiscoveryRefs refs = new DiscoveryRefs();
+            AreaDefinition islet1 = Data<AreaDefinition>(AreasFolder, "Islet1"), islet2 = Data<AreaDefinition>(AreasFolder, "Islet2");
+            AreaDefinition forgeArea = Data<AreaDefinition>(AreasFolder, "Forge");
+            ResourceType plank = Data<ResourceType>(ResourceTypesFolder, "Plank"), rope = Data<ResourceType>(ResourceTypesFolder, "Rope");
+            ResourceType stone = Data<ResourceType>(ResourceTypesFolder, "Stone");
+            System.Random random = new System.Random(77);
+
+            // Batık Koyu: Demirci + hurda yığınları + büyük batık + süsler.
+            Transform wreckRoot = new GameObject("Islet Wreck Content").transform;
+            GameObject forge = PlaceBuilding("Forge", wreckRoot, MapLayout.Forge, p.Forge, forgeArea, config);
+            Transform pads = GameObject.Find("UnlockPads").transform;
+            CreatePad(p.UnlockPad, pads, "Pad Forge", MapLayout.Forge + MapLayout.BuildingPadOffset, forgeArea, islet1, reserved);
+            Reserve(reserved, MapLayout.Forge, 3.8f);
+            List<Object> scrapNodes = new List<Object>();
+            foreach (Vector3 pos in MapLayout.ScrapNodes)
+            {
+                GameObject node = Place(p.ScrapNode, wreckRoot, pos, (float)random.NextDouble() * 360f);
+                scrapNodes.Add(node.GetComponent<ResourceNode>());
+                Reserve(reserved, pos, 2.2f);
+            }
+            Transform bigWreck = new GameObject("IsletWreck").transform;
+            bigWreck.SetParent(wreckRoot, false);
+            bigWreck.SetPositionAndRotation(MapLayout.IsletWreck + Vector3.down * 0.7f, Quaternion.Euler(0f, 125f, 8f));
+            PrefabFactory.CreateModel(ModelCatalog.IsletWreck, bigWreck);
+            BuilderUtil.MarkStatic(bigWreck.gameObject);
+            DecorateIslet(p, wreckRoot, island, 0, new[] { "SandRocks_A", "BigRock", "Cannon", "Barrel", "Anchor", "SandRocks_B", "Skulls" }, random, reserved);
+
+            // Demirci Çırağı: hurda toplar, Demirci'ye götürür. Taşıyıcılar çivileri de taşır.
+            WorkerType smithType = Data<WorkerType>(WorkerTypesFolder, "Smith");
+            LumberjackWorker smith = CreateWorkerTemplate<LumberjackWorker>(p.Smith, smithType);
+            BuilderUtil.SetArray(smith, "trees", scrapNodes.ToArray());
+            BuilderUtil.SetField(smith, "buildingInput", forge.GetComponentInChildren<BuildingInput>(true));
+            CreateSpawner("Smiths", workersRoot, smithType, smith, config);
+            if (carrierTemplate != null)
+            {
+                SerializedObject so = new SerializedObject(carrierTemplate);
+                SerializedProperty sources = so.FindProperty("sources");
+                sources.arraySize++;
+                sources.GetArrayElementAtIndex(sources.arraySize - 1).objectReferenceValue = forge.GetComponentInChildren<BuildingOutput>(true);
+                so.ApplyModifiedPropertiesWithoutUndo();
+            }
+
+            // Kayıp Tapınak: harabe + süsler.
+            Transform templeRoot = new GameObject("Islet Temple Content").transform;
+            DiscoveryBuilder.BuildTemple(templeRoot, random);
+            Reserve(reserved, MapLayout.Temple, MapLayout.TempleRadius + 1.6f);
+            DecorateIslet(p, templeRoot, island, 1, new[] { "DecorPalm", "BushRound", "DecorPalm", "Bush", "GrassPatch", "FlowerPurple", "DecorPalm" }, random, reserved);
+
+            // Köprüler.
+            GameObject signPrefab = p.Decor[ModelCatalog.Sign.Key];
+            refs.FirstBridge = DiscoveryBuilder.BuildBridge(new DiscoveryBuilder.BridgeSpec
+            {
+                Id = "bridge_wreck", Name = "Köprü", Islet = 0, IslandArea = islet1, RequiredArea = Data<AreaDefinition>(AreasFolder, "Sawmill"),
+                Plank = plank, Planks = 40
+            }, island, config, signPrefab, reserved);
+            DiscoveryBuilder.BuildBridge(new DiscoveryBuilder.BridgeSpec
+            {
+                Id = "bridge_temple", Name = "Köprü", Islet = 1, IslandArea = islet2, RequiredArea = Data<AreaDefinition>(AreasFolder, "RopeWorkshop"),
+                Plank = plank, Planks = 30, Rope = rope, Ropes = 12
+            }, island, config, signPrefab, reserved);
+
+            // Bulutlar: kapalı bölgeler ve adacıklar.
+            DiscoveryBuilder.BuildCloud("Rocky", RectCenter(MapLayout.RockyRect), MapLayout.RockyRect.size - Vector2.one * 0.9f, Data<AreaDefinition>(AreasFolder, "Rocky"), config, 1);
+            DiscoveryBuilder.BuildCloud("Orchard", RectCenter(MapLayout.OrchardRect), MapLayout.OrchardRect.size - Vector2.one * 0.9f, Data<AreaDefinition>(AreasFolder, "Orchard"), config, 2);
+            DiscoveryBuilder.BuildCloud("Cove", RectCenter(MapLayout.CoveRect), MapLayout.CoveRect.size - Vector2.one * 0.9f, Data<AreaDefinition>(AreasFolder, "Cove"), config, 3);
+            for (int i = 0; i < island.IsletCount; i++)
+            {
+                Vector4 v = island.Islet(i);
+                DiscoveryBuilder.BuildCloud(MapLayout.IsletNames[i], new Vector3(v.x, 0f, v.y), new Vector2(v.z, v.w) * 2f, i == 0 ? islet1 : islet2, config, 10 + i);
+            }
+
+            // Gizli sandıklar (bazılarından nadir kostüm çıkar).
+            Transform chests = new GameObject("Chests").transform;
+            int[] coins = { 60, 80, 60, 60, 100, 80, 120, 100 };
+            int[] crystals = { 3, 3, 2, 2, 4, 3, 5, 4 };
+            string[] costumeOf = { null, "S_Gold", null, null, "C_Skeleton", null, null, "C_GoldCaptain" };
+            for (int i = 0; i < MapLayout.Chests.Length; i++)
+            {
+                Vector3 pos = Inside(island, MapLayout.Chests[i], 2.4f);
+                GameObject chest = Place(p.Chest, chests, pos, (float)random.NextDouble() * 360f);
+                chest.name = "Chest " + (i + 1);
+                TreasureChest component = chest.GetComponent<TreasureChest>();
+                BuilderUtil.SetString(component, "id", "chest_" + (i + 1));
+                BuilderUtil.SetInt(component, "coins", coins[i]);
+                BuilderUtil.SetInt(component, "crystals", crystals[i]);
+                if (costumeOf[i] != null) BuilderUtil.SetField(component, "costume", BuilderUtil.Load<CostumeDefinition>(CostumesFolder + "/" + costumeOf[i] + ".asset"));
+                Reserve(reserved, pos, 1.6f);
+            }
+
+            // Koleksiyon ve altın figür parçaları.
+            Transform collect = new GameObject("Collectibles").transform;
+            string[] keys = { "compass", "bottle", "skull", "spyglass", "map" };
+            for (int i = 0; i < keys.Length; i++)
+            {
+                Vector3 pos = Inside(island, MapLayout.Collectibles[i], 2.2f);
+                Place(p.Collectibles[keys[i]], collect, pos, 0f);
+                Reserve(reserved, pos, 1.3f);
+            }
+            string[] figure = { "figure_head", "figure_wing", "figure_tail" };
+            for (int i = 0; i < figure.Length; i++)
+            {
+                Vector3 pos = Inside(island, MapLayout.FigureParts[i], 1.8f);
+                Place(p.Collectibles[figure[i]], collect, pos, 0f);
+                Reserve(reserved, pos, 1.3f);
+            }
+
+            // Kırık yapılar (yan görev: onar).
+            AreaDefinition sawmillArea = Data<AreaDefinition>(AreasFolder, "Sawmill"), ropeArea = Data<AreaDefinition>(AreasFolder, "RopeWorkshop");
+            DiscoveryBuilder.BuildRepairSite(DiscoveryBuilder.RepairKind.Well, "well", "Kuyu", MapLayout.Well, 90f, plank, 8, stone, 6, sawmillArea, config, reserved);
+            DiscoveryBuilder.BuildRepairSite(DiscoveryBuilder.RepairKind.Fence, "fence", "Çit", MapLayout.BrokenFence, 180f, plank, 6, null, 0, sawmillArea, config, reserved);
+            DiscoveryBuilder.BuildRepairSite(DiscoveryBuilder.RepairKind.Pier, "pier", "İskele", MapLayout.BrokenPier, 180f, plank, 10, rope, 4, ropeArea, config, reserved);
+
+            // Bina seviye kareleri (küçük; rehber göstermez).
+            AddLevelPads(p, pads, "Sawmill", MapLayout.Sawmill + MapLayout.LevelPadLeft, reserved);
+            AddLevelPads(p, pads, "StoneWorkshop", MapLayout.Workshop + MapLayout.LevelPadFrontLeft, reserved);
+            AddLevelPads(p, pads, "RopeWorkshop", MapLayout.RopeWorkshop + MapLayout.LevelPadRight, reserved);
+            AddLevelPads(p, pads, "Loom", MapLayout.Loom + MapLayout.LevelPadRight, reserved);
+            AddLevelPads(p, pads, "Forge", MapLayout.Forge + MapLayout.LevelPadRight, reserved);
+
+            // Arayüz: kristal, yan görev kartları, koleksiyon kartı (vitrin kamerası).
+            Sprite crystalIcon = IconGenerator.Create("crystal");
+            CrystalUI crystalPanel = UiBuilder.CreateCrystalPanel(crystalIcon);
+            List<Object> cards = UiBuilder.CreateQuestCards(config.MaxActiveQuests, crystalIcon);
+            // Kristal ve görev kartları para panelinin hemen arkasında: paneller, kaçış ekranı ve Test Menüsü üstte kalır.
+            int hudIndex = GameObject.Find("Canvas/SafeArea/CoinPanel").transform.GetSiblingIndex() + 1;
+            crystalPanel.transform.SetSiblingIndex(hudIndex);
+            for (int i = 0; i < cards.Count; i++) ((Component)cards[i]).transform.SetSiblingIndex(hudIndex + 1 + i);
+            BuilderUtil.SetArray(Object.FindAnyObjectByType<QuestManager>(), "cards", cards.ToArray());
+            CreateShowcase(config, mainCamera);
+
+            // Oyuncu kostümü.
+            PlayerCostume costume = player.gameObject.AddComponent<PlayerCostume>();
+            Transform body = player.Find("Body");
+            BuilderUtil.SetField(costume, "body", body);
+            BuilderUtil.SetField(costume, "visual", player.GetComponent<CharacterVisual>());
+            BuilderUtil.SetField(costume, "defaultModel", body.Find("Model").gameObject);
+            return refs;
+        }
+
+        private static Vector3 RectCenter(Rect r) => new Vector3(r.center.x, 0f, r.center.y);
+
+        // Nokta kıyıya fazla yakınsa bulunduğu kara parçasının merkezine doğru kaydırılır.
+        private static Vector3 Inside(IslandShape island, Vector3 pos, float margin)
+        {
+            Vector2 p2 = new Vector2(pos.x, pos.z);
+            int lobe = island.NearestLobe(p2);
+            Vector2 c = island.LobeCenter(lobe);
+            for (int i = 0; i < 200 && island.SignedDistance(p2) > -margin; i++) p2 = Vector2.MoveTowards(p2, c, 0.1f);
+            return new Vector3(p2.x, 0f, p2.y);
+        }
+
+        // Adacığa birkaç süs (çakışmayan rastgele yerler).
+        private static void DecorateIslet(Prefabs p, Transform parent, IslandShape island, int islet, string[] keys, System.Random random, List<Vector3> reserved)
+        {
+            Vector4 v = island.Islet(islet);
+            int placed = 0;
+            for (int attempt = 0; attempt < 120 && placed < keys.Length; attempt++)
+            {
+                float a = (float)random.NextDouble() * Mathf.PI * 2f, r = Mathf.Sqrt((float)random.NextDouble());
+                Vector3 pos = new Vector3(v.x + Mathf.Cos(a) * v.z * 0.85f * r, 0f, v.y + Mathf.Sin(a) * v.w * 0.85f * r);
+                Vector2 p2 = new Vector2(pos.x, pos.z);
+                if (island.SignedDistance(p2) > -1.2f) continue;
+                bool blocked = false;
+                foreach (Vector3 res in reserved) if (Vector2.Distance(p2, new Vector2(res.x, res.y)) < res.z + 1f) { blocked = true; break; }
+                if (blocked || !p.Decor.ContainsKey(keys[placed])) continue;
+                GameObject go = Place(p.Decor[keys[placed]], parent, pos, (float)random.NextDouble() * 360f);
+                if (keys[placed] == "DecorPalm" || keys[placed] == "BigRock" || keys[placed] == "Cannon")
+                    BuilderUtil.SetVector2(go.AddComponent<NavObstacle>(), "size", keys[placed] == "DecorPalm" ? new Vector2(0.6f, 0.6f) : new Vector2(1.1f, 1.1f));
+                Reserve(reserved, pos, 1.4f);
+                placed++;
+            }
+        }
+
+        // Binanın yanında Seviye 2 ve Seviye 3 kareleri (aynı yerde: 3, 2 açılınca belirir). Küçük, rehber göstermez.
+        private static void AddLevelPads(Prefabs p, Transform pads, string building, Vector3 position, List<Vector3> reserved)
+        {
+            AreaDefinition baseArea = Data<AreaDefinition>(AreasFolder, building);
+            AreaDefinition lv2 = Data<AreaDefinition>(AreasFolder, building + "Lv2"), lv3 = Data<AreaDefinition>(AreasFolder, building + "Lv3");
+            CreatePad(p.UnlockPad, pads, "Pad " + building + "Lv2", position, lv2, baseArea, reserved);
+            CreatePad(p.UnlockPad, pads, "Pad " + building + "Lv3", position, lv3, lv2, reserved);
+            foreach (string name in new[] { "Pad " + building + "Lv2", "Pad " + building + "Lv3" })
+            {
+                Transform pad = pads.Find(name);
+                pad.localScale = Vector3.one * MapLayout.LevelPadScale;
+                BuilderUtil.SetBool(pad.GetComponent<UnlockPad>(), "guideIgnore", true);
+            }
+            foreach (ProcessingBuilding b in Object.FindObjectsByType<ProcessingBuilding>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                if (b.Type != Data<BuildingType>(BuildingTypesFolder, building)) continue;
+                BuilderUtil.SetArray(b, "levelAreas", new Object[] { lv2, lv3 });
+            }
+        }
+
+        // Koleksiyon kartının vitrin kamerası: sahnenin çok altında, sadece "vitrin" katmanını RenderTexture'a çizer.
+        private static void CreateShowcase(GameConfig config, Camera mainCamera)
+        {
+            const int layer = 31;
+            string rtPath = ArtGenerator.GeneratedFolder + "/ShowcaseRT.renderTexture";
+            RenderTexture rt = BuilderUtil.Load<RenderTexture>(rtPath);
+            if (rt == null)
+            {
+                rt = new RenderTexture(512, 512, 16, RenderTextureFormat.ARGB32) { name = "ShowcaseRT", antiAliasing = 2 };
+                AssetDatabase.CreateAsset(rt, rtPath);
+            }
+            GameObject camGo = new GameObject("ShowcaseCamera");
+            camGo.transform.SetPositionAndRotation(new Vector3(0f, -300f, -2.4f), Quaternion.identity);
+            Camera cam = camGo.AddComponent<Camera>();
+            cam.cullingMask = 1 << layer;
+            cam.clearFlags = CameraClearFlags.SolidColor;
+            cam.backgroundColor = UiBuilder.PanelColor;
+            cam.fieldOfView = 26f;
+            cam.nearClipPlane = 0.1f;
+            cam.farClipPlane = 10f;
+            cam.targetTexture = rt;
+            Transform slot = new GameObject("ShowcaseSlot").transform;
+            slot.position = new Vector3(0f, -300f, 0f);
+            slot.gameObject.layer = layer;
+            mainCamera.cullingMask &= ~(1 << layer);
+            UiBuilder.CreateCollectionPopup(config, rt, cam, slot);
         }
 
         // Ağaçlar doğal görünsün: rastgele yöne bakar, hafif (±TreeTiltMax derece) eğilir, boyu biraz farklıdır.
@@ -1101,7 +1515,8 @@ namespace KayipAda.EditorTools
 
         // Gizli hazır işçi: WorkerSpawner bunu kopyalayıp kamptan çıkarır.
         // Sahne kurulurken baraka kapısı (işçilerin çıktığı yer), sevinç noktası ve rehber hedefi.
-        private static Transform barracksDoor, barracksCheer, crewStation;
+        private static Transform barracksDoor, barracksCheer, crewStation, workersRoot;
+        private static CarrierWorker carrierTemplate;
 
         private static T CreateWorkerTemplate<T>(GameObject prefab, WorkerType type) where T : Worker
         {
@@ -1204,6 +1619,14 @@ namespace KayipAda.EditorTools
             }
             GameObject flag = Place(p.Decor[ModelCatalog.ShipFlag.Key], supplies, shipRoot.transform.TransformPoint(parts.TopOfTallestMast), 90f);
             flag.name = "Flag";
+
+            // Altın figür (burunda; tapınaktaki 3 parça bulununca belirir) ve yelken/bayrak kostümü.
+            GameObject figure = DiscoveryBuilder.BuildFigurehead(shipRoot.transform, new Vector3(0f, parts.DeckY * 0.82f, sb.max.z - 0.25f), Quaternion.Euler(-30f, 0f, 0f));
+            ShipFigurehead figurehead = shipRoot.AddComponent<ShipFigurehead>();
+            BuilderUtil.SetField(figurehead, "config", config);
+            BuilderUtil.SetField(figurehead, "figure", figure);
+            SailCostume sailCostume = shipRoot.AddComponent<SailCostume>();
+            BuilderUtil.SetArray(sailCostume, "targets", new Object[] { parts.Sails.gameObject, flag });
 
             // Döndür: burun bowDir yönüne.
             shipRoot.transform.rotation = Quaternion.LookRotation(bowDir);
@@ -1416,16 +1839,16 @@ namespace KayipAda.EditorTools
         // Teslim alanının üstündeki kutusuz gösterge: başlık + 2 satır (ikon, "12/30", ince dolum çubuğu).
         private static ShipProgressView CreateShipProgressView(Transform parent)
         {
-            Canvas canvas = UiFactory.CreateWorldCanvas("ProgressView", parent, new Vector3(0f, 4.2f, 0f), Quaternion.identity, new Vector2(420f, 260f));
+            Canvas canvas = UiFactory.CreateWorldCanvas("ProgressView", parent, new Vector3(0f, 4.6f, 0f), Quaternion.identity, new Vector2(420f, 340f));
             canvas.gameObject.AddComponent<Billboard>();
             TMPro.TextMeshProUGUI title = UiFactory.CreateUIText("Title", canvas.transform, "OMURGA 1/5", 58f, UiFactory.Gold);
-            UiFactory.Size(title, new Vector2(0f, 95f), new Vector2(420f, 70f));
+            UiFactory.Size(title, new Vector2(0f, 135f), new Vector2(420f, 70f));
             List<ShipProgressView.Row> rows = new List<ShipProgressView.Row>();
-            for (int i = 0; i < 2; i++)
+            for (int i = 0; i < 3; i++)
             {
                 GameObject row = new GameObject("Row " + i, typeof(RectTransform));
                 row.transform.SetParent(canvas.transform, false);
-                ((RectTransform)row.transform).anchoredPosition = new Vector2(0f, 20f - i * 82f);
+                ((RectTransform)row.transform).anchoredPosition = new Vector2(0f, 60f - i * 82f);
                 ((RectTransform)row.transform).sizeDelta = new Vector2(400f, 76f);
                 Image icon = UiFactory.CreateImage("Icon", row.transform, null, Color.white);
                 UiFactory.Size(icon, new Vector2(-150f, 0f), new Vector2(72f, 72f));
@@ -1555,7 +1978,7 @@ namespace KayipAda.EditorTools
 
         // ---------------------------------------------------------------- Yönlendirme oku
 
-        private static void CreateGuide(GameConfig config, Camera cam, Transform crew)
+        private static void CreateGuide(GameConfig config, Camera cam, Transform crew, DiscoveryRefs discovery)
         {
             GameObject guide = new GameObject("ProgressionGuide");
             GameObject arrow = new GameObject("WorldArrow");
@@ -1582,6 +2005,8 @@ namespace KayipAda.EditorTools
             BuilderUtil.SetField(component, "screenArrow", screenArrow.rectTransform);
             BuilderUtil.SetField(component, "cam", cam);
             BuilderUtil.SetField(component, "crewStation", crew);
+            BuilderUtil.SetField(component, "keyBridge", discovery.FirstBridge);
+            BuilderUtil.SetField(component, "keyResource", Data<ResourceType>(ResourceTypesFolder, "Nail"));
         }
 
         // ---------------------------------------------------------------- Süsler

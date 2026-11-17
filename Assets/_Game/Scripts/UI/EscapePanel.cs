@@ -21,6 +21,11 @@ namespace KayipAda
         [SerializeField] private TMP_Text timeLabel;
         [SerializeField] private TMP_Text xpLabel;
         [SerializeField] private TMP_Text coinLabel;
+        [SerializeField] private TMP_Text crystalLabel;
+        [Tooltip("\"Koleksiyon 3/5    Sandıklar 6/8\"")]
+        [SerializeField] private TMP_Text collectionLabel;
+        [Tooltip("Altın figür takılıysa görünen \"EFSANEVİ GEMİ!\" rozeti.")]
+        [SerializeField] private GameObject legendaryBadge;
         [SerializeField] private Button replayButton;
 
         public bool IsShown => root != null && root.activeSelf;
@@ -31,6 +36,7 @@ namespace KayipAda
         private void Awake()
         {
             if (root != null) root.SetActive(false);
+            if (legendaryBadge != null) legendaryBadge.SetActive(false);
             if (replayButton != null) replayButton.onClick.AddListener(Replay);
         }
 
@@ -43,6 +49,13 @@ namespace KayipAda
             int xp = save != null ? save.RegisterEscape() : config.EscapeXp;
             int level = save != null ? save.CaptainLevel : 0;
             int coins = CurrencyManager.Instance != null ? CurrencyManager.Instance.TotalEarned : 0;
+            bool legendary = QuestManager.Instance != null && QuestManager.Instance.HasLegendaryFigure;
+            int crystals = save != null ? save.RegisterEscapeCrystals(legendary) : config.EscapeCrystals;
+            if (legendaryBadge != null) legendaryBadge.SetActive(legendary);
+            if (crystalLabel != null) crystalLabel.text = "+" + crystals + " Kristal";
+            if (collectionLabel != null && ProfileManager.Instance != null)
+                collectionLabel.text = "Koleksiyon " + ProfileManager.Instance.CollectionCount + "/" + Collectible.CountOfKind(Collectible.Kind.Collection)
+                                       + "    Sandıklar " + ProfileManager.Instance.ChestCount + "/" + TreasureChest.All.Count;
 
             StarCount = testMode ? 3 : seconds <= config.ThreeStarSeconds ? 3 : seconds <= config.TwoStarSeconds ? 2 : 1;
             timeLabel.text = testMode

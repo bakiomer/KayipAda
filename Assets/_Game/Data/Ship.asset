@@ -26,6 +26,8 @@ MonoBehaviour:
       Amount: 40
     - Resource: {fileID: 11400000, guid: 11a4c8adf4f7f154682163628023af08, type: 2}
       Amount: 30
+    - Resource: {fileID: 11400000, guid: 38a66f798f824b04db6799f56c4cd224, type: 2}
+      Amount: 8
     RevealAtEnd: 0.55
     UnlockOnComplete: {fileID: 11400000, guid: 1ca6664a910e13246aea1518624b07a1, type: 2}
     UnlockMessage: "Yeni: Halat At\xF6lyesi a\xE7\u0131labilir!"
@@ -35,9 +37,11 @@ MonoBehaviour:
       Amount: 30
     - Resource: {fileID: 11400000, guid: 571ef7226ed2f3047a16b2b09d398eed, type: 2}
       Amount: 20
+    - Resource: {fileID: 11400000, guid: 38a66f798f824b04db6799f56c4cd224, type: 2}
+      Amount: 10
     RevealAtEnd: 0.8
     UnlockOnComplete: {fileID: 11400000, guid: 686f9cb472a843241b04ee9f4e766d0e, type: 2}
-    UnlockMessage: "Yeni: Dokuma Tezgah\u0131 ve Lif\xE7i i\u015F\xE7i!"
+    UnlockMessage: "Yeni: Dokuma Tezgah\u0131 a\xE7\u0131labilir!"
   - Name: Yelken
     Requirements:
     - Resource: {fileID: 11400000, guid: 8c1f4744dc7f7524cb6aa6dab85f9cf2, type: 2}
@@ -56,11 +60,40 @@ MonoBehaviour:
     UnlockMessage: "Suya indirme zaman\u0131!"
   DeliverInterval: 0.08
   CelebrationDuration: 2.6
+  StageSlowScale: 0.3
+  StageSlowTime: 0.5
+  StageShotPitch: 38
+  StageShotYaw: 0
+  StageShotDistance: 17
+  StageShotBlend: 4
+  StageShotHold: 1.6
+  PieceAppearDuration: 0.45
+  PieceDropHeight: 1.8
+  HullRevealSpeed: 0.6
+  ScaffoldRemoveInterval: 0.08
   GatherTime: 3
+  OrbitDuration: 5
+  OrbitDegrees: 150
+  OrbitDistance: 16
+  OrbitHeight: 4.5
+  GatherShotBack: 0.15
+  GatherShotSide: 1
+  GatherShotDistance: 12
+  GatherShotHeight: 7.5
   SlideDuration: 3
   SlideDistance: 10
   SinkFraction: 0.14
+  TurnDuration: 2
   SailSpeed: 3.5
+  FollowDistance: 15
+  FollowHeight: 3.5
+  SunsetTime: 6
+  SunsetColor: {r: 1, g: 0.6, b: 0.35, a: 1}
+  SunsetIntensity: 1.05
+  SunsetPitch: 14
+  SunsetSky: {r: 0.62, g: 0.5, b: 0.68, a: 1}
+  SunsetEquator: {r: 0.95, g: 0.62, b: 0.45, a: 1}
+  ConfettiDuration: 8
   SailDuration: 7
   FireworkCount: 18
   FireworkInterval: 0.55

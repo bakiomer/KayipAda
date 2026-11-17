@@ -32,6 +32,15 @@ namespace KayipAda.EditorTools
         [MenuItem(Menu + "Her İşçiden 1 Tane", false, 122)]
         private static void Workers() => DevCommands.HireAllWorkers();
 
+        [MenuItem(Menu + "+100 Kristal", false, 160)] private static void Crystals() => DevCommands.AddCrystals(Config);
+        [MenuItem(Menu + "Tüm Kostümleri Aç", false, 161)] private static void Costumes() => DevCommands.UnlockAllCostumes();
+        [MenuItem(Menu + "Sıradaki Kostümü Giy", false, 162)] private static void NextCostume() => DevCommands.WearNextCostume();
+        [MenuItem(Menu + "Tüm Sandıkları Göster", false, 163)] private static void Chests() => DevCommands.ToggleShowChests();
+        [MenuItem(Menu + "Koleksiyonu Tamamla", false, 164)] private static void Collection() => DevCommands.CompleteCollection();
+        [MenuItem(Menu + "Görevleri Tamamla", false, 165)] private static void Quests() => DevCommands.CompleteQuests();
+        [MenuItem(Menu + "Köprüleri Tamamla", false, 166)] private static void Bridges() => DevCommands.CompleteBridges();
+        [MenuItem(Menu + "Bulutları Kaldır-Getir", false, 167)] private static void Clouds() => DevCommands.ToggleClouds();
+
         [MenuItem(Menu + "Yığını Doldur/Kalas", false, 140)] private static void FillPlank() => Fill("Plank");
         [MenuItem(Menu + "Yığını Doldur/Tuğla", false, 141)] private static void FillBrick() => Fill("Brick");
         [MenuItem(Menu + "Yığını Doldur/Halat", false, 142)] private static void FillRope() => Fill("Rope");

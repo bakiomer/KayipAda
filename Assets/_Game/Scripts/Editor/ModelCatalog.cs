@@ -130,6 +130,26 @@ namespace KayipAda.EditorTools
         public static readonly ModelSpec Ship = M("Ship", ModelPack.Quaternius, "Ship_Large", 9f, SizeAxis.Largest, true, true, "İnşa edilen gemi (kızakta aşağıdan yukarı belirir, törende suya kayar)");
         public static readonly ModelSpec ShipWreck = M("ShipWreck", ModelPack.KenneyPirate, "ship-wreck", 10f, SizeAxis.Largest, true, true, "Yarım kalmış gemi iskeleti (dekor)");
 
+        // ---------------------------------------------------------------- Keşif (sandık, koleksiyon, tapınak, Batık Koyu)
+        public static readonly ModelSpec ChestClosed = M("ChestClosed", ModelPack.Quaternius, "Prop_Chest_Closed", 0.95f, SizeAxis.Largest, true, true, "Gizli hazine sandığı (kapalı)");
+        public static readonly ModelSpec ChestGold = M("ChestGold", ModelPack.Quaternius, "Prop_Chest_Gold", 1.05f, SizeAxis.Largest, true, true, "Açılmış hazine sandığı (altın dolu)");
+        public static readonly ModelSpec BottleLetter = M("BottleLetter", ModelPack.Quaternius, "Prop_Bottle_2", 0.6f, SizeAxis.Height, true, false, "Koleksiyon: şişede mektup");
+        public static readonly ModelSpec GoldenSkull = M("GoldenSkull", ModelPack.Quaternius, "Prop_Skull", 0.5f, SizeAxis.Largest, true, false, "Koleksiyon: altın kafatası (altına boyanır)");
+        public static readonly ModelSpec MapPiece = M("MapPiece", ModelPack.Quaternius, "UI_Paper", 0.6f, SizeAxis.Largest, true, false, "Koleksiyon: hazine haritası parçası");
+        public static readonly ModelSpec StatueHead = M("StatueHead", ModelPack.KenneyNature, "statue_head", 0.7f, SizeAxis.Largest, true, true, "Altın figür başı (altına boyanır) — Quaternius'ta yok");
+        public static readonly ModelSpec TempleColumn = M("TempleColumn", ModelPack.KenneyNature, "statue_column", 2.6f, SizeAxis.Height, true, true, "Tapınak sütunu — Quaternius'ta yok");
+        public static readonly ModelSpec TempleColumnBroken = M("TempleColumnBroken", ModelPack.KenneyNature, "statue_columnDamaged", 1.9f, SizeAxis.Height, true, true, "Kırık tapınak sütunu");
+        public static readonly ModelSpec TempleRing = M("TempleRing", ModelPack.KenneyNature, "statue_ring", 2.6f, SizeAxis.Largest, true, false, "Tapınak altar halkası (yerde)");
+        public static readonly ModelSpec TempleObelisk = M("TempleObelisk", ModelPack.KenneyNature, "statue_obelisk", 3.2f, SizeAxis.Height, true, true, "Dikili taş");
+        public static readonly ModelSpec TempleBlock = M("TempleBlock", ModelPack.KenneyNature, "statue_block", 0.9f, SizeAxis.Largest, true, true, "Yıkık taş blok");
+        public static readonly ModelSpec ScrapWreck = M("ScrapWreck", ModelPack.KenneyPirate, "ship-wreck", 2.8f, SizeAxis.Largest, true, true, "Hurda metal veren batık parçası (Batık Koyu)");
+        public static readonly ModelSpec IsletWreck = M("IsletWreck", ModelPack.KenneyPirate, "ship-wreck", 8f, SizeAxis.Largest, true, true, "Batık Koyu'ndaki büyük batık gemi (süs)");
+        public static readonly ModelSpec Forge = M("Forge", ModelPack.KenneySurvival, "workbench-anvil", 3.4f, SizeAxis.Largest, true, true, "Demirci — kodla kurulan ocak + örs + çekiç (MachineBuilder); dosya sadece boyut için");
+        public static readonly ModelSpec Anvil = M("Anvil", ModelPack.KenneySurvival, "workbench-anvil", 1.15f, SizeAxis.Largest, true, true, "Demircinin örsü");
+        public static readonly ModelSpec Hammer = M("Hammer", ModelPack.KenneySurvival, "tool-hammer", 0.75f, SizeAxis.Largest, true, false, "Demircinin çekici (örse vurur)");
+        public static readonly ModelSpec BrokenPier = M("BrokenPier", ModelPack.Quaternius, "Environment_Dock_Broken", 3.4f, SizeAxis.Largest, true, true, "Kırık iskele (yan görevde onarılır)");
+        public static readonly ModelSpec Smith = M("Worker_Smith", ModelPack.Quaternius, "Characters_Skeleton", 1.7f, SizeAxis.Height, false, true, "Demirci Çırağı (iskelet korsan; hurda toplar, Demirci'ye götürür)");
+
         // ---------------------------------------------------------------- Süsler (Prefabs/Decor)
         public static readonly ModelSpec[] Decor =
         {

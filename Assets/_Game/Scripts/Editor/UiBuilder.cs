@@ -210,6 +210,137 @@ namespace KayipAda.EditorTools
             return component;
         }
 
+        // ---------------------------------------------------------------- Keşif arayüzü
+
+        // Para panelinin altında küçük kristal göstergesi (mor taş + sayı).
+        public static CrystalUI CreateCrystalPanel(Sprite crystalIcon)
+        {
+            GameObject holder = new GameObject("CrystalPanel", typeof(RectTransform));
+            holder.transform.SetParent(Safe, false);
+            RectTransform rt = (RectTransform)holder.transform;
+            Anchor(rt, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(130f, -172f), new Vector2(170f, 64f));
+            Image back = UiFactory.CreateImage("Back", holder.transform, ArtGenerator.LoadSprite(ArtGenerator.RoundedRectPath), new Color(0.1f, 0.13f, 0.19f, 0.85f));
+            back.type = Image.Type.Sliced;
+            UiFactory.Stretch(back.rectTransform);
+            Image icon = UiFactory.CreateImage("Icon", holder.transform, crystalIcon, Color.white);
+            UiFactory.Size(icon, new Vector2(-50f, 0f), new Vector2(54f, 54f));
+            icon.preserveAspect = true;
+            TextMeshProUGUI label = UiFactory.CreateUIText("Count", holder.transform, "0", 44f, new Color(0.88f, 0.78f, 1f));
+            label.alignment = TextAlignmentOptions.MidlineLeft;
+            UiFactory.Size(label, new Vector2(30f, 2f), new Vector2(110f, 60f));
+            CrystalUI ui = holder.AddComponent<CrystalUI>();
+            BuilderUtil.SetField(ui, "label", label);
+            BuilderUtil.SetField(ui, "punchTarget", rt);
+            return ui;
+        }
+
+        // Sol üstte (TEST butonunun altında) en fazla iki yan görev kartı.
+        public static List<Object> CreateQuestCards(int count, Sprite crystalIcon)
+        {
+            List<Object> cards = new List<Object>();
+            for (int i = 0; i < count; i++)
+            {
+                GameObject holder = new GameObject("QuestCard " + i, typeof(RectTransform));
+                holder.transform.SetParent(Safe, false);
+                RectTransform rt = (RectTransform)holder.transform;
+                Anchor(rt, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(16f, -124f - i * 150f), new Vector2(390f, 136f));
+                GameObject bodyGo = new GameObject("Body", typeof(RectTransform));
+                bodyGo.transform.SetParent(holder.transform, false);
+                RectTransform body = (RectTransform)bodyGo.transform;
+                UiFactory.Stretch(body);
+                Image bg = UiFactory.CreateImage("Back", body, ArtGenerator.LoadSprite(ArtGenerator.RoundedRectPath), new Color(0.1f, 0.13f, 0.19f, 0.88f));
+                bg.type = Image.Type.Sliced;
+                UiFactory.Stretch(bg.rectTransform);
+                Image badge = UiFactory.CreateImage("Badge", body, ArtGenerator.LoadSprite(ArtGenerator.StarPath), UiFactory.Gold);
+                Anchor(badge.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(10f, -10f), new Vector2(40f, 40f));
+                TextMeshProUGUI title = UiFactory.CreateUIText("Title", body, "Görev", 34f, Color.white);
+                title.alignment = TextAlignmentOptions.MidlineLeft;
+                title.enableAutoSizing = true;
+                title.fontSizeMin = 22f;
+                title.fontSizeMax = 34f;
+                Anchor(title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 1f), new Vector2(56f, -8f), new Vector2(-64f, 46f));
+                Image barBack = UiFactory.CreateImage("BarBack", body, ArtGenerator.LoadSprite(ArtGenerator.RoundedRectPath), new Color(0f, 0f, 0f, 0.45f));
+                barBack.type = Image.Type.Sliced;
+                Anchor(barBack.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(16f, 52f), new Vector2(200f, 18f));
+                Image fill = UiFactory.CreateImage("Fill", body, ArtGenerator.LoadSprite(ArtGenerator.SquarePath), new Color(0.55f, 0.9f, 0.35f));
+                fill.type = Image.Type.Filled;
+                fill.fillMethod = Image.FillMethod.Horizontal;
+                Anchor(fill.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(20f, 56f), new Vector2(192f, 10f));
+                TextMeshProUGUI countText = UiFactory.CreateUIText("Count", body, "0/10", 30f, UiFactory.Gold);
+                countText.alignment = TextAlignmentOptions.MidlineLeft;
+                Anchor(countText.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(226f, 42f), new Vector2(140f, 40f));
+                Image coin = UiFactory.CreateImage("Coin", body, ArtGenerator.LoadSprite(ArtGenerator.CoinIconPath), Color.white);
+                Anchor(coin.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(16f, 8f), new Vector2(34f, 34f));
+                TextMeshProUGUI coinText = UiFactory.CreateUIText("CoinText", body, "", 28f, Color.white);
+                coinText.alignment = TextAlignmentOptions.MidlineLeft;
+                Anchor(coinText.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(54f, 6f), new Vector2(100f, 38f));
+                Image gem = UiFactory.CreateImage("Crystal", body, crystalIcon, Color.white);
+                gem.preserveAspect = true;
+                Anchor(gem.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(160f, 8f), new Vector2(34f, 34f));
+                TextMeshProUGUI gemText = UiFactory.CreateUIText("CrystalText", body, "", 28f, new Color(0.88f, 0.78f, 1f));
+                gemText.alignment = TextAlignmentOptions.MidlineLeft;
+                Anchor(gemText.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(198f, 6f), new Vector2(100f, 38f));
+
+                QuestCard card = holder.AddComponent<QuestCard>();
+                BuilderUtil.SetField(card, "body", body);
+                BuilderUtil.SetField(card, "background", bg);
+                BuilderUtil.SetField(card, "title", title);
+                BuilderUtil.SetField(card, "count", countText);
+                BuilderUtil.SetField(card, "fill", fill);
+                BuilderUtil.SetField(card, "coinIcon", coin.gameObject);
+                BuilderUtil.SetField(card, "coinText", coinText);
+                BuilderUtil.SetField(card, "crystalIcon", gem.gameObject);
+                BuilderUtil.SetField(card, "crystalText", gemText);
+                cards.Add(card);
+            }
+            return cards;
+        }
+
+        // Koleksiyon kartı: ortada dönen 3D görünüş (vitrin kamerası → RenderTexture), ad, "Koleksiyon 2/5".
+        public static CollectionPopup CreateCollectionPopup(GameConfig config, RenderTexture texture, Camera showcaseCamera, Transform slot)
+        {
+            GameObject holder = new GameObject("CollectionPopup", typeof(RectTransform));
+            holder.transform.SetParent(Safe, false);
+            UiFactory.Stretch((RectTransform)holder.transform);
+            GameObject root = new GameObject("Root", typeof(RectTransform));
+            root.transform.SetParent(holder.transform, false);
+            UiFactory.Stretch((RectTransform)root.transform);
+            Image dim = UiFactory.CreateImage("Dim", root.transform, null, new Color(0f, 0f, 0f, 0.45f));
+            dim.raycastTarget = true;
+            UiFactory.Stretch(dim.rectTransform);
+            Button close = dim.gameObject.AddComponent<Button>();
+            close.transition = Selectable.Transition.None;
+            Image card = UiFactory.CreateImage("Card", root.transform, ArtGenerator.LoadSprite(ArtGenerator.RoundedRectPath), PanelColor);
+            card.type = Image.Type.Sliced;
+            UiFactory.Size(card, new Vector2(0f, 80f), new Vector2(720f, 860f));
+            TextMeshProUGUI head = UiFactory.CreateUIText("Head", card.transform, "YENİ KOLEKSİYON!", 52f, UiFactory.Gold);
+            UiFactory.Size(head, new Vector2(0f, 360f), new Vector2(680f, 80f));
+            Image glow = UiFactory.CreateImage("Glow", card.transform, ArtGenerator.LoadSprite(ArtGenerator.SoftCirclePath), new Color(0.8f, 0.65f, 1f, 0.6f));
+            UiFactory.Size(glow, new Vector2(0f, 60f), new Vector2(560f, 560f));
+            GameObject rawGo = new GameObject("View", typeof(RectTransform));
+            rawGo.transform.SetParent(card.transform, false);
+            RawImage raw = rawGo.AddComponent<RawImage>();
+            raw.texture = texture;
+            raw.raycastTarget = false;
+            ((RectTransform)rawGo.transform).anchoredPosition = new Vector2(0f, 60f);
+            ((RectTransform)rawGo.transform).sizeDelta = new Vector2(480f, 480f);
+            TextMeshProUGUI name = UiFactory.CreateUIText("Name", card.transform, "Eski Pusula", 58f, Color.white);
+            UiFactory.Size(name, new Vector2(0f, -240f), new Vector2(680f, 80f));
+            TextMeshProUGUI count = UiFactory.CreateUIText("Count", card.transform, "Koleksiyon 1/5", 46f, new Color(0.88f, 0.78f, 1f));
+            UiFactory.Size(count, new Vector2(0f, -320f), new Vector2(680f, 70f));
+
+            CollectionPopup popup = holder.AddComponent<CollectionPopup>();
+            BuilderUtil.SetField(popup, "config", config);
+            BuilderUtil.SetField(popup, "root", root);
+            BuilderUtil.SetField(popup, "card", card.rectTransform);
+            BuilderUtil.SetField(popup, "nameLabel", name);
+            BuilderUtil.SetField(popup, "countLabel", count);
+            BuilderUtil.SetField(popup, "closeButton", close);
+            BuilderUtil.SetField(popup, "showcaseCamera", showcaseCamera);
+            BuilderUtil.SetField(popup, "showcaseSlot", slot);
+            return popup;
+        }
+
         // ---------------------------------------------------------------- Kutlama ve kaçış
 
         // Ekranın üst-ortasında yarı saydam kart: büyük altın başlık + beyaz alt yazı.
@@ -348,15 +479,26 @@ namespace KayipAda.EditorTools
                 stars.Add(star);
             }
 
-            TextMeshProUGUI time = UiFactory.CreateUIText("Time", root.transform, "Süre: 0 dk", 56f, Color.white);
-            UiFactory.Size(time, new Vector2(0f, 20f), new Vector2(1000f, 80f));
-            TextMeshProUGUI xp = UiFactory.CreateUIText("Xp", root.transform, "+0 Kaptanlık XP", 56f, new Color(0.6f, 1f, 0.6f));
-            UiFactory.Size(xp, new Vector2(0f, -80f), new Vector2(1000f, 80f));
-            TextMeshProUGUI coins = UiFactory.CreateUIText("Coins", root.transform, "Kazanılan para: 0", 56f, UiFactory.Gold);
-            UiFactory.Size(coins, new Vector2(0f, -170f), new Vector2(1000f, 80f));
-            TextMeshProUGUI soon = UiFactory.CreateUIText("Soon", root.transform, "Yeni adalar yakında!", 50f, new Color(0.7f, 0.85f, 1f));
-            UiFactory.Size(soon, new Vector2(0f, -290f), new Vector2(1000f, 90f));
-            Button replay = CreateButton("Replay", root.transform, "TEKRAR OYNA", new Vector2(0f, -470f), new Vector2(620f, 160f), Green, 66f);
+            TextMeshProUGUI time = UiFactory.CreateUIText("Time", root.transform, "Süre: 0 dk", 54f, Color.white);
+            UiFactory.Size(time, new Vector2(0f, 30f), new Vector2(1000f, 76f));
+            TextMeshProUGUI xp = UiFactory.CreateUIText("Xp", root.transform, "+0 Kaptanlık XP", 52f, new Color(0.6f, 1f, 0.6f));
+            UiFactory.Size(xp, new Vector2(0f, -50f), new Vector2(1000f, 76f));
+            TextMeshProUGUI coins = UiFactory.CreateUIText("Coins", root.transform, "Kazanılan para: 0", 52f, UiFactory.Gold);
+            UiFactory.Size(coins, new Vector2(0f, -128f), new Vector2(1000f, 76f));
+            TextMeshProUGUI crystals = UiFactory.CreateUIText("Crystals", root.transform, "+0 Kristal", 52f, new Color(0.88f, 0.78f, 1f));
+            UiFactory.Size(crystals, new Vector2(0f, -206f), new Vector2(1000f, 76f));
+            TextMeshProUGUI collection = UiFactory.CreateUIText("Collection", root.transform, "Koleksiyon 0/5    Sandıklar 0/8", 48f, Color.white);
+            UiFactory.Size(collection, new Vector2(0f, -284f), new Vector2(1000f, 76f));
+            TextMeshProUGUI soon = UiFactory.CreateUIText("Soon", root.transform, "Yeni adalar yakında!", 44f, new Color(0.7f, 0.85f, 1f));
+            UiFactory.Size(soon, new Vector2(0f, -362f), new Vector2(1000f, 76f));
+            Button replay = CreateButton("Replay", root.transform, "TEKRAR OYNA", new Vector2(0f, -510f), new Vector2(620f, 150f), Green, 64f);
+            // Efsanevi gemi rozeti (altın figür takılıysa).
+            Image badge = UiFactory.CreateImage("Legendary", root.transform, ArtGenerator.LoadSprite(ArtGenerator.RoundedRectPath), new Color(0.75f, 0.15f, 0.12f, 0.95f));
+            badge.type = Image.Type.Sliced;
+            UiFactory.Size(badge, new Vector2(300f, 330f), new Vector2(430f, 96f));
+            badge.rectTransform.localRotation = Quaternion.Euler(0f, 0f, -10f);
+            TextMeshProUGUI badgeText = UiFactory.CreateUIText("Text", badge.transform, "EFSANEVİ GEMİ!", 50f, UiFactory.Gold);
+            UiFactory.Stretch(badgeText.rectTransform);
 
             EscapePanel panel = holder.AddComponent<EscapePanel>();
             BuilderUtil.SetField(panel, "config", config);
@@ -366,6 +508,9 @@ namespace KayipAda.EditorTools
             BuilderUtil.SetField(panel, "timeLabel", time);
             BuilderUtil.SetField(panel, "xpLabel", xp);
             BuilderUtil.SetField(panel, "coinLabel", coins);
+            BuilderUtil.SetField(panel, "crystalLabel", crystals);
+            BuilderUtil.SetField(panel, "collectionLabel", collection);
+            BuilderUtil.SetField(panel, "legendaryBadge", badge.gameObject);
             BuilderUtil.SetField(panel, "replayButton", replay);
             return panel;
         }

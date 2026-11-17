@@ -78,6 +78,72 @@ namespace KayipAda
             }
         }
 
+        // ---------------------------------------------------------------- Keşif komutları
+
+        public static void AddCrystals(GameConfig config)
+        {
+            if (!Use() || ProfileManager.Instance == null) return;
+            ProfileManager.Instance.AddCrystals(config.DevCrystalAmount);
+        }
+
+        public static void UnlockAllCostumes()
+        {
+            if (!Use() || ProfileManager.Instance == null) return;
+            ProfileManager.Instance.UnlockAll();
+        }
+
+        // Sahip olunan karakter kostümlerinin sıradakini giyer (yelken de bir sonrakine geçer).
+        public static string WearNextCostume()
+        {
+            if (!Use() || ProfileManager.Instance == null) return "";
+            CostumeDefinition c = ProfileManager.Instance.EquipNext(CostumeSlot.Character);
+            CostumeDefinition s = ProfileManager.Instance.EquipNext(CostumeSlot.Sail);
+            return (c != null ? c.DisplayName : "-") + " / " + (s != null ? s.DisplayName : "-");
+        }
+
+        public static bool ChestsShown { get; private set; }
+
+        public static void ToggleShowChests()
+        {
+            if (!Use()) return;
+            ChestsShown = !ChestsShown;
+            TreasureChest.ShowAll(ChestsShown);
+        }
+
+        public static void CompleteCollection()
+        {
+            if (!Use()) return;
+            foreach (Collectible c in new System.Collections.Generic.List<Collectible>(Collectible.All))
+                if (c != null && c.Type == Collectible.Kind.Collection && !c.IsTaken) c.Take();
+            if (CollectionPopup.Instance != null) CollectionPopup.Instance.Hide();
+        }
+
+        public static void CompleteQuests()
+        {
+            if (!Use() || QuestManager.Instance == null) return;
+            QuestManager.Instance.CompleteAllActive();
+        }
+
+        // Köprülerin gerektirdiği binayı da açar, köprüleri tamamlar.
+        public static void CompleteBridges()
+        {
+            if (!Use()) return;
+            foreach (ConstructionSite site in ConstructionSite.All)
+            {
+                if (!(site is BridgeBuilder)) continue;
+                site.ForceComplete();
+            }
+        }
+
+        public static bool CloudsHidden { get; private set; }
+
+        public static void ToggleClouds()
+        {
+            if (!Use()) return;
+            CloudsHidden = !CloudsHidden;
+            RegionCloud.SetAllHidden(CloudsHidden);
+        }
+
         private static void Unlock(AreaDefinition area)
         {
             if (area != null && AreaManager.Instance != null && !AreaManager.Instance.IsUnlocked(area)) AreaManager.Instance.Unlock(area);

@@ -91,6 +91,22 @@ namespace KayipAda.EditorTools
                     s.Add(new Box { C = new Vector2(64, 64), Half = new Vector2(46, 30), Radius = 24, Fill = new Color(0.97f, 0.94f, 0.84f) });
                     s.Add(new Box { C = new Vector2(64, 64), Half = new Vector2(6, 30), Radius = 3, Fill = new Color(0.85f, 0.35f, 0.3f) });
                     break;
+                case "scrap": // paslı metal levhalar + cıvata
+                    s.Add(new Box { C = new Vector2(54, 58), Half = new Vector2(36, 18), Radius = 4, Angle = 18, Fill = new Color(0.62f, 0.4f, 0.28f) });
+                    s.Add(new Box { C = new Vector2(74, 78), Half = new Vector2(34, 16), Radius = 4, Angle = -14, Fill = new Color(0.55f, 0.56f, 0.6f) });
+                    s.Add(new Circle { C = new Vector2(46, 86), R = 10, Fill = new Color(0.4f, 0.4f, 0.44f) });
+                    break;
+                case "nail": // üç çivi
+                    for (int i = -1; i <= 1; i++)
+                    {
+                        s.Add(new Box { C = new Vector2(64 + i * 24, 58), Half = new Vector2(5, 40), Radius = 3, Angle = i * 10, Fill = new Color(0.7f, 0.72f, 0.76f) });
+                        s.Add(new Box { C = new Vector2(64 + i * 24 - i * 7, 100), Half = new Vector2(14, 6), Radius = 3, Angle = i * 10, Fill = new Color(0.5f, 0.52f, 0.56f) });
+                    }
+                    break;
+                case "crystal": // mor kristal (elmas)
+                    s.Add(new Box { C = new Vector2(64, 64), Half = new Vector2(34, 34), Radius = 6, Angle = 45, Fill = new Color(0.62f, 0.38f, 0.95f) });
+                    s.Add(new Box { C = new Vector2(52, 76), Half = new Vector2(10, 22), Radius = 4, Angle = 45, Fill = new Color(0.86f, 0.75f, 1f) });
+                    break;
                 default:
                     s.Add(new Circle { C = new Vector2(64, 64), R = 40, Fill = Color.white });
                     break;

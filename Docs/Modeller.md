@@ -72,6 +72,29 @@
 | Geliştirme tezgahı (kampta) — Quaternius'ta yok | UpgradeBench | KenneySurvival | workbench.fbx | 1,9 m (en büyük kenar) | ✅ |
 | İnşa edilen gemi (kızakta aşağıdan yukarı belirir, törende suya kayar) | Ship | Quaternius | Ship_Large.fbx | 9 m (en büyük kenar) | ✅ |
 
+## Keşif (adacıklar, sandık, koleksiyon, tapınak, Demirci)
+
+| Nesne | Prefab adı | Paket | Model dosyası | Boyut | Durum |
+|---|---|---|---|---|---|
+| Gizli hazine sandığı (kapalı) | ChestClosed | Quaternius | Prop_Chest_Closed.fbx | 0,95 m (en büyük kenar) | ✅ |
+| Açılmış hazine sandığı (altın dolu) | ChestGold | Quaternius | Prop_Chest_Gold.fbx | 1,05 m (en büyük kenar) | ✅ |
+| Koleksiyon: şişede mektup | BottleLetter | Quaternius | Prop_Bottle_2.fbx | 0,6 m (yükseklik) | ✅ |
+| Koleksiyon: altın kafatası (altına boyanır) | GoldenSkull | Quaternius | Prop_Skull.fbx | 0,5 m (en büyük kenar) | ✅ |
+| Koleksiyon: hazine haritası parçası | MapPiece | Quaternius | UI_Paper.fbx | 0,6 m (en büyük kenar) | ✅ |
+| Altın figür başı (altına boyanır) — Quaternius'ta yok | StatueHead | KenneyNature | statue_head.fbx | 0,7 m (en büyük kenar) | ✅ |
+| Tapınak sütunu — Quaternius'ta yok | TempleColumn | KenneyNature | statue_column.fbx | 2,6 m (yükseklik) | ✅ |
+| Kırık tapınak sütunu | TempleColumnBroken | KenneyNature | statue_columnDamaged.fbx | 1,9 m (yükseklik) | ✅ |
+| Tapınak altar halkası (yerde) | TempleRing | KenneyNature | statue_ring.fbx | 2,6 m (en büyük kenar) | ✅ |
+| Dikili taş | TempleObelisk | KenneyNature | statue_obelisk.fbx | 3,2 m (yükseklik) | ✅ |
+| Yıkık taş blok | TempleBlock | KenneyNature | statue_block.fbx | 0,9 m (en büyük kenar) | ✅ |
+| Hurda metal veren batık parçası (Batık Koyu) | ScrapWreck | KenneyPirate | ship-wreck.fbx | 2,8 m (en büyük kenar) | ✅ |
+| Batık Koyu'ndaki büyük batık gemi (süs) | IsletWreck | KenneyPirate | ship-wreck.fbx | 8 m (en büyük kenar) | ✅ |
+| Demirci — kodla kurulan ocak + örs + çekiç (MachineBuilder); dosya sadece boyut için | Forge | KenneySurvival | workbench-anvil.fbx | 3,4 m (en büyük kenar) | ✅ |
+| Demircinin örsü | Anvil | KenneySurvival | workbench-anvil.fbx | 1,15 m (en büyük kenar) | ✅ |
+| Demircinin çekici (örse vurur) | Hammer | KenneySurvival | tool-hammer.fbx | 0,75 m (en büyük kenar) | ✅ |
+| Kırık iskele (yan görevde onarılır) | BrokenPier | Quaternius | Environment_Dock_Broken.fbx | 3,4 m (en büyük kenar) | ✅ |
+| Demirci Çırağı (iskelet korsan; hurda toplar, Demirci'ye götürür) | Worker_Smith | Quaternius | Characters_Skeleton.fbx | 1,7 m (yükseklik) | ✅ |
+
 ## Süsler
 
 | Nesne | Prefab adı | Paket | Model dosyası | Boyut | Durum |

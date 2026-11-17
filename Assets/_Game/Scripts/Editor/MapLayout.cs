@@ -90,6 +90,58 @@ namespace KayipAda.EditorTools
         public static readonly Vector3 DeliveryFromShip = new Vector3(-3.8f, 0f, -1.2f);
         public static readonly Vector3 WreckOffset = new Vector3(-10f, 0f, 3f);
 
+        // ================================================================ Keşif (adacıklar, köprüler, sandıklar, koleksiyon)
+
+        // Adacıklar: (merkez X, merkez Z, yarıçap X, yarıçap Z). 0 = Batık Koyu (batı), 1 = Kayıp Tapınak (güneydoğu).
+        public static readonly Vector4[] Islets = { new Vector4(-31f, 9f, 6.5f, 7.5f), new Vector4(29.5f, -11f, 7f, 7.5f) };
+        public static readonly string[] IsletNames = { "Batık Koyu", "Kayıp Tapınak" };
+        // Adacık zemin tonları (ayırt edici görünüş): Batık Koyu koyu kum + yosunlu kaya, Tapınak sık yeşil + yosun.
+        public static readonly Color[] IsletGrass = { new Color(0.5f, 0.55f, 0.38f), new Color(0.3f, 0.58f, 0.3f) };
+        public static readonly Color[] IsletSand = { new Color(0.86f, 0.76f, 0.58f), new Color(0.95f, 0.86f, 0.64f) };
+        public const float IsletSandWidth = 2.6f;
+        // Köprüler: ana adadaki uç noktasının yaklaşık yeri (kıyıya göre düzeltilir) ve adacığa uzanma yönü.
+        public static readonly Vector3[] BridgeMainEnd = { new Vector3(-17.8f, 0f, 9f), new Vector3(14.6f, 0f, -11f) };
+        public const float BridgeHalfWidth = 1.15f;
+        public const float BridgeShoreInset = 1.4f;  // köprü uçları kıyıdan bu kadar içeride
+        public const float BridgeHeadInland = 2.3f;  // teslim alanı köprü ucundan karaya doğru bu kadar
+        public const float BridgePlankSpacing = 0.44f;
+        public const float BridgeDeckY = 0.07f;
+
+        // Batık Koyu: Demirci (hurda metal → çivi), hurda yığınları, büyük batık gemi.
+        public static readonly Vector3 Forge = new Vector3(-31f, 0f, 7.6f);
+        public static readonly Vector3[] ScrapNodes = { new Vector3(-34.6f, 0f, 12.2f), new Vector3(-28.2f, 0f, 12.8f), new Vector3(-35.6f, 0f, 6.6f) };
+        public static readonly Vector3 IsletWreck = new Vector3(-38.2f, 0f, 12.5f);
+
+        // Kayıp Tapınak: harabe halkası (sütunlar), dikili taş, altar.
+        public static readonly Vector3 Temple = new Vector3(30f, 0f, -10.6f);
+        public const float TempleRadius = 3.4f;
+
+        // Gizli sandıklar (8): ana adada 4, her adacıkta 2. Kıyıya fazla yakınsa içeri doğru kaydırılır.
+        public static readonly Vector3[] Chests =
+        {
+            new Vector3(-13.5f, 0f, 17f), new Vector3(7.4f, 0f, 13.9f), new Vector3(-15.5f, 0f, -9f), new Vector3(9.5f, 0f, -16.5f),
+            new Vector3(-35.4f, 0f, 13.8f), new Vector3(-27.4f, 0f, 3.6f), new Vector3(34.4f, 0f, -8.8f), new Vector3(25.6f, 0f, -8.2f)
+        };
+        // Koleksiyon (5): eski pusula, şişede mektup, altın kafatası, kaptan dürbünü, hazine haritası parçası.
+        public static readonly Vector3[] Collectibles =
+        {
+            new Vector3(-33.6f, 0f, 4.6f), new Vector3(-2.5f, 0f, -17.5f), new Vector3(30f, 0f, -10.6f),
+            new Vector3(-4.6f, 0f, 20f), new Vector3(-10f, 0f, 14.3f)
+        };
+        // Altın figür parçaları (3, tapınakta).
+        public static readonly Vector3[] FigureParts = { new Vector3(33.4f, 0f, -12.8f), new Vector3(26.4f, 0f, -12.4f), new Vector3(31.8f, 0f, -7.2f) };
+
+        // Kırık yapılar (yan görev): kuyu, çit, iskele (kök = teslim alanı; kırık yapı arkasında).
+        public static readonly Vector3 Well = new Vector3(3.2f, 0f, -3.4f);
+        public static readonly Vector3 BrokenFence = new Vector3(-10.2f, 0f, -12f);
+        public static readonly Vector3 BrokenPier = new Vector3(4f, 0f, -17.6f);
+
+        // Bina seviye kareleri: binanın köküne göre (bina yanında küçük kare).
+        public const float LevelPadScale = 0.72f;
+        public static readonly Vector3 LevelPadLeft = new Vector3(-3.2f, 0f, -0.6f);
+        public static readonly Vector3 LevelPadRight = new Vector3(3.1f, 0f, -0.5f);
+        public static readonly Vector3 LevelPadFrontLeft = new Vector3(-1.6f, 0f, -3.4f);
+
         // Yığında parçalar arası boşluk (1.05 = %5).
         public const float StackGapScale = 1.05f;
 

@@ -166,8 +166,29 @@ namespace KayipAda
                 speedButtons.Add(b.GetComponent<Image>());
             }
 
+            // Keşif: ikişerli satırlar (menü ekrana sığsın).
+            Transform k1 = CreateRow(p);
+            Flex(CreateButton(k1, "+" + config.DevCrystalAmount + " Kristal", ButtonColor, () => DevCommands.AddCrystals(config)));
+            Flex(CreateButton(k1, "Tüm Kostümleri Aç", ButtonColor, DevCommands.UnlockAllCostumes));
+            Transform k2 = CreateRow(p);
+            Flex(CreateButton(k2, "Sıradaki Kostümü Giy", ButtonColor, () => DevCommands.WearNextCostume()));
+            Flex(CreateButton(k2, "Tüm Sandıkları Göster", ButtonColor, DevCommands.ToggleShowChests));
+            Transform k3 = CreateRow(p);
+            Flex(CreateButton(k3, "Koleksiyonu Tamamla", ButtonColor, DevCommands.CompleteCollection));
+            Flex(CreateButton(k3, "Görevleri Tamamla", ButtonColor, DevCommands.CompleteQuests));
+            Transform k4 = CreateRow(p);
+            Flex(CreateButton(k4, "Köprüleri Tamamla", ButtonColor, DevCommands.CompleteBridges));
+            Flex(CreateButton(k4, "Bulutları Kaldır/Getir", ButtonColor, DevCommands.ToggleClouds));
+
             CreateButton(p, "Kaydı Sil ve Yeniden Başlat", DangerColor, DevCommands.ResetSaveAndRestart);
             CreateButton(p, "Kapat", new Color(0.3f, 0.3f, 0.34f, 1f), Close);
+        }
+
+        private static void Flex(Button b)
+        {
+            b.GetComponent<LayoutElement>().flexibleWidth = 1f;
+            b.GetComponentInChildren<TMP_Text>().enableAutoSizing = true;
+            b.GetComponentInChildren<TMP_Text>().fontSizeMin = 16f;
         }
 
         private void ChangeResource(int step)

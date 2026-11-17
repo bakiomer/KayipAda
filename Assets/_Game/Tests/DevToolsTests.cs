@@ -193,8 +193,17 @@ namespace KayipAda.Tests
                 if (!AreaManager.Instance.IsUnlocked(pad.Area)) AreaManager.Instance.Unlock(pad.Area);
             }
             yield return new WaitForSeconds(2f); // kapılar açılsın
+            // Köprü başları (köprüler bitmeden) ana adadan ulaşılabilir olmalı.
+            foreach (ConstructionSite site in ConstructionSite.All)
+                Assert.IsTrue(IslandNavMesh.HasCompletePath(start, site.transform.position), site.name + " (teslim alanı) ulaşılamıyor");
+            DevCommands.CompleteBridges(); // adacıklar
+            yield return new WaitForSeconds(2.5f); // bulut odak çekimi
             yield return WaitFor(() => IslandNavMesh.IsUpToDate, 5f);
             Assert.IsTrue(IslandNavMesh.IsUpToDate, "NavMesh güncellenmedi");
+            foreach (TreasureChest chest in TreasureChest.All)
+                Assert.IsTrue(IslandNavMesh.HasCompletePath(start, chest.transform.position + Vector3.back * 1.2f), chest.name + " sandığına ulaşılamıyor");
+            foreach (Collectible item in Collectible.All)
+                Assert.IsTrue(IslandNavMesh.HasCompletePath(start, item.transform.position), item.name + " eşyasına ulaşılamıyor");
 
             foreach (BuildingInput input in Object.FindObjectsByType<BuildingInput>(FindObjectsSortMode.None))
                 Assert.IsTrue(IslandNavMesh.HasCompletePath(start, input.transform.position), input.transform.parent.name + " girişine ulaşılamıyor");

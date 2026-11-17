@@ -11,6 +11,11 @@ namespace KayipAda
 {
     public class UnlockPad : InteractionZone
     {
+        [Tooltip("İsteğe bağlı kare (bina seviyesi): rehber oku bunu göstermez.")]
+        [SerializeField] private bool guideIgnore;
+
+        public bool GuideIgnore => guideIgnore;
+
         [SerializeField] private AreaDefinition area;
         [Tooltip("Boş değilse: bu kare ancak bu alan açıldıktan sonra görünür.")]
         [SerializeField] private AreaDefinition requiredArea;

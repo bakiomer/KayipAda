@@ -10,6 +10,9 @@ namespace KayipAda
 {
     public class ResourceNode : InteractionZone
     {
+        // Herhangi bir kaynak noktasından toplanınca (yan görevler): kaynak türü, oyuncu mu.
+        public static event System.Action<ResourceType, bool> Gathered;
+
         [SerializeField] private ResourceNodeType nodeType;
         [Tooltip("Sallanma/sıkışma/küçülme efektlerinin uygulandığı görsel kök (model).")]
         [SerializeField] private Transform visual;
@@ -102,7 +105,7 @@ namespace KayipAda
                 if (!CanServe(visitor) || visitor.IsFull) continue;
 
                 ResourceItem item = nodeType.Resource.Spawn(transform.position + Vector3.up * spawnHeight);
-                visitor.TryAdd(item);
+                if (visitor.TryAdd(item)) Gathered?.Invoke(item.Type, visitor.IsPlayer);
                 Stock--;
                 gave = true;
                 playerGot |= visitor.IsPlayer;

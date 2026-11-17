@@ -12,7 +12,7 @@ namespace KayipAda.EditorTools
 {
     public static class MachineBuilder
     {
-        public enum Kind { None, RopeWheel, Loom }
+        public enum Kind { None, RopeWheel, Loom, Anvil }
 
         private static Material Wood => ArtGenerator.GetLit("M_ShipWood", null, MapLayout.ShipWoodColor);
         private static Material Plank => ArtGenerator.GetLit("M_ShipPlank", null, MapLayout.ShipPlankColor);
@@ -25,12 +25,13 @@ namespace KayipAda.EditorTools
         // Makineyi "body" altına kurar ve hareket bileşenini ekler. Ürünün çıktığı yeri (body'nin yerel uzayında) döner.
         public static Vector3 Build(Kind kind, Transform body, ProcessingBuilding building, GameConfig config, float size)
         {
-            Shelter(body, kind == Kind.Loom ? new Color(0.25f, 0.5f, 0.75f) : new Color(0.82f, 0.25f, 0.2f), size);
+            Color stripe = kind == Kind.Loom ? new Color(0.25f, 0.5f, 0.75f) : kind == Kind.Anvil ? new Color(0.32f, 0.3f, 0.3f) : new Color(0.82f, 0.25f, 0.2f);
+            Shelter(body, stripe, size);
             Machine machine = body.gameObject.AddComponent<Machine>();
             BuilderUtil.SetField(machine, "config", config);
             BuilderUtil.SetField(machine, "building", building);
-            BuilderUtil.SetEnum(machine, "kind", kind == Kind.Loom ? 1 : 0);
-            Vector3 output = kind == Kind.Loom ? BuildLoom(body, machine) : BuildRopeWheel(body, machine);
+            BuilderUtil.SetEnum(machine, "kind", kind == Kind.Loom ? 1 : kind == Kind.Anvil ? 2 : 0);
+            Vector3 output = kind == Kind.Loom ? BuildLoom(body, machine) : kind == Kind.Anvil ? BuildForge(body, machine) : BuildRopeWheel(body, machine);
             BuilderUtil.SetShadows(body.gameObject, true);
             return output;
         }
@@ -182,6 +183,62 @@ namespace KayipAda.EditorTools
             BuilderUtil.SetField(machine, "cloth", cloth);
             BuilderUtil.SetFloat(machine, "cycleTime", 0.75f);
             return rollerPos + Vector3.up * 0.2f;
+        }
+
+        // Demirci: solda taş ocak (kor gibi parlayan közler + baca), ortada örs, örsün üstünde inip kalkan çekiç kolu.
+        private static Vector3 BuildForge(Transform body, Machine machine)
+        {
+            Material stone = ArtGenerator.GetLit("M_ForgeStone", null, new Color(0.5f, 0.48f, 0.46f));
+            Material ember = ArtGenerator.GetLit("M_Ember", null, new Color(1f, 0.45f, 0.1f));
+            Part(body, PrimitiveType.Cube, "Hearth", new Vector3(-0.85f, 0.45f, 0.25f), new Vector3(1f, 0.9f, 0.9f), Quaternion.identity, stone);
+            GameObject coals = Part(body, PrimitiveType.Cube, "Embers", new Vector3(-0.85f, 0.92f, 0.25f), new Vector3(0.75f, 0.06f, 0.65f), Quaternion.identity, ember);
+            Part(body, PrimitiveType.Cylinder, "Chimney", new Vector3(-0.85f, 1.8f, 0.45f), new Vector3(0.35f, 0.85f, 0.35f), Quaternion.identity, stone);
+            Transform anvil = new GameObject("Anvil").transform;
+            anvil.SetParent(body, false);
+            anvil.localPosition = new Vector3(0.45f, 0f, -0.05f);
+            PrefabFactory.CreateModel(ModelCatalog.Anvil, anvil);
+            float top = PrefabFactory.WorldBounds(anvil.gameObject).max.y - body.position.y;
+            // Çekiç kolu: örsün arkasındaki direğe takılı, X ekseninde döner (vuruşta örse iner).
+            Part(body, PrimitiveType.Cube, "HammerPost", new Vector3(0.45f, (top + 0.55f) * 0.5f, 0.62f), new Vector3(0.14f, top + 0.55f, 0.14f), Quaternion.identity, Wood);
+            Transform pivot = new GameObject("HammerPivot").transform;
+            pivot.SetParent(body, false);
+            pivot.localPosition = new Vector3(0.45f, top + 0.45f, 0.62f);
+            Part(pivot, PrimitiveType.Cube, "Arm", new Vector3(0f, 0f, -0.35f), new Vector3(0.08f, 0.08f, 0.7f), Quaternion.identity, Wood);
+            Transform head = new GameObject("Hammer").transform;
+            head.SetParent(pivot, false);
+            head.localPosition = new Vector3(0f, -0.12f, -0.68f);
+            Part(head, PrimitiveType.Cube, "Head", Vector3.zero, new Vector3(0.22f, 0.16f, 0.16f), Quaternion.identity, Iron);
+            pivot.localRotation = Quaternion.Euler(-8f, 0f, 0f);
+            // Kıvılcımlar (vuruşta).
+            GameObject sparksGo = new GameObject("Sparks");
+            sparksGo.transform.SetParent(body, false);
+            sparksGo.transform.localPosition = new Vector3(0.45f, top + 0.05f, -0.05f);
+            ParticleSystem sparks = sparksGo.AddComponent<ParticleSystem>();
+            sparks.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            ParticleSystem.MainModule main = sparks.main;
+            main.loop = false;
+            main.playOnAwake = false;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.25f, 0.5f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(2f, 4.5f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.04f, 0.08f);
+            main.startColor = new ParticleSystem.MinMaxGradient(new Color(1f, 0.85f, 0.3f), new Color(1f, 0.5f, 0.1f));
+            main.gravityModifier = 1.2f;
+            main.maxParticles = 40;
+            ParticleSystem.EmissionModule emission = sparks.emission;
+            emission.rateOverTime = 0f;
+            ParticleSystem.ShapeModule shape = sparks.shape;
+            shape.shapeType = ParticleSystemShapeType.Hemisphere;
+            shape.radius = 0.08f;
+            shape.rotation = new Vector3(-90f, 0f, 0f);
+            ParticleSystemRenderer pr = sparksGo.GetComponent<ParticleSystemRenderer>();
+            pr.sharedMaterial = ArtGenerator.GetTransparent("M_Spark", ArtGenerator.LoadSprite(ArtGenerator.SoftCirclePath)?.texture, Color.white);
+            pr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+
+            BuilderUtil.SetField(machine, "hammer", pivot);
+            BuilderUtil.SetField(machine, "sparks", sparks);
+            BuilderUtil.SetField(machine, "ember", coals.transform);
+            BuilderUtil.SetFloat(machine, "cycleTime", 0.9f);
+            return new Vector3(0.45f, top + 0.15f, -0.05f);
         }
 
         public static GameObject Part(Transform parent, PrimitiveType type, string name, Vector3 pos, Vector3 scale, Quaternion rot, Material material)

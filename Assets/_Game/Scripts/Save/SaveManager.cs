@@ -111,13 +111,21 @@ namespace KayipAda
                 }
             }
             if (CrewManager.Instance != null) CrewManager.Instance.Restore(SaveData.ToDictionary(data.Crew));
+            if (ProfileManager.Instance != null) ProfileManager.Instance.Restore(data);
         }
 
         // Gemi: her şey uyandıktan sonra.
         private void RestoreLate()
         {
             if (ShipBuilder.Instance != null) ShipBuilder.Instance.Restore(data.ShipStage, SaveData.ToDictionary(data.ShipDelivered));
+            Dictionary<string, int> sites = SaveData.ToDictionary(data.Sites);
+            foreach (ConstructionSite site in ConstructionSite.All) site.Restore(sites, data.SitesDone.Contains(site.Id));
+            if (QuestManager.Instance != null) QuestManager.Instance.Restore(data);
         }
+
+        // Kalıcı profil (test için ve "Tekrar oyna" sonrası).
+        public int Escapes => data.Escapes;
+        public int LegendaryShips => data.LegendaryShips;
 
         public void Save()
         {
@@ -151,6 +159,15 @@ namespace KayipAda
                     if (type != null) data.Upgrades.Add(new SaveData.IdValue(type.Id, UpgradeManager.Instance.GetLevel(type)));
                 }
             }
+            if (ProfileManager.Instance != null) ProfileManager.Instance.Collect(data);
+            if (QuestManager.Instance != null) QuestManager.Instance.Collect(data);
+            data.Sites.Clear();
+            data.SitesDone.Clear();
+            foreach (ConstructionSite site in ConstructionSite.All)
+            {
+                site.Collect(data.Sites);
+                if (site.IsCompleted) data.SitesDone.Add(site.Id);
+            }
             if (CrewManager.Instance != null)
             {
                 data.Crew.Clear();
@@ -171,6 +188,16 @@ namespace KayipAda
             data.Escapes++;
             Save();
             return config.EscapeXp;
+        }
+
+        // Kaçış ödülü kristalleri (kalıcı) ve efsanevi gemi sayacı. Döndürülen: kazanılan kristal.
+        public int RegisterEscapeCrystals(bool legendary)
+        {
+            int crystals = config.EscapeCrystals + (legendary ? config.LegendaryCrystals : 0);
+            if (legendary) data.LegendaryShips++;
+            if (ProfileManager.Instance != null) ProfileManager.Instance.AddCrystals(crystals);
+            Save();
+            return crystals;
         }
 
         // Test Menüsü: kaydı tamamen siler (kaptanlık dahil) ve oyunu baştan başlatır.

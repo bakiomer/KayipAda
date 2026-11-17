@@ -327,6 +327,59 @@ namespace KayipAda
         [field: Tooltip("Kıyıya bu kadar (metre) yakınken adımlar suda halka bırakır.")]
         [field: SerializeField, Min(0f)] public float RippleCoastDistance { get; private set; } = 0.75f;
 
+        [field: Header("Keşif: bulutlar, sandıklar, koleksiyon")]
+        [field: Tooltip("Bulut parçalarının kıpırdama hızı.")]
+        [field: SerializeField, Min(0f)] public float CloudDriftSpeed { get; private set; } = 0.35f;
+
+        [field: Tooltip("Bölge açılınca kameranın bulutlu bölgeye odaklandığı toplam süre (saniye).")]
+        [field: SerializeField, Min(0.5f)] public float CloudFocusTime { get; private set; } = 1.8f;
+
+        [field: Tooltip("Bulutun dağılma süresi (saniye).")]
+        [field: SerializeField, Min(0.1f)] public float CloudDisperseTime { get; private set; } = 1.1f;
+
+        [field: Tooltip("Odak çekiminde kameranın yüksekliği ve geride durduğu uzaklık (metre).")]
+        [field: SerializeField, Min(1f)] public float CloudShotHeight { get; private set; } = 14f;
+        [field: SerializeField, Min(1f)] public float CloudShotDistance { get; private set; } = 12f;
+
+        [field: Tooltip("Oyuncu sandığa bu kadar yaklaşınca kapak açılır (metre).")]
+        [field: SerializeField, Min(0.5f)] public float ChestOpenDistance { get; private set; } = 1.7f;
+
+        [field: Tooltip("Koleksiyon / altın figür eşyası bu uzaklıkta alınır (metre).")]
+        [field: SerializeField, Min(0.3f)] public float CollectibleDistance { get; private set; } = 1.2f;
+
+        [field: Tooltip("Daha önce bulunmuş sandık/eşyanın soluk tonu.")]
+        [field: SerializeField] public Color FoundItemTint { get; private set; } = new Color(0.55f, 0.55f, 0.6f, 1f);
+
+        [field: Tooltip("Koleksiyon 5/5 olunca verilen ek kristal (bir kez).")]
+        [field: SerializeField, Min(0)] public int CollectionBonusCrystals { get; private set; } = 15;
+
+        [field: Tooltip("Koleksiyon kartının ekranda kaldığı süre (saniye).")]
+        [field: SerializeField, Min(0.5f)] public float CollectionPopupTime { get; private set; } = 3.2f;
+
+        [field: Header("Yan görevler ve altın figür")]
+        [field: Tooltip("Aynı anda en fazla kaç yan görev görünür.")]
+        [field: SerializeField, Range(1, 3)] public int MaxActiveQuests { get; private set; } = 2;
+
+        [field: Tooltip("Görev bitince yenisinin gelmesi için bekleme (saniye).")]
+        [field: SerializeField, Min(0f)] public float QuestRefillDelay { get; private set; } = 1.4f;
+
+        [field: Tooltip("Gemiye altın figür takılması için gereken parça sayısı.")]
+        [field: SerializeField, Min(1)] public int FigurePartsNeeded { get; private set; } = 3;
+
+        [field: Tooltip("Kaçışta kazanılan kristal; efsanevi gemiyle (altın figür) ek kristal.")]
+        [field: SerializeField, Min(0)] public int EscapeCrystals { get; private set; } = 10;
+        [field: SerializeField, Min(0)] public int LegendaryCrystals { get; private set; } = 20;
+
+        [field: Header("Bina seviyeleri (1, 2, 3)")]
+        [field: Tooltip("Seviyeye göre üretim hızı çarpanı.")]
+        [field: SerializeField] public float[] BuildingLevelSpeed { get; private set; } = { 1f, 1.35f, 1.75f };
+
+        [field: Tooltip("Seviyeye göre giriş/çıkış kapasitesine eklenen.")]
+        [field: SerializeField] public float[] BuildingLevelCapacity { get; private set; } = { 0f, 6f, 12f };
+
+        [field: Tooltip("Seviyeye göre binanın görünen boyu (büyür).")]
+        [field: SerializeField] public float[] BuildingLevelScale { get; private set; } = { 1f, 1.1f, 1.2f };
+
         [field: Header("Test Menüsü (sadece Editor ve geliştirme sürümü)")]
         [field: Tooltip("Test Menüsü'ndeki \"+Para\" butonunun verdiği para.")]
         [field: SerializeField, Min(1)] public int DevMoneyAmount { get; private set; } = 1000;
@@ -336,5 +389,8 @@ namespace KayipAda
 
         [field: Tooltip("Test Menüsü'ndeki oyun hızı seçenekleri.")]
         [field: SerializeField] public float[] DevSpeeds { get; private set; } = { 1f, 2f, 5f };
+
+        [field: Tooltip("Test Menüsü'ndeki \"+Kristal\" butonunun verdiği kristal.")]
+        [field: SerializeField, Min(1)] public int DevCrystalAmount { get; private set; } = 100;
     }
 }

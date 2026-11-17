@@ -3,6 +3,8 @@
 // BuildingType'taki sürede işler: ham maddeler binaya uçup kaybolur, ürün çıkış yığınına uçar.
 // Çalışırken üstte ilerleme halkası döner ve duman/talaş çıkar; ürün çıkınca bina zıplar.
 // Çıkış dolunca durur (ilerleme bekler), ürün alınınca kaldığı yerden devam eder.
+// Seviye: yanındaki küçük karelerle (levelAreas: Seviye 2, Seviye 3) yükselir; hız ve kapasite artar, bina büyür
+// (GameConfig > Bina seviyeleri).
 
 using UnityEngine;
 
@@ -21,6 +23,11 @@ namespace KayipAda
         [SerializeField] private Transform bodyVisual;
         [Tooltip("Çalışırken çıkan duman/talaş (boş olabilir).")]
         [SerializeField] private ParticleSystem workEffect;
+        [Tooltip("Seviye kareleri: açıldıkça bina seviye atlar (Seviye 2, Seviye 3).")]
+        [SerializeField] private AreaDefinition[] levelAreas = new AreaDefinition[0];
+
+        // Herhangi bir bina ürün çıkarınca (yan görevler): ürün türü, adet.
+        public static event System.Action<ResourceType, int> AnyProduced;
 
         public BuildingType Type => type;
         public ItemPile InputPile => inputPile;
@@ -32,6 +39,33 @@ namespace KayipAda
         // Şu an işliyor mu (makineler sadece işlerken hareket eder)? İşlemin ilerlemesi 0..1.
         public bool IsWorking => working;
         public float Progress => progress;
+
+        // 1, 2, 3...: açılmış seviye karesi sayısı + 1.
+        public int Level
+        {
+            get
+            {
+                int level = 1;
+                if (AreaManager.Instance == null) return level;
+                foreach (AreaDefinition a in levelAreas) if (a != null && AreaManager.Instance.IsUnlocked(a)) level++;
+                return level;
+            }
+        }
+
+        public int MaxLevel => levelAreas.Length + 1;
+        public AreaDefinition[] LevelAreas => levelAreas;
+
+        // Toplam hız çarpanı: geliştirme × seviye.
+        public float SpeedMultiplier => UpgradeManager.Multiplier(UpgradeStat.BuildingSpeed) * LevelValue(config.BuildingLevelSpeed, 1f);
+
+        private float LevelValue(float[] values, float fallback)
+        {
+            int i = Level - 1;
+            return values != null && values.Length > 0 ? values[Mathf.Clamp(i, 0, values.Length - 1)] : fallback;
+        }
+
+        private int shownLevel = 1;
+        private Vector3 bodyScale = Vector3.one;
 
         // Bir ürün çıkınca.
         public event System.Action Produced;
@@ -51,6 +85,39 @@ namespace KayipAda
 
             ApplyCapacities();
             progressRing.SetProgress(0f);
+            if (bodyVisual != null) bodyScale = bodyVisual.localScale;
+        }
+
+        private void Start()
+        {
+            shownLevel = Level;
+            ApplyLevelScale();
+            if (AreaManager.Instance != null) AreaManager.Instance.AreaUnlocked += OnAreaUnlocked;
+        }
+
+        private void OnDestroy()
+        {
+            if (AreaManager.Instance != null) AreaManager.Instance.AreaUnlocked -= OnAreaUnlocked;
+        }
+
+        // Seviye atladı: bina büyür, parıltı + yazı.
+        private void OnAreaUnlocked(AreaDefinition area)
+        {
+            if (System.Array.IndexOf(levelAreas, area) < 0 || Level == shownLevel) return;
+            shownLevel = Level;
+            ApplyLevelScale();
+            if (bodyVisual != null) Tween.PunchScale(bodyVisual, 0.15f, 0.45f);
+            if (Effects.Instance != null)
+            {
+                Effects.Instance.Sparkle(productSpawnPoint.position + Vector3.up);
+                Effects.Instance.ShowText(productSpawnPoint.position + Vector3.up * 2.4f, type.DisplayName + " Seviye " + shownLevel + "!", new Color(0.6f, 1f, 0.6f));
+            }
+            AudioManager.Play(SoundId.Upgrade);
+        }
+
+        private void ApplyLevelScale()
+        {
+            if (bodyVisual != null) bodyVisual.localScale = bodyScale * LevelValue(config.BuildingLevelScale, 1f);
         }
 
         private void Update()
@@ -66,7 +133,7 @@ namespace KayipAda
             else if (HasRoomForOutput())
             {
                 isWorking = true;
-                progress += Time.deltaTime * UpgradeManager.Multiplier(UpgradeStat.BuildingSpeed) / type.ProcessTime;
+                progress += Time.deltaTime * SpeedMultiplier / type.ProcessTime;
                 if (progress >= 1f)
                 {
                     progress = 0f;
@@ -90,8 +157,9 @@ namespace KayipAda
 
         private void ApplyCapacities()
         {
-            inputPile.Capacity = type.InputCapacity;
-            outputPile.Capacity = type.OutputCapacity;
+            int extra = Mathf.RoundToInt(LevelValue(config.BuildingLevelCapacity, 0f));
+            inputPile.Capacity = type.InputCapacity + extra;
+            outputPile.Capacity = type.OutputCapacity + extra;
         }
 
         private bool HasRoomForOutput()
@@ -117,6 +185,7 @@ namespace KayipAda
             if (bodyVisual != null) Tween.PunchScale(bodyVisual, config.NodeSquash, 0.3f);
             AudioManager.Play(SoundId.Produce, 0.4f);
             Produced?.Invoke();
+            AnyProduced?.Invoke(type.Output, type.OutputAmount);
         }
     }
 }

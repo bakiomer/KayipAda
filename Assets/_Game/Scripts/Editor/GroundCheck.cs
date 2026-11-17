@@ -17,7 +17,7 @@ namespace KayipAda.EditorTools
         private const float BuriedFraction = 0.5f;   // boyunun bu kadarı zeminin altındaysa "gömülü"
 
         // Bilerek suya/zemine gömülen ya da havada duran nesneler (ad başlangıcı).
-        private static readonly string[] Skip = { "Dock", "ShipWreck", "Water", "Island", "Ship", "Slipway", "Scaffolding",
+        private static readonly string[] Skip = { "Collectibles", "Cloud", "Bridge", "Dock", "ShipWreck", "Water", "Island", "Ship", "Slipway", "Scaffolding",
                                                   "Player", "Worker", "Enemy", "Coin", "FloatingText", "Confetti", "Dust",
                                                   "Sparkle", "Splash", "Firework", "Item_" };
 
