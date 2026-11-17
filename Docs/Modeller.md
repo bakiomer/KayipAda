@@ -134,6 +134,21 @@
 | Tabela | Signpost | KenneySurvival | signpost.fbx | 1,5 m (yükseklik) | ✅ |
 | Örs (atölye süsü) | Workbench | KenneySurvival | workbench-anvil.fbx | 1,1 m (en büyük kenar) | ✅ |
 | Kütük yığını (bıçkıhane süsü) | LogPile | KenneyNature | log_stack.fbx | 1,4 m (en büyük kenar) | ✅ |
+| Çalılık: büyük çalı (kapalı bölge) | ThicketBushA | KenneyNature | plant_bushLarge.fbx | 1,5 m (yükseklik) | ✅ |
+| Çalılık: sivri çalı | ThicketBushB | KenneyNature | plant_bushLargeTriangle.fbx | 1,6 m (yükseklik) | ✅ |
+| Çalılık: yuvarlak çalı | ThicketBushC | KenneyNature | plant_bushDetailed.fbx | 1,3 m (yükseklik) | ✅ |
+| Sarmaşık (yapraklı dallar) | Vine | KenneyNature | crops_leafsStageB.fbx | 1,2 m (yükseklik) | ✅ |
+| Sarmaşık / yosun (çalıların üstünde) | VineMoss | KenneyNature | hanging_moss.fbx | 1 m (en büyük kenar) | ✅ |
+| Taş ocağı kaya yüzü | QuarryCliffA | Quaternius | Environment_Cliff2.fbx | 3,6 m (yükseklik) | ✅ |
+| Taş ocağı kaya yüzü | QuarryCliffB | Quaternius | Environment_Cliff3.fbx | 3,2 m (yükseklik) | ✅ |
+| Taş ocağı kaya yüzü | QuarryCliffC | Quaternius | Environment_Cliff4.fbx | 3,4 m (yükseklik) | ✅ |
+| Kazma (rafta) — Quaternius'ta yok | Pickaxe | KenneySurvival | tool-pickaxe.fbx | 0,95 m (en büyük kenar) | ✅ |
+| Kürek (rafta) | Shovel | KenneySurvival | tool-shovel.fbx | 0,95 m (en büyük kenar) | ✅ |
+| Kırık taş yığını (taş ocağı) | StonePile | KenneySurvival | resource-stone-large.fbx | 1 m (en büyük kenar) | ✅ |
+| Kırık taş parçası | RockChunk | KenneyNature | rock_smallC.fbx | 0,45 m (en büyük kenar) | ✅ |
+| Meyve kasası (içinde kodla meyveler) | FruitCrate | KenneySurvival | box-open.fbx | 0,7 m (en büyük kenar) | ✅ |
+| Alçak süslü çit (Meyve Bahçesi) | FenceLow | KenneyNature | fence_simple.fbx | 2 m (en büyük kenar) | ✅ |
+| İskeleye bağlı küçük sandal (yan görevde onarılır) | Rowboat | KenneyPirate | boat-row-small.fbx | 2,6 m (en büyük kenar) | ✅ |
 
 ## Bulunamayan / içe aktarılamayan modeller
 

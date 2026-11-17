@@ -102,14 +102,14 @@ namespace KayipAda
                         profile.AddCrystals(config.CollectionBonusCrystals);
                     }
                 }
-                Faded.Apply(visual.gameObject, config.FoundItemTint);
-                if (glow != null) glow.SetActive(false);
             }
-            else
+            else if (QuestManager.Instance != null)
             {
-                if (QuestManager.Instance != null) QuestManager.Instance.AddFigurePart(id);
-                Tween.PopOut(transform, 0.3f);
+                QuestManager.Instance.AddFigurePart(id);
             }
+            // Alınan eşya yerden hemen kaybolur (profilde "bulundu" kalır; yeniden oynayınca soluk görünür).
+            if (glow != null) glow.SetActive(false);
+            Tween.PopOut(transform, 0.25f, () => gameObject.SetActive(false));
             PickedUp?.Invoke(this);
         }
 

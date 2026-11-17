@@ -139,39 +139,39 @@ namespace KayipAda.Tests
         [UnityTest]
         public IEnumerator Collision_ClosedAreaFenceBlocksUntilUnlocked()
         {
-            Rect rocky = new Rect(-11f, 6f, 9f, 9f); // MapLayout.RockyRect (kapı güney kenarın ortasında, x = -6.5)
+            Rect rocky = new Rect(-11f, 6f, 9f, 9f); // MapLayout.RockyRect (çit yok; kapalıyken çalılık engeller)
             Vector2 north = new Vector2(0f, 1f);
 
-            // Çitin düz kısmına doğru yürü: geçemez.
+            // Çalılığa doğru yürü: geçemez.
             Teleport(new Vector3(-3.5f, 0f, rocky.yMin - 1.2f));
             Player.ScriptedInput = north;
             yield return new WaitForSeconds(1.5f);
-            Assert.Less(Player.transform.position.z, rocky.yMin, "Oyuncu kapalı bölgenin çitinden geçti");
+            Assert.Less(Player.transform.position.z, rocky.yMin, "Oyuncu kapalı bölgenin çalılığından geçti");
 
-            // Kapalı kapıya doğru yürü: geçemez.
+            // Karenin önünden (eski kapı) yürü: geçemez.
             Teleport(new Vector3(-6.5f, 0f, rocky.yMin - 0.9f));
             yield return new WaitForSeconds(1.5f);
-            Assert.Less(Player.transform.position.z, rocky.yMin, "Oyuncu kapalı kapıdan geçti");
+            Assert.Less(Player.transform.position.z, rocky.yMin, "Oyuncu kapalı bölgeye girdi");
             Player.ScriptedInput = Vector2.zero;
             Shot("E_kapi_kapali");
 
-            // Bölge açılınca kapı açılır, içeri girilir.
+            // Kayma: çalılığa çapraz yürüyünce takılmadan yanından kayar (x değişir).
+            Teleport(new Vector3(-6.5f, 0f, rocky.yMin - 0.6f));
+            Player.ScriptedInput = new Vector2(0.7f, 0.7f);
+            float startX = Player.transform.position.x;
+            yield return new WaitForSeconds(0.8f);
+            Player.ScriptedInput = Vector2.zero;
+            Assert.Greater(Player.transform.position.x - startX, 1f, "Oyuncu çalılığa çapraz yürürken kaymadı (takıldı)");
+
+            // Bölge açılınca çalılık kesilir, içeri girilir.
             AreaManager.Instance.Unlock(PadArea("Pad Rocky"));
-            yield return new WaitForSeconds(1.5f);
+            yield return new WaitForSeconds(2.5f);
             Shot("E_kapi_acildi");
             Teleport(new Vector3(-6.5f, 0f, rocky.yMin - 0.9f));
             Player.ScriptedInput = north;
             yield return new WaitForSeconds(1.2f);
             Player.ScriptedInput = Vector2.zero;
-            Assert.Greater(Player.transform.position.z, rocky.yMin + 0.8f, "Bölge açılınca kapıdan girilemedi");
-
-            // Kayma: çite çapraz yürüyünce takılmadan yanından kayar (x değişir).
-            Teleport(new Vector3(-3.5f, 0f, rocky.yMin - 0.6f));
-            Player.ScriptedInput = new Vector2(0.7f, 0.7f);
-            float startX = Player.transform.position.x;
-            yield return new WaitForSeconds(0.8f);
-            Player.ScriptedInput = Vector2.zero;
-            Assert.Greater(Player.transform.position.x - startX, 1f, "Oyuncu çite çapraz yürürken kaymadı (takıldı)");
+            Assert.Greater(Player.transform.position.z, rocky.yMin + 0.8f, "Bölge açılınca içeri girilemedi");
         }
 
         // Hiçbir açma karesi, bina girişi/çıkışı, teslim alanı ya da Pazar engeller yüzünden ulaşılamaz olmasın.
@@ -197,7 +197,7 @@ namespace KayipAda.Tests
             foreach (ConstructionSite site in ConstructionSite.All)
                 Assert.IsTrue(IslandNavMesh.HasCompletePath(start, site.transform.position), site.name + " (teslim alanı) ulaşılamıyor");
             DevCommands.CompleteBridges(); // adacıklar
-            yield return new WaitForSeconds(2.5f); // bulut odak çekimi
+            yield return new WaitForSeconds(5f); // köprü açılış çekimleri
             yield return WaitFor(() => IslandNavMesh.IsUpToDate, 5f);
             Assert.IsTrue(IslandNavMesh.IsUpToDate, "NavMesh güncellenmedi");
             foreach (TreasureChest chest in TreasureChest.All)

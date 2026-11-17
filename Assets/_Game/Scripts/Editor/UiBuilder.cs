@@ -514,5 +514,62 @@ namespace KayipAda.EditorTools
             BuilderUtil.SetField(panel, "replayButton", replay);
             return panel;
         }
+    
+        // ---------------------------------------------------------------- Bina yükseltme paneli (Yükselt tabelası)
+
+        // Alttan kayan, yürümeyi engellemeyen küçük panel: bina adı, seviye noktaları, hız/kapasite artışı, Yükselt butonu.
+        public static BuildingUpgradePanel CreateBuildingUpgradePanel(GameConfig config)
+        {
+            GameObject root = new GameObject("BuildingUpgradePanel", typeof(RectTransform));
+            root.transform.SetParent(Safe, false);
+            UiFactory.Stretch((RectTransform)root.transform);
+            Image sheet = UiFactory.CreateImage("Sheet", root.transform, ArtGenerator.LoadSprite(ArtGenerator.RoundedRectPath), PanelColor);
+            sheet.type = Image.Type.Sliced;
+            sheet.raycastTarget = true;
+            Anchor(sheet.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 24f), new Vector2(-48f, 420f));
+
+            TextMeshProUGUI title = UiFactory.CreateUIText("Title", sheet.transform, "Bıçkıhane", 60f, UiFactory.Gold);
+            title.alignment = TextAlignmentOptions.MidlineLeft;
+            Anchor(title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 1f), new Vector2(40f, -24f), new Vector2(-80f, 80f));
+            TextMeshProUGUI level = UiFactory.CreateUIText("Level", sheet.transform, "Seviye 1/3", 40f, UiFactory.Cream);
+            level.alignment = TextAlignmentOptions.MidlineRight;
+            Anchor(level.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-40f, -30f), new Vector2(300f, 60f));
+            List<Image> dots = new List<Image>();
+            for (int i = 0; i < 3; i++)
+            {
+                Image dot = UiFactory.CreateImage("Dot " + i, sheet.transform, ArtGenerator.LoadSprite(ArtGenerator.CirclePath), Color.white);
+                Anchor(dot.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(-230f + i * 52f, -112f), new Vector2(40f, 40f));
+                dots.Add(dot);
+            }
+            TextMeshProUGUI speed = UiFactory.CreateUIText("Speed", sheet.transform, "Hız ×1.00 → ×1.35", 46f, Color.white);
+            speed.alignment = TextAlignmentOptions.MidlineLeft;
+            speed.richText = true;
+            Anchor(speed.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 1f), new Vector2(40f, -150f), new Vector2(-80f, 64f));
+            TextMeshProUGUI capacity = UiFactory.CreateUIText("Capacity", sheet.transform, "Kapasite +0 → +6", 46f, Color.white);
+            capacity.alignment = TextAlignmentOptions.MidlineLeft;
+            capacity.richText = true;
+            Anchor(capacity.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 1f), new Vector2(40f, -220f), new Vector2(-80f, 64f));
+
+            Button buy = CreateButton("Buy", sheet.transform, "", Vector2.zero, new Vector2(520f, 110f), Green, 50f);
+            Anchor((RectTransform)buy.transform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 30f), new Vector2(560f, 110f));
+            TextMeshProUGUI priceText = buy.GetComponentInChildren<TextMeshProUGUI>();
+            priceText.text = "Yükselt  350";
+            priceText.fontSize = 50f;
+            Image coin = UiFactory.CreateImage("Coin", buy.transform, ArtGenerator.LoadSprite(ArtGenerator.CoinIconPath), Color.white);
+            Anchor(coin.rectTransform, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-28f, 0f), new Vector2(64f, 64f));
+
+            BuildingUpgradePanel panel = root.AddComponent<BuildingUpgradePanel>();
+            BuilderUtil.SetField(panel, "config", config);
+            BuilderUtil.SetField(panel, "sheet", sheet.rectTransform);
+            BuilderUtil.SetField(panel, "title", title);
+            BuilderUtil.SetField(panel, "levelText", level);
+            BuilderUtil.SetArray(panel, "levelDots", dots.ToArray());
+            BuilderUtil.SetField(panel, "speedText", speed);
+            BuilderUtil.SetField(panel, "capacityText", capacity);
+            BuilderUtil.SetField(panel, "buyButton", buy);
+            BuilderUtil.SetField(panel, "priceText", priceText);
+            BuilderUtil.SetField(panel, "priceIcon", coin.gameObject);
+            return panel;
+        }
     }
 }

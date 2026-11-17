@@ -130,6 +130,7 @@ MonoBehaviour:
   shrinkHeightOnly: 0
   remnant: {fileID: 8430831124917592028}
   hitParticles: 5
+  regrowStyle: 2
 --- !u!1 &3855661629926314476
 GameObject:
   m_ObjectHideFlags: 0
@@ -2457,10 +2458,10 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 7600755698764156164}
+  - {fileID: 3043279654071034279}
   m_Father: {fileID: 3407280152285866137}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1001 &7994441795526224623
+--- !u!1001 &3292518105849169484
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -2537,10 +2538,10 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 6f9489c3bfad6a5418de388f15cfd64c, type: 3}
---- !u!4 &7600755698764156164 stripped
+--- !u!4 &3043279654071034279 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 6f9489c3bfad6a5418de388f15cfd64c, type: 3}
-  m_PrefabInstance: {fileID: 7994441795526224623}
+  m_PrefabInstance: {fileID: 3292518105849169484}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &8691744920516500733
 PrefabInstance:

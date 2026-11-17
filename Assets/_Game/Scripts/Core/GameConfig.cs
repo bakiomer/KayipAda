@@ -327,20 +327,7 @@ namespace KayipAda
         [field: Tooltip("Kıyıya bu kadar (metre) yakınken adımlar suda halka bırakır.")]
         [field: SerializeField, Min(0f)] public float RippleCoastDistance { get; private set; } = 0.75f;
 
-        [field: Header("Keşif: bulutlar, sandıklar, koleksiyon")]
-        [field: Tooltip("Bulut parçalarının kıpırdama hızı.")]
-        [field: SerializeField, Min(0f)] public float CloudDriftSpeed { get; private set; } = 0.35f;
-
-        [field: Tooltip("Bölge açılınca kameranın bulutlu bölgeye odaklandığı toplam süre (saniye).")]
-        [field: SerializeField, Min(0.5f)] public float CloudFocusTime { get; private set; } = 1.8f;
-
-        [field: Tooltip("Bulutun dağılma süresi (saniye).")]
-        [field: SerializeField, Min(0.1f)] public float CloudDisperseTime { get; private set; } = 1.1f;
-
-        [field: Tooltip("Odak çekiminde kameranın yüksekliği ve geride durduğu uzaklık (metre).")]
-        [field: SerializeField, Min(1f)] public float CloudShotHeight { get; private set; } = 14f;
-        [field: SerializeField, Min(1f)] public float CloudShotDistance { get; private set; } = 12f;
-
+        [field: Header("Keşif: sandıklar, koleksiyon")]
         [field: Tooltip("Oyuncu sandığa bu kadar yaklaşınca kapak açılır (metre).")]
         [field: SerializeField, Min(0.5f)] public float ChestOpenDistance { get; private set; } = 1.7f;
 
@@ -392,5 +379,88 @@ namespace KayipAda
 
         [field: Tooltip("Test Menüsü'ndeki \"+Kristal\" butonunun verdiği kristal.")]
         [field: SerializeField, Min(1)] public int DevCrystalAmount { get; private set; } = 100;
+
+        [field: Header("Ağaç/kaya yeniden büyüme")]
+        [field: Tooltip("Yeniden dolma süresinin ne kadarı boyunca kütük/kırık taş yerinde kalır (0.4 = %40).")]
+        [field: SerializeField, Range(0.05f, 0.8f)] public float NodeStumpStayFraction { get; private set; } = 0.4f;
+
+        [field: Tooltip("Kütüğün yere gömülerek kaybolma süresi (saniye).")]
+        [field: SerializeField, Min(0.1f)] public float NodeStumpSinkTime { get; private set; } = 0.6f;
+
+        [field: Tooltip("Büyüme aşaması sayısı (fidan → genç ağaç → tam ağaç = 3).")]
+        [field: SerializeField, Range(2, 5)] public int NodeGrowStages { get; private set; } = 3;
+
+        [field: Tooltip("Fidanın boyu (tam ağacın oranı).")]
+        [field: SerializeField, Range(0.05f, 0.8f)] public float NodeSaplingScale { get; private set; } = 0.25f;
+
+        [field: Tooltip("Kaya yeniden belirirken yerin ne kadar altından yükselir (metre).")]
+        [field: SerializeField, Min(0.1f)] public float NodeRiseDepth { get; private set; } = 1.1f;
+
+        [field: Header("Kapalı bölge çalılığı")]
+        [field: Tooltip("Çalıların rüzgârda sallanma hızı ve açısı (derece).")]
+        [field: SerializeField, Min(0f)] public float ThicketSwaySpeed { get; private set; } = 1.3f;
+        [field: SerializeField, Min(0f)] public float ThicketSwayAngle { get; private set; } = 3f;
+
+        [field: Tooltip("Bölge açılınca kameranın bölgeye odaklandığı toplam süre (saniye).")]
+        [field: SerializeField, Min(0.5f)] public float ThicketFocusTime { get; private set; } = 2.2f;
+
+        [field: Tooltip("Çalıların tek tek kesilip savrulması bu süreye yayılır (saniye).")]
+        [field: SerializeField, Min(0.1f)] public float ThicketCutTime { get; private set; } = 1.2f;
+
+        [field: Tooltip("Kesilen her çalıdan saçılan yaprak sayısı.")]
+        [field: SerializeField, Min(0)] public int ThicketLeaves { get; private set; } = 10;
+
+        [field: Tooltip("Odak çekiminde kameranın yüksekliği ve bölgeden uzaklığı (metre).")]
+        [field: SerializeField, Min(1f)] public float ThicketShotHeight { get; private set; } = 14f;
+        [field: SerializeField, Min(1f)] public float ThicketShotDistance { get; private set; } = 12f;
+
+        [field: Header("Köprüler: karşı kıyı ve açılış")]
+        [field: Tooltip("Köprü başına gelince kamera karşı kıyıyı bu kadar gösterir (saniye; 0 = kapalı).")]
+        [field: SerializeField, Min(0f)] public float BridgePreviewTime { get; private set; } = 2.4f;
+
+        [field: Tooltip("Karşı kıyı gösterimi tekrar en erken bu kadar sonra (saniye).")]
+        [field: SerializeField, Min(0f)] public float BridgePreviewCooldown { get; private set; } = 30f;
+
+        [field: Tooltip("Köprü bitince kameranın köprü boyunca karşıya kayma süresi (saniye).")]
+        [field: SerializeField, Min(0.3f)] public float BridgeRevealGlide { get; private set; } = 2.2f;
+
+        [field: Tooltip("Karşı kıyıda nesneler zıplayarak belirdikten sonra kameranın bekleme süresi (saniye).")]
+        [field: SerializeField, Min(0f)] public float BridgeRevealHold { get; private set; } = 1.8f;
+
+        [field: Tooltip("Köprü çekimlerinde kameranın yüksekliği ve hedeften uzaklığı (metre).")]
+        [field: SerializeField, Min(1f)] public float BridgeShotHeight { get; private set; } = 12f;
+        [field: SerializeField, Min(1f)] public float BridgeShotDistance { get; private set; } = 11f;
+
+        [field: Header("Tanıtım tabelaları ve yükseltme tabelaları")]
+        [field: Tooltip("Oyuncu tabelaya bu kadar yaklaşınca tanıtım kartı açılır (metre).")]
+        [field: SerializeField, Min(0.5f)] public float InfoCardDistance { get; private set; } = 3.4f;
+
+        [field: Header("Ambar (depo)")]
+        [field: Tooltip("Ambar seviyesine göre kapasite (birim).")]
+        [field: SerializeField] public int[] StorageCapacity { get; private set; } = { 100, 160, 240 };
+
+        [field: Tooltip("Bırakma/alma alanında iki parça arası (saniye).")]
+        [field: SerializeField, Min(0.01f)] public float StorageTransferInterval { get; private set; } = 0.07f;
+
+        [field: Tooltip("Ambar dolu uyarısı tekrar en erken bu kadar sonra (saniye).")]
+        [field: SerializeField, Min(0.1f)] public float StorageFullWarningInterval { get; private set; } = 2.5f;
+
+        [field: Header("Deniz ve kıyı (su shader'ı)")]
+        [field: Tooltip("Kıyıya vuran dalganın hızı (tur/saniye) ve kıyıdan içeri ulaştığı mesafe (0-1, kıyı dokusu ölçeğinde).")]
+        [field: SerializeField, Min(0f)] public float ShoreWaveSpeed { get; private set; } = 0.12f;
+        [field: SerializeField, Range(0f, 1f)] public float ShoreWaveReach { get; private set; } = 0.35f;
+
+        [field: Tooltip("Köpük şeridinin yoğunluğu (0 = yok).")]
+        [field: SerializeField, Range(0f, 1.5f)] public float ShoreFoamStrength { get; private set; } = 0.85f;
+
+        [field: Tooltip("Islak kum izinin koyuluğu (0 = yok).")]
+        [field: SerializeField, Range(0f, 1f)] public float WetSandStrength { get; private set; } = 0.35f;
+
+        [field: Tooltip("Deniz yüzeyindeki güneş parıltılarının yoğunluğu (0 = yok) ve sıklığı.")]
+        [field: SerializeField, Range(0f, 2f)] public float SeaGlintStrength { get; private set; } = 0.7f;
+        [field: SerializeField, Range(0.001f, 0.2f)] public float SeaGlintDensity { get; private set; } = 0.03f;
+
+        [field: Tooltip("Deniz yüzeyinin hafif dalgalanması (0 = düz).")]
+        [field: SerializeField, Range(0f, 2f)] public float SeaRippleStrength { get; private set; } = 0.6f;
     }
 }

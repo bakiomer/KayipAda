@@ -29,8 +29,10 @@ namespace KayipAda
         [SerializeField] private AreaDefinition requiredArea;
         [Tooltip("Alan açıkken görünen kısım (yer işareti, ilerleme yazısı).")]
         [SerializeField] private GameObject zoneVisual;
-        [Tooltip("İlerleme yazısı (\"Köprü: 18/40\").")]
+        [Tooltip("İlerleme yazısı (\"Köprü: 18/40\"); göstergesi varsa kullanılmaz.")]
         [SerializeField] private TMP_Text progressLabel;
+        [Tooltip("Gemi göstergesi gibi kutusuz gösterge: ad + her malzeme için ikon + \"0/8\" + ince çubuk.")]
+        [SerializeField] private ShipProgressView progressView;
         [Tooltip("Malzemenin uçtuğu nokta (alt sınıf parça yerini vermezse).")]
         [SerializeField] private Transform dropPoint;
 
@@ -51,6 +53,8 @@ namespace KayipAda
         public bool IsAvailable => requiredArea == null || (AreaManager.Instance != null && AreaManager.Instance.IsUnlocked(requiredArea));
         public int TotalRequired { get { int n = 0; foreach (Requirement r in requirements) n += r.Amount; return n; } }
         public int TotalDelivered { get { int n = 0; foreach (Requirement r in requirements) n += Delivered(r.Resource); return n; } }
+
+        public ShipProgressView ProgressView => progressView;
 
         public int Delivered(ResourceType type) => type != null && delivered.TryGetValue(type, out int n) ? n : 0;
 
@@ -133,6 +137,19 @@ namespace KayipAda
 
         private void RefreshLabel()
         {
+            if (progressView != null)
+            {
+                ResourceType[] types = new ResourceType[requirements.Length];
+                int[] have = new int[requirements.Length], need = new int[requirements.Length];
+                for (int i = 0; i < requirements.Length; i++)
+                {
+                    types[i] = requirements[i].Resource;
+                    have[i] = Delivered(requirements[i].Resource);
+                    need[i] = requirements[i].Amount;
+                }
+                progressView.Show(displayName.ToUpperInvariant(), types, have, need);
+                return;
+            }
             if (progressLabel == null) return;
             System.Text.StringBuilder sb = new System.Text.StringBuilder();
             sb.Append(displayName).Append(": ").Append(TotalDelivered).Append('/').Append(TotalRequired);

@@ -23,6 +23,7 @@ namespace KayipAda
         private const float SlideHeight = 320f; // band ekranın dışından (yukarıdan) bu kadar kayar
 
         public bool IsShown => root != null && root.activeSelf;
+        public string CurrentText => title != null ? title.text : "";
 
         private void Awake()
         {

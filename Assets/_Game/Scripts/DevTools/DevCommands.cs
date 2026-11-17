@@ -135,13 +135,14 @@ namespace KayipAda
             }
         }
 
-        public static bool CloudsHidden { get; private set; }
+        public static bool ThicketsHidden { get; private set; }
 
-        public static void ToggleClouds()
+        // Kapalı bölgelerin çalılıklarını kaldır / geri getir (açık bölgelerde zaten yok).
+        public static void ToggleThickets()
         {
             if (!Use()) return;
-            CloudsHidden = !CloudsHidden;
-            RegionCloud.SetAllHidden(CloudsHidden);
+            ThicketsHidden = !ThicketsHidden;
+            RegionThicket.SetAllHidden(ThicketsHidden);
         }
 
         private static void Unlock(AreaDefinition area)

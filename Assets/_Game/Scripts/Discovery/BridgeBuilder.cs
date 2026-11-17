@@ -1,7 +1,9 @@
 // BridgeBuilder.cs
-// Adacığa giden aşamalı köprü: köprü başındaki teslim alanına getirilen her kalas köprüde sıradaki tahta olarak
-// yerine oturur (ikincisinde halatlar korkuluk olur). "Köprü: 18/40". Bitince adacık bölgesi açılır (bulut dağılır),
-// köprünün üstü yürünebilir olur (IslandShape + NavMesh) ve kısa bir kutlama yapılır.
+// Adacığa giden aşamalı köprü: köprü başındaki teslim alanına getirilen her kalas köprüde, köprü başından karşıya
+// doğru sıradaki tahta olarak yerine oturur (ikincisinde halatlar korkuluk olur). Kalın direkler iki yakaya baştan
+// bağlıdır. Köprü başına gelince (inşa bitmeden) kamera kısa süre karşı kıyıyı gösterir (batık, Demirci iskeleti,
+// hurda yığınları). Bitince: kamera köprü boyunca karşıya kayar, karşıdaki nesneler zıplayarak belirir,
+// "BATIK KOYU AÇILDI!" bandı çıkar, kamera oyuncuya döner; köprünün üstü yürünebilir olur (IslandShape + NavMesh).
 
 using System.Collections.Generic;
 using UnityEngine;
@@ -20,6 +22,16 @@ namespace KayipAda
         [SerializeField] private Transform endA;
         [SerializeField] private Transform endB;
         [SerializeField] private float halfWidth = 1.2f;
+        [Tooltip("Karşı kıyıdaki içerik (köprü bitince çocukları sırayla zıplayarak belirir).")]
+        [SerializeField] private Transform revealRoot;
+        [Tooltip("Karşı kıyının ortası (kamera buraya bakar).")]
+        [SerializeField] private Transform farShore;
+
+        private float previewCooldown;
+        private Transform player;
+        public bool IsPreviewing { get; private set; }
+        public bool IsRevealing { get; private set; }
+        public Vector3 FarShore => farShore != null ? farShore.position : EndB;
 
         private static readonly List<BridgeBuilder> open = new List<BridgeBuilder>();
 
@@ -41,6 +53,77 @@ namespace KayipAda
         {
             base.OnDestroy();
             open.Remove(this);
+        }
+
+        protected override void Start()
+        {
+            base.Start();
+            PlayerController p = FindAnyObjectByType<PlayerController>();
+            player = p != null ? p.transform : null;
+        }
+
+        // Köprü başına gelen oyuncuya (inşa bitmeden) karşı kıyıyı kısa süre göster.
+        private void LateUpdate()
+        {
+            if (previewCooldown > 0f) previewCooldown -= Time.deltaTime;
+            if (IsCompleted || !IsAvailable || player == null || config.BridgePreviewTime <= 0f || previewCooldown > 0f) return;
+            if (IsPreviewing || PlayerController.InputBlocked) return;
+            Vector3 d = player.position - transform.position;
+            d.y = 0f;
+            if (d.sqrMagnitude > 2.2f * 2.2f) return;
+            CameraFollow cam = CameraFollow.Main;
+            if (cam == null || cam.HasShot) return;
+            previewCooldown = config.BridgePreviewCooldown;
+            StartCoroutine(Preview(cam));
+        }
+
+        private System.Collections.IEnumerator Preview(CameraFollow cam)
+        {
+            IsPreviewing = true;
+            Vector3 look = Vector3.Lerp(EndB, FarShore, 0.6f);
+            Vector3 pos = look + new Vector3(0f, config.BridgeShotHeight, -config.BridgeShotDistance);
+            cam.SetShot(pos, Quaternion.LookRotation(look - pos), 2.6f);
+            yield return new WaitForSeconds(config.BridgePreviewTime);
+            if (cam.HasShot && !IsRevealing) cam.ClearShot();
+            IsPreviewing = false;
+        }
+
+        // Bitiş çekimi: kamera köprü boyunca karşıya kayar, karşıdaki nesneler zıplayarak belirir, bant çıkar.
+        private System.Collections.IEnumerator Reveal()
+        {
+            IsRevealing = true;
+            CameraFollow cam = CameraFollow.Main;
+            Vector3 offset = new Vector3(0f, config.BridgeShotHeight, -config.BridgeShotDistance);
+            Vector3 start = EndA, end = Vector3.Lerp(EndB, FarShore, 0.6f);
+            float glide = config.BridgeRevealGlide;
+            for (float t = 0f; t < glide; t += Time.deltaTime)
+            {
+                Vector3 look = Vector3.Lerp(start, end, Mathf.SmoothStep(0f, 1f, t / glide));
+                if (cam != null) cam.SetShot(look + offset, Quaternion.LookRotation(-offset), 6f);
+                yield return null;
+            }
+            // Karşı kıyı canlanır: nesneler sırayla zıplayarak gelir.
+            AudioManager.Play(SoundId.Discovery);
+            if (revealRoot != null)
+            {
+                int k = 0;
+                foreach (Transform child in revealRoot)
+                {
+                    if (!child.gameObject.activeSelf) continue;
+                    Vector3 scale = child.localScale;
+                    child.localScale = Vector3.zero;
+                    Tween.PopIn(child, scale, config.PopInDuration, 0.08f * k);
+                    if (k % 2 == 0 && Effects.Instance != null) Effects.Instance.Dust(child.position);
+                    k++;
+                }
+            }
+            if (islandArea != null && CelebrationBanner.Instance != null)
+                CelebrationBanner.Instance.Show(islandArea.DisplayName.ToUpperInvariant() + " AÇILDI!", "", config.BridgeRevealHold + 0.8f);
+            if (Effects.Instance != null) Effects.Instance.Confetti(FarShore + Vector3.up);
+            Haptics.Vibrate();
+            yield return new WaitForSeconds(config.BridgeRevealHold);
+            if (cam != null) cam.ClearShot();
+            IsRevealing = false;
         }
 
         protected override Vector3 PiecePosition(ResourceType type, int index)
@@ -83,11 +166,8 @@ namespace KayipAda
             NavObstacle.Touch(); // NavMesh köprüyü eklesin
             if (islandArea != null && AreaManager.Instance != null && !AreaManager.Instance.IsUnlocked(islandArea)) AreaManager.Instance.Unlock(islandArea);
             if (!animate) return;
-            Vector3 mid = (endA.position + endB.position) * 0.5f;
-            if (Effects.Instance != null) Effects.Instance.Confetti(mid + Vector3.up);
-            if (CelebrationBanner.Instance != null) CelebrationBanner.Instance.Show(DisplayName + " tamamlandı!", islandArea != null ? islandArea.DisplayName + " açıldı" : "", 2.2f);
             AudioManager.Play(SoundId.StageComplete);
-            Haptics.Vibrate();
+            if (isActiveAndEnabled) StartCoroutine(Reveal());
         }
     }
 }

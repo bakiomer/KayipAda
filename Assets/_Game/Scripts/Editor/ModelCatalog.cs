@@ -187,7 +187,26 @@ namespace KayipAda.EditorTools
             M("BrokenDock", ModelPack.Quaternius, "Environment_Dock_Broken", 3f, SizeAxis.Largest, true, false, "Kırık gemi/iskele parçası"),
             M("Signpost", ModelPack.KenneySurvival, "signpost", 1.5f, SizeAxis.Height, true, true, "Tabela"),
             M("Workbench", ModelPack.KenneySurvival, "workbench-anvil", 1.1f, SizeAxis.Largest, true, true, "Örs (atölye süsü)"),
-            M("LogPile", ModelPack.KenneyNature, "log_stack", 1.4f, SizeAxis.Largest, true, true, "Kütük yığını (bıçkıhane süsü)")
+            M("LogPile", ModelPack.KenneyNature, "log_stack", 1.4f, SizeAxis.Largest, true, true, "Kütük yığını (bıçkıhane süsü)"),
+
+            // Kapalı bölge çalılığı (açılınca kesilir) ve sarmaşık.
+            M("ThicketBushA", ModelPack.KenneyNature, "plant_bushLarge", 1.5f, SizeAxis.Height, true, true, "Çalılık: büyük çalı (kapalı bölge)"),
+            M("ThicketBushB", ModelPack.KenneyNature, "plant_bushLargeTriangle", 1.6f, SizeAxis.Height, true, true, "Çalılık: sivri çalı"),
+            M("ThicketBushC", ModelPack.KenneyNature, "plant_bushDetailed", 1.3f, SizeAxis.Height, true, true, "Çalılık: yuvarlak çalı"),
+            M("Vine", ModelPack.KenneyNature, "crops_leafsStageB", 1.2f, SizeAxis.Height, true, false, "Sarmaşık (yapraklı dallar)"),
+            M("VineMoss", ModelPack.KenneyNature, "hanging_moss", 1.0f, SizeAxis.Largest, true, false, "Sarmaşık / yosun (çalıların üstünde)"),
+            // Taş ocağı (Kayalık).
+            M("QuarryCliffA", ModelPack.Quaternius, "Environment_Cliff2", 3.6f, SizeAxis.Height, true, true, "Taş ocağı kaya yüzü"),
+            M("QuarryCliffB", ModelPack.Quaternius, "Environment_Cliff3", 3.2f, SizeAxis.Height, true, true, "Taş ocağı kaya yüzü"),
+            M("QuarryCliffC", ModelPack.Quaternius, "Environment_Cliff4", 3.4f, SizeAxis.Height, true, true, "Taş ocağı kaya yüzü"),
+            M("Pickaxe", ModelPack.KenneySurvival, "tool-pickaxe", 0.95f, SizeAxis.Largest, true, false, "Kazma (rafta) — Quaternius'ta yok"),
+            M("Shovel", ModelPack.KenneySurvival, "tool-shovel", 0.95f, SizeAxis.Largest, true, false, "Kürek (rafta)"),
+            M("StonePile", ModelPack.KenneySurvival, "resource-stone-large", 1.0f, SizeAxis.Largest, true, true, "Kırık taş yığını (taş ocağı)"),
+            M("RockChunk", ModelPack.KenneyNature, "rock_smallC", 0.45f, SizeAxis.Largest, true, false, "Kırık taş parçası"),
+            // Meyve bahçesi ve iskele.
+            M("FruitCrate", ModelPack.KenneySurvival, "box-open", 0.7f, SizeAxis.Largest, true, true, "Meyve kasası (içinde kodla meyveler)"),
+            M("FenceLow", ModelPack.KenneyNature, "fence_simple", 2f, SizeAxis.Largest, true, true, "Alçak süslü çit (Meyve Bahçesi)"),
+            M("Rowboat", ModelPack.KenneyPirate, "boat-row-small", 2.6f, SizeAxis.Largest, true, true, "İskeleye bağlı küçük sandal (yan görevde onarılır)")
         };
 
         // Modeller.md'deki "pakette olmayan" listesi.

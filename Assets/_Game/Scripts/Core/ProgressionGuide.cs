@@ -84,11 +84,19 @@ namespace KayipAda
                 if (current != null) current.SetHighlighted(true);
             }
             if (crewFirst) return crewStation;
-            if (best != null) return best.transform;
+            if (best != null)
+            {
+                // Kapalı bölgenin tanıtım tabelası henüz okunmadıysa ok önce tabelayı gösterir (kare hemen yanında).
+                InfoSign sign = InfoSign.For(best.Area);
+                return sign != null && !sign.HasBeenSeen ? sign.transform : best.transform;
+            }
 
             ShipBuilder needs = ShipBuilder.Instance;
             if (keyBridge != null && keyResource != null && !keyBridge.IsCompleted && keyBridge.IsAvailable && needs != null && needs.Needs(keyResource))
-                return keyBridge.transform;
+            {
+                InfoSign sign = InfoSign.For(keyBridge.IslandArea);
+                return sign != null && !sign.HasBeenSeen ? sign.transform : keyBridge.transform;
+            }
 
             ShipBuilder ship = ShipBuilder.Instance;
             if (ship != null && !ship.IsComplete && ship.Delivery != null) return ship.Delivery.transform;

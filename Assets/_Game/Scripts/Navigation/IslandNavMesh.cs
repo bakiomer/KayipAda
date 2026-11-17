@@ -77,6 +77,7 @@ namespace KayipAda
             settings.voxelSize = voxelSize;
             Bounds bounds = ground != null ? ground.GetComponent<Renderer>().bounds : new Bounds(Vector3.zero, Vector3.one * 100f);
             foreach (MeshFilter extra in extraGrounds) if (extra != null) bounds.Encapsulate(extra.GetComponent<Renderer>().bounds);
+            foreach (Pier pier in Pier.All) if (pier != null) { bounds.Encapsulate(pier.EndA); bounds.Encapsulate(pier.EndB); }
             bounds.Expand(new Vector3(2f, 6f, 2f));
             int version = NavObstacle.Version;
             if (async)
@@ -128,6 +129,20 @@ namespace KayipAda
                     shape = NavMeshBuildSourceShape.Box,
                     transform = Matrix4x4.TRS(new Vector3(mid.x, -0.1f, mid.z), Quaternion.LookRotation(d.normalized), Vector3.one),
                     size = new Vector3(bridge.HalfWidth * 2f - 0.3f, 0.2f, d.magnitude + 1f),
+                    area = 0
+                });
+            }
+            // Denize uzanan iskele: üstü yürünebilir.
+            foreach (Pier pier in Pier.All)
+            {
+                if (pier == null) continue;
+                Vector3 a = pier.EndA, b = pier.EndB, mid = (a + b) * 0.5f, d = b - a;
+                d.y = 0f;
+                sources.Add(new NavMeshBuildSource
+                {
+                    shape = NavMeshBuildSourceShape.Box,
+                    transform = Matrix4x4.TRS(new Vector3(mid.x, -0.1f, mid.z), Quaternion.LookRotation(d.normalized), Vector3.one),
+                    size = new Vector3(pier.HalfWidth * 2f - 0.3f, 0.2f, d.magnitude + 1f),
                     area = 0
                 });
             }

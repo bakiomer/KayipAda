@@ -3,14 +3,15 @@
 // Bunlar oynanış ayarı değil, harita tasarımıdır. Kamera güneyden (-Z) kuzeye (+Z) bakar.
 //
 //                    ~~~~~~~~ deniz ~~~~~~~~
-//                         [iskele]   (batık gemi)      z ≈ 25+
-//        ┌──── KAYALIK ────┐   yol   ┌─ MEYVE BAHÇESİ ─┐
-//        │ kaya  TAŞ ATÖLY.│    |    │ ağaç     ağaç   │   z 6..15 (çitli, başta kapalı)
-//        │ kaya       kaya │    |    │      ağaç       │
-//        └──────[kare]─────┘    |    └─────[kare]──────┘   z 4.5
-// TAYFA         palmiye    palmiye    palmiye             z -1..2  BAŞLANGIÇ SAHİLİ
-// BARAKASI                  oyuncu                         z -6
-//  KAMP      PAZAR                    BIÇKIHANE           z -12
+//                    [uzun iskele]   GEMİ (iki raylı kızak)   z ≈ 24+
+// KAYIP   köprü  ┌─ KAYALIK (taş ocağı) ─┐  yol  ┌─ MEYVE BAHÇESİ ─┐  HALAT ATÖLYESİ   z 6..15 (çalılıklı, başta kapalı)
+// TAPINAK ═════  │ kaya yüzü, raylar     │   |   │ kemerli kapı     │  KETEN TARLASI   z -3.5..3.5
+//                └────────[kare]─────────┘   |   └─────[kare]───────┘  DOKUMA TEZGAHI   z -8
+// TAYFA BARAKASI       palmiye    palmiye    palmiye                   (Palmiye Koyu)
+//  KAMP                          oyuncu                                                z -6
+//            PAZAR                     BIÇKIHANE                                       z -12
+//                                        ║ köprü (güneye)
+//                                   BATIK KOYU (Demirci, hurda)                        z -35
 
 using System.Collections.Generic;
 using UnityEngine;
@@ -52,15 +53,17 @@ namespace KayipAda.EditorTools
         public static readonly Vector3 OrchardPad = new Vector3(5.25f, 0f, 4.4f);
         public static readonly Vector3[] Rocks = { new Vector3(-9f, 0f, 8.4f), new Vector3(-4.3f, 0f, 8.4f), new Vector3(-9.3f, 0f, 12.6f) };
         public static readonly Vector3 Workshop = new Vector3(-5f, 0f, 12.6f);
-        public static readonly Vector3[] FruitTrees = { new Vector3(3.9f, 0f, 8.6f), new Vector3(6.8f, 0f, 9.4f), new Vector3(5f, 0f, 12.8f) };
+        public static readonly Vector3[] FruitTrees = { new Vector3(3.5f, 0f, 9.0f), new Vector3(7.0f, 0f, 9.0f), new Vector3(3.5f, 0f, 12.2f) };
+        // Bahçedeki meyvesiz genç ağaçlar (sıraları tamamlar, süs).
+        public static readonly Vector3[] OrchardYoungTrees = { new Vector3(7.0f, 0f, 12.2f) };
 
         // Palmiye Koyu (doğu): lif veren palmiyeler. Kuzeyinde, bahçe çitinden yürüme yolu kadar uzakta Halat Atölyesi
         // ve Dokuma Tezgahı (giriş/çıkış alanları hiçbir şeye değmez).
-        public static readonly Rect CoveRect = new Rect(10.5f, -6f, 5f, 8f);
-        public static readonly Vector3 CovePad = new Vector3(9.2f, 0f, -2f);
-        public static readonly Vector3[] FiberPalms = { new Vector3(12f, 0f, -4.3f), new Vector3(14.3f, 0f, -1.6f), new Vector3(12f, 0f, 0.8f) };
-        public static readonly Vector3 RopeWorkshop = new Vector3(13.4f, 0f, 6.1f);
-        public static readonly Vector3 Loom = new Vector3(13.2f, 0f, 12.6f);
+        public static readonly Rect CoveRect = new Rect(10.5f, -3.5f, 5.5f, 7f);
+        public static readonly Vector3 CovePad = new Vector3(9.0f, 0f, 0f);
+        public static readonly Vector3[] FiberPalms = { new Vector3(12.2f, 0f, -1.9f), new Vector3(14.6f, 0f, 0.3f), new Vector3(12.3f, 0f, 2.1f) };
+        public static readonly Vector3 RopeWorkshop = new Vector3(12.6f, 0f, 7.6f);
+        public static readonly Vector3 Loom = new Vector3(13.0f, 0f, -7.9f);
 
         // Kampın yanındaki geliştirme tezgahı
         public static readonly Vector3 UpgradeStation = new Vector3(-8f, 0f, -2.2f);
@@ -93,54 +96,58 @@ namespace KayipAda.EditorTools
         // ================================================================ Keşif (adacıklar, köprüler, sandıklar, koleksiyon)
 
         // Adacıklar: (merkez X, merkez Z, yarıçap X, yarıçap Z). 0 = Batık Koyu (batı), 1 = Kayıp Tapınak (güneydoğu).
-        public static readonly Vector4[] Islets = { new Vector4(-31f, 9f, 6.5f, 7.5f), new Vector4(29.5f, -11f, 7f, 7.5f) };
+        public static readonly Vector4[] Islets = { new Vector4(6f, -35f, 6.5f, 7.5f), new Vector4(-31f, 9f, 7f, 7.5f) };
         public static readonly string[] IsletNames = { "Batık Koyu", "Kayıp Tapınak" };
         // Adacık zemin tonları (ayırt edici görünüş): Batık Koyu koyu kum + yosunlu kaya, Tapınak sık yeşil + yosun.
         public static readonly Color[] IsletGrass = { new Color(0.5f, 0.55f, 0.38f), new Color(0.3f, 0.58f, 0.3f) };
         public static readonly Color[] IsletSand = { new Color(0.86f, 0.76f, 0.58f), new Color(0.95f, 0.86f, 0.64f) };
         public const float IsletSandWidth = 2.6f;
         // Köprüler: ana adadaki uç noktasının yaklaşık yeri (kıyıya göre düzeltilir) ve adacığa uzanma yönü.
-        public static readonly Vector3[] BridgeMainEnd = { new Vector3(-17.8f, 0f, 9f), new Vector3(14.6f, 0f, -11f) };
-        public const float BridgeHalfWidth = 1.15f;
+        public static readonly Vector3[] BridgeMainEnd = { new Vector3(5.6f, 0f, -17.6f), new Vector3(-17.8f, 0f, 9f) };
+        public const float BridgeHalfWidth = 0.95f;   // dar ve uzun köprü
         public const float BridgeShoreInset = 1.4f;  // köprü uçları kıyıdan bu kadar içeride
         public const float BridgeHeadInland = 2.3f;  // teslim alanı köprü ucundan karaya doğru bu kadar
         public const float BridgePlankSpacing = 0.44f;
         public const float BridgeDeckY = 0.07f;
 
         // Batık Koyu: Demirci (hurda metal → çivi), hurda yığınları, büyük batık gemi.
-        public static readonly Vector3 Forge = new Vector3(-31f, 0f, 7.6f);
-        public static readonly Vector3[] ScrapNodes = { new Vector3(-34.6f, 0f, 12.2f), new Vector3(-28.2f, 0f, 12.8f), new Vector3(-35.6f, 0f, 6.6f) };
-        public static readonly Vector3 IsletWreck = new Vector3(-38.2f, 0f, 12.5f);
+        public static readonly Vector3 Forge = new Vector3(1.8f, 0f, -32.4f);
+        public static readonly Vector3[] ScrapNodes = { new Vector3(9.6f, 0f, -31.4f), new Vector3(9.9f, 0f, -37.0f), new Vector3(4.9f, 0f, -39.0f) };
+        public static readonly Vector3 IsletWreck = new Vector3(-0.6f, 0f, -40.0f);
 
         // Kayıp Tapınak: harabe halkası (sütunlar), dikili taş, altar.
-        public static readonly Vector3 Temple = new Vector3(30f, 0f, -10.6f);
+        public static readonly Vector3 Temple = new Vector3(-30.5f, 0f, 9.4f);
         public const float TempleRadius = 3.4f;
 
         // Gizli sandıklar (8): ana adada 4, her adacıkta 2. Kıyıya fazla yakınsa içeri doğru kaydırılır.
         public static readonly Vector3[] Chests =
         {
             new Vector3(-13.5f, 0f, 17f), new Vector3(7.4f, 0f, 13.9f), new Vector3(-15.5f, 0f, -9f), new Vector3(9.5f, 0f, -16.5f),
-            new Vector3(-35.4f, 0f, 13.8f), new Vector3(-27.4f, 0f, 3.6f), new Vector3(34.4f, 0f, -8.8f), new Vector3(25.6f, 0f, -8.2f)
+            new Vector3(12.0f, 0f, -34.0f), new Vector3(1.2f, 0f, -36.6f), new Vector3(-26.4f, 0f, 11.4f), new Vector3(-35.0f, 0f, 11.9f)
         };
-        // Koleksiyon (5): eski pusula, şişede mektup, altın kafatası, kaptan dürbünü, hazine haritası parçası.
+        // Koleksiyon (5): eski pusula, şişede mektup, altın kafatası, kaptan dürbünü (uzun iskelenin ucunda; kodla
+        // yerleşir), hazine haritası parçası.
         public static readonly Vector3[] Collectibles =
         {
-            new Vector3(-33.6f, 0f, 4.6f), new Vector3(-2.5f, 0f, -17.5f), new Vector3(30f, 0f, -10.6f),
-            new Vector3(-4.6f, 0f, 20f), new Vector3(-10f, 0f, 14.3f)
+            new Vector3(7.0f, 0f, -40.6f), new Vector3(-2.5f, 0f, -17.5f), new Vector3(-30.5f, 0f, 9.4f),
+            new Vector3(-4.6f, 0f, 20f), new Vector3(-9.6f, 0f, 14.0f)
         };
         // Altın figür parçaları (3, tapınakta).
-        public static readonly Vector3[] FigureParts = { new Vector3(33.4f, 0f, -12.8f), new Vector3(26.4f, 0f, -12.4f), new Vector3(31.8f, 0f, -7.2f) };
+        public static readonly Vector3[] FigureParts = { new Vector3(-34.2f, 0f, 7.0f), new Vector3(-28.0f, 0f, 6.4f), new Vector3(-29.0f, 0f, 12.9f) };
 
-        // Kırık yapılar (yan görev): kuyu, çit, iskele (kök = teslim alanı; kırık yapı arkasında).
+        // Kırık yapılar (yan görev): kuyu, çit (kök = teslim alanı; kırık yapı arkasında). Sandal: uzun iskelenin yanında.
         public static readonly Vector3 Well = new Vector3(3.2f, 0f, -3.4f);
         public static readonly Vector3 BrokenFence = new Vector3(-10.2f, 0f, -12f);
-        public static readonly Vector3 BrokenPier = new Vector3(4f, 0f, -17.6f);
 
-        // Bina seviye kareleri: binanın köküne göre (bina yanında küçük kare).
-        public const float LevelPadScale = 0.72f;
-        public static readonly Vector3 LevelPadLeft = new Vector3(-3.2f, 0f, -0.6f);
-        public static readonly Vector3 LevelPadRight = new Vector3(3.1f, 0f, -0.5f);
-        public static readonly Vector3 LevelPadFrontLeft = new Vector3(-1.6f, 0f, -3.4f);
+        // Denize uzanan uzun iskele (kuzey kıyı, geminin batısında): x, karadaki başlangıcı kıyıdan ne kadar içeride, boyu.
+        public const float PierX = -2.2f;
+        public const float PierInland = 2.0f;
+        public const float PierLength = 13f;
+        public const float PierHalfWidth = 1.05f;
+
+        // Bina "Yükselt" tabelası: binanın köküne göre (sağ yanında, girişleri kapatmadan).
+        public static readonly Vector3 UpgradeSignOffset = new Vector3(2.95f, 0f, 0.2f);
+
 
         // Yığında parçalar arası boşluk (1.05 = %5).
         public const float StackGapScale = 1.05f;
@@ -181,8 +188,11 @@ namespace KayipAda.EditorTools
             new[] { new Vector2(0f, -9f), new Vector2(5f, -10.5f) },                                 // bıçkıhane
             new[] { new Vector2(0f, 4.4f), new Vector2(-6.5f, 4.4f), new Vector2(-6.5f, 10.5f) },    // kayalık
             new[] { new Vector2(0f, 4.4f), new Vector2(5.25f, 4.4f), new Vector2(5.25f, 10.5f) },    // meyve bahçesi
-            new[] { new Vector2(0f, -6f), new Vector2(6.5f, -6.2f), new Vector2(9.2f, -2f) },        // palmiye koyu
-            new[] { new Vector2(5.25f, 4.4f), new Vector2(10.2f, 3.6f), new Vector2(10.4f, 11.2f) },  // halat ve dokuma
+            new[] { new Vector2(0f, -6f), new Vector2(6.5f, -5.8f), new Vector2(9.0f, -1.2f) },       // palmiye koyu
+            new[] { new Vector2(5.25f, 4.4f), new Vector2(9.6f, 4.9f), new Vector2(12.6f, 5.4f) },    // halat atölyesi
+            new[] { new Vector2(5f, -10.5f), new Vector2(9.6f, -9.8f), new Vector2(13.0f, -9.7f) },   // dokuma tezgahı
+            new[] { new Vector2(0f, 20f), new Vector2(-2.2f, 22.6f) },                                  // uzun iskele
+            new[] { new Vector2(5f, -13.5f), new Vector2(5.4f, -17.2f) },                               // batık koyu köprüsü
             new[] { new Vector2(0f, -6f), new Vector2(-6.5f, -6.2f), new Vector2(-10f, -5.6f) },     // kamp
             new[] { new Vector2(-6.5f, -6.2f), new Vector2(-9.6f, -2.6f), new Vector2(-12.2f, -0.9f) }  // tayfa barakası
         };

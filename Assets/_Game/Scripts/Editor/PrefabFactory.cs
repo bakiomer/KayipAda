@@ -1065,7 +1065,7 @@ namespace KayipAda.EditorTools
         public static GameObject BuildNode(ModelSpec spec, ResourceNodeType nodeType, GameConfig config,
                                            float zoneRadius, Vector2 trunkSize, float standRadius,
                                            ModelSpec fruit = null, int fruitCount = 0, Color? chipColor = null,
-                                           ModelSpec remnant = null)
+                                           ModelSpec remnant = null, ResourceNode.RegrowStyle regrow = ResourceNode.RegrowStyle.Shrink)
         {
             GameObject root = new GameObject(spec.Key);
             Transform visual = new GameObject("Visual").transform;
@@ -1111,6 +1111,7 @@ namespace KayipAda.EditorTools
             BuilderUtil.SetField(node, "visual", visual);
             BuilderUtil.SetFloat(node, "standRadius", standRadius);
             BuilderUtil.SetFloat(node, "spawnHeight", Mathf.Min(spec.Size * 0.5f, 1.6f));
+            BuilderUtil.SetEnum(node, "regrowStyle", (int)regrow);
             return Save(root, Folder + "/Nodes/" + spec.Key + ".prefab");
         }
 

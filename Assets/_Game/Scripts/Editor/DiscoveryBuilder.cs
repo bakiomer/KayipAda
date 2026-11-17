@@ -2,7 +2,6 @@
 // Keşif içeriğini kurar (sahne kurma komutunun parçası):
 // - Adacıklar: Batık Koyu ve Kayıp Tapınak'ın zemin modeli ve kendi dokusu (ayırt edici renkler), NavMesh'e eklenir.
 // - Köprüler: köprü başında teslim alanı, tahtalar/halatlar, yanlarda direkler (BridgeBuilder).
-// - Bulutlar: kapalı bölgelerin ve adacıkların üstünde alçak poligonlu bulut (RegionCloud).
 // - Sandıklar, koleksiyon eşyaları, altın figür parçaları; tapınak harabesi ve batık gemi; kırık yapılar (onarım).
 
 using System.Collections.Generic;
@@ -170,6 +169,7 @@ namespace KayipAda.EditorTools
             public AreaDefinition IslandArea, RequiredArea;
             public ResourceType Plank, Rope;
             public int Planks, Ropes;
+            public Transform RevealRoot; // karşı kıyının içeriği (köprü bitince zıplayarak belirir)
         }
 
         public static BridgeBuilder BuildBridge(BridgeSpec spec, IslandShape island, GameConfig config, GameObject signPrefab, List<Vector3> reserved)
@@ -205,9 +205,7 @@ namespace KayipAda.EditorTools
             PrefabFactory.AddGroundDecal("Ring", zone.transform, Vector3.up * 0.004f, new Vector2(3.1f, 3.1f), new Color(1f, 1f, 1f, 0.85f), ArtGenerator.RingPath, 0f);
             for (int i = 0; i < 2; i++)
                 PrefabFactory.AddGroundDecal("Arrow " + i, zone.transform, Vector3.forward * (1.9f + i * 0.6f), new Vector2(0.6f, 0.6f), new Color(1f, 1f, 1f, 0.7f), ArtGenerator.ArrowPath, 0f);
-            TMPro.TextMeshPro label = UiFactory.CreateWorldText("Progress", zone.transform, new Vector3(0f, 2.6f, 0f), spec.Name + ": 0/" + (spec.Planks + spec.Ropes), 5.5f, UiFactory.Gold);
-            label.gameObject.AddComponent<Billboard>();
-            ((RectTransform)label.transform).sizeDelta = new Vector2(6f, 2f);
+            ShipProgressView view = PrototypeSceneBuilder.CreateShipProgressView(zone.transform, 3.4f, 0.8f);
 
             // Köprü: iki kıyı arasında yan kirişler ve direkler (hep görünür = inşaat), tahtalar ve halatlar sırayla belirir.
             Transform deck = new GameObject("Deck").transform;
@@ -222,10 +220,15 @@ namespace KayipAda.EditorTools
             for (int i = 0; i < postCount; i++)
             {
                 float z = length * i / (postCount - 1);
+                bool end = i == 0 || i == postCount - 1;
+                float thick = end ? 0.34f : 0.24f;
                 for (int s = -1; s <= 1; s += 2)
                 {
-                    MachineBuilder.Part(deck, PrimitiveType.Cylinder, "Post", new Vector3(s * w, -0.2f, z), new Vector3(0.18f, 0.95f, 0.18f), Quaternion.identity, Wood);
-                    postTops.Add(new Vector3(s * w, 0.75f, z));
+                    MachineBuilder.Part(deck, PrimitiveType.Cylinder, "Post", new Vector3(s * (w + 0.06f), -0.25f, z), new Vector3(thick, 1.1f, thick), Quaternion.identity, Wood);
+                    MachineBuilder.Part(deck, PrimitiveType.Cylinder, "Lash", new Vector3(s * (w + 0.06f), 0.72f, z), new Vector3(thick + 0.05f, 0.05f, thick + 0.05f), Quaternion.identity, RopeMat);
+                    if (end) // kıyıya çakılı ek kazık
+                        MachineBuilder.Part(deck, PrimitiveType.Cylinder, "Stake", new Vector3(s * (w + 0.4f), 0.15f, z + (i == 0 ? -0.35f : 0.35f)), new Vector3(0.2f, 0.4f, 0.2f), Quaternion.identity, Wood);
+                    postTops.Add(new Vector3(s * (w + 0.06f), 0.75f, z));
                 }
             }
             List<Transform> planks = new List<Transform>();
@@ -240,7 +243,6 @@ namespace KayipAda.EditorTools
                 planks.Add(plank.transform);
             }
             List<Transform> ropes = new List<Transform>();
-            if (spec.Ropes > 0)
             {
                 for (int i = 0; i < postCount - 1; i++)
                 {
@@ -250,7 +252,7 @@ namespace KayipAda.EditorTools
                         Vector3 mid = (from + to) * 0.5f + Vector3.down * 0.12f;
                         GameObject rope = MachineBuilder.Part(deck, PrimitiveType.Cylinder, "Rope", mid, new Vector3(0.06f, Vector3.Distance(from, to) * 0.5f, 0.06f),
                                                               Quaternion.Euler(90f, 0f, 0f), RopeMat);
-                        ropes.Add(rope.transform);
+                        if (spec.Ropes > 0) ropes.Add(rope.transform); // halat istenmiyorsa korkuluk baştan hazır
                     }
                 }
             }
@@ -267,6 +269,7 @@ namespace KayipAda.EditorTools
             if (signPrefab != null)
             {
                 GameObject sign = (GameObject)PrefabUtility.InstantiatePrefab(signPrefab);
+                sign.name = "Sign";
                 sign.transform.SetParent(root.transform, false);
                 sign.transform.localPosition = new Vector3(-2.2f, 0f, 0.6f);
                 sign.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
@@ -283,8 +286,13 @@ namespace KayipAda.EditorTools
             SetRequirements(bridge, spec.Plank, spec.Planks, spec.Rope, spec.Ropes);
             BuilderUtil.SetField(bridge, "requiredArea", spec.RequiredArea);
             BuilderUtil.SetField(bridge, "zoneVisual", zone);
-            BuilderUtil.SetField(bridge, "progressLabel", label);
+            BuilderUtil.SetField(bridge, "progressView", view);
             BuilderUtil.SetField(bridge, "islandArea", spec.IslandArea);
+            Transform far = new GameObject("FarShore").transform;
+            far.SetParent(root.transform, false);
+            far.position = new Vector3(isletC.x, 0f, isletC.y);
+            BuilderUtil.SetField(bridge, "farShore", far);
+            BuilderUtil.SetField(bridge, "revealRoot", spec.RevealRoot);
             BuilderUtil.SetArray(bridge, "planks", planks.ToArray());
             BuilderUtil.SetArray(bridge, "ropes", ropes.ToArray());
             BuilderUtil.SetField(bridge, "endA", endA);
@@ -309,48 +317,6 @@ namespace KayipAda.EditorTools
                 list.GetArrayElementAtIndex(1).FindPropertyRelative("Amount").intValue = secondAmount;
             }
             so.ApplyModifiedPropertiesWithoutUndo();
-        }
-
-        // ================================================================ Bulutlar
-
-        public static RegionCloud BuildCloud(string name, Vector3 center, Vector2 size, AreaDefinition area, GameConfig config, int seed)
-        {
-            GameObject root = new GameObject("Cloud " + name);
-            root.transform.position = center;
-            Mesh puffMesh = BuilderUtil.Load<Mesh>(ArtGenerator.FruitMeshPath);
-            Material white = ArtGenerator.GetLit("M_Cloud", null, new Color(0.96f, 0.97f, 1f));
-            Material shade = ArtGenerator.GetLit("M_CloudShade", null, new Color(0.86f, 0.89f, 0.96f));
-            System.Random random = new System.Random(seed);
-            List<Transform> puffs = new List<Transform>();
-            float step = 2.3f;
-            int nx = Mathf.Max(2, Mathf.RoundToInt(size.x / step)), nz = Mathf.Max(2, Mathf.RoundToInt(size.y / step));
-            for (int ix = 0; ix < nx; ix++)
-            {
-                for (int iz = 0; iz < nz; iz++)
-                {
-                    float fx = (ix + 0.5f) / nx - 0.5f, fz = (iz + 0.5f) / nz - 0.5f;
-                    // Elips alan (adacık): köşeleri atla.
-                    if (size.x > 11f && fx * fx + fz * fz > 0.26f) continue;
-                    Vector3 pos = new Vector3(fx * size.x + R(random, 0.5f), 1.2f + R(random, 0.35f), fz * size.y + R(random, 0.5f));
-                    Transform puff = new GameObject("Puff").transform;
-                    puff.SetParent(root.transform, false);
-                    puff.localPosition = pos;
-                    float s = step * (1.15f + R(random, 0.25f));
-                    puff.localScale = new Vector3(s * 1.25f, s * (0.62f + R(random, 0.1f)), s * 1.2f);
-                    puff.localRotation = Quaternion.Euler(0f, (float)random.NextDouble() * 360f, 0f);
-                    MeshFilter mf = puff.gameObject.AddComponent<MeshFilter>();
-                    mf.sharedMesh = puffMesh;
-                    MeshRenderer mr = puff.gameObject.AddComponent<MeshRenderer>();
-                    mr.sharedMaterial = (ix + iz) % 3 == 0 ? shade : white;
-                    mr.shadowCastingMode = ShadowCastingMode.Off;
-                    puffs.Add(puff);
-                }
-            }
-            RegionCloud cloud = root.AddComponent<RegionCloud>();
-            BuilderUtil.SetField(cloud, "config", config);
-            BuilderUtil.SetField(cloud, "area", area);
-            BuilderUtil.SetArray(cloud, "puffs", puffs.ToArray());
-            return cloud;
         }
 
         private static float R(System.Random r, float amount) => ((float)r.NextDouble() * 2f - 1f) * amount;
@@ -561,9 +527,7 @@ namespace KayipAda.EditorTools
             Color green = new Color(0.55f, 0.95f, 0.5f);
             PrefabFactory.AddGroundDecal("Glow", zone.transform, Vector3.zero, new Vector2(2.6f, 2.6f), new Color(green.r, green.g, green.b, 0.3f), ArtGenerator.CirclePath, 0f);
             PrefabFactory.AddGroundDecal("Ring", zone.transform, Vector3.up * 0.004f, new Vector2(2.7f, 2.7f), new Color(1f, 1f, 1f, 0.8f), ArtGenerator.RingPath, 0f);
-            TMPro.TextMeshPro label = UiFactory.CreateWorldText("Progress", zone.transform, new Vector3(0f, 2.4f, 0f), displayName, 5f, UiFactory.Gold);
-            label.gameObject.AddComponent<Billboard>();
-            ((RectTransform)label.transform).sizeDelta = new Vector2(6f, 2f);
+            ShipProgressView view = PrototypeSceneBuilder.CreateShipProgressView(zone.transform, 3.0f, 0.7f);
 
             GameObject broken = new GameObject("Broken");
             broken.transform.SetParent(root.transform, false);
@@ -586,15 +550,21 @@ namespace KayipAda.EditorTools
                     BuildFence(fixedGo.transform, behind, false);
                     break;
                 default:
-                    Transform b = new GameObject("Dock").transform;
+                    // Sandal: kırıkken kumda yan yatmış (delik, tahtası eksik); onarılınca iskeleye bağlı yüzer.
+                    ModelSpec boat = null;
+                    foreach (ModelSpec spec in ModelCatalog.Decor) if (spec.Key == "Rowboat") boat = spec;
+                    Transform b = new GameObject("Boat").transform;
                     b.SetParent(broken.transform, false);
-                    b.localPosition = behind + Vector3.forward * 1.6f;
-                    PrefabFactory.CreateModel(ModelCatalog.BrokenPier, b);
-                    Transform f = new GameObject("Dock").transform;
+                    b.localPosition = behind + new Vector3(0.2f, -0.05f, 0.4f);
+                    b.localRotation = Quaternion.Euler(0f, 70f, 24f);
+                    PrefabFactory.CreateModel(boat, b);
+                    MachineBuilder.Part(broken.transform, PrimitiveType.Cube, "LoosePlank", behind + new Vector3(-1.2f, 0.05f, -0.4f), new Vector3(0.9f, 0.06f, 0.2f), Quaternion.Euler(0f, 30f, 0f), Plank);
+                    Transform f = new GameObject("Boat").transform;
                     f.SetParent(fixedGo.transform, false);
-                    f.localPosition = behind + Vector3.forward * 2.6f;
-                    f.localRotation = Quaternion.Euler(0f, 90f, 0f);
-                    PrefabFactory.CreateModel(ModelCatalog.Dock, f);
+                    f.localPosition = behind + new Vector3(-1.2f, ArtGenerator.WaterLevel - 0.05f, 2.2f);
+                    f.localRotation = Quaternion.Euler(0f, 0f, 0f);
+                    PrefabFactory.CreateModel(boat, f);
+                    MachineBuilder.Part(fixedGo.transform, PrimitiveType.Cylinder, "Mooring", behind + new Vector3(-1.9f, 0.3f, 1.2f), new Vector3(0.04f, 0.9f, 0.04f), Quaternion.Euler(60f, 0f, 0f), RopeMat);
                     break;
             }
             BuilderUtil.SetShadows(root, true);
@@ -606,7 +576,7 @@ namespace KayipAda.EditorTools
             SetRequirements(site, first, firstAmount, second, secondAmount);
             BuilderUtil.SetField(site, "requiredArea", requiredArea);
             BuilderUtil.SetField(site, "zoneVisual", zone);
-            BuilderUtil.SetField(site, "progressLabel", label);
+            BuilderUtil.SetField(site, "progressView", view);
             BuilderUtil.SetField(site, "brokenVisual", broken);
             BuilderUtil.SetField(site, "fixedVisual", fixedGo);
             reserved.Add(new Vector3(position.x, position.z, 2.2f));

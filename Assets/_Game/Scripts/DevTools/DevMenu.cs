@@ -178,7 +178,7 @@ namespace KayipAda
             Flex(CreateButton(k3, "Görevleri Tamamla", ButtonColor, DevCommands.CompleteQuests));
             Transform k4 = CreateRow(p);
             Flex(CreateButton(k4, "Köprüleri Tamamla", ButtonColor, DevCommands.CompleteBridges));
-            Flex(CreateButton(k4, "Bulutları Kaldır/Getir", ButtonColor, DevCommands.ToggleClouds));
+            Flex(CreateButton(k4, "Çalılıkları Kaldır/Getir", ButtonColor, DevCommands.ToggleThickets));
 
             CreateButton(p, "Kaydı Sil ve Yeniden Başlat", DangerColor, DevCommands.ResetSaveAndRestart);
             CreateButton(p, "Kapat", new Color(0.3f, 0.3f, 0.34f, 1f), Close);

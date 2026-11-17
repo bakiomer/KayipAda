@@ -27,15 +27,13 @@ namespace KayipAda.Tests
             return null;
         }
 
-        // Köprü: kalas teslim edildikçe tahtalar belirir; bitince adacık açılır, bulut dağılır, köprüden adacığa yürünür.
+        // Köprü: köprü başına gelince kamera karşı kıyıyı gösterir; kalas teslim edildikçe tahtalar köprü başından karşıya
+        // doğru belirir; bitince kamera köprü boyunca kayar, karşı kıyı zıplayarak belirir, adacık açılır, köprüden yürünür.
         [UnityTest]
         public IEnumerator Bridge_DeliveringPlanksOpensIslet()
         {
             BridgeBuilder bridge = Bridge("bridge_wreck");
             Assert.IsNotNull(bridge, "Batık Koyu köprüsü yok");
-            RegionCloud cloud = null;
-            foreach (RegionCloud c in RegionCloud.All) if (c.Area == bridge.IslandArea) cloud = c;
-            Assert.IsNotNull(cloud, "Adacığın bulutu yok");
             Assert.IsFalse(bridge.IsAvailable, "Bıçkıhane kapalıyken köprü görünüyor");
 
             AreaManager.Instance.Unlock(PadArea("Pad Sawmill"));
@@ -43,6 +41,14 @@ namespace KayipAda.Tests
             Assert.IsTrue(bridge.IsAvailable, "Bıçkıhane açılınca köprü görünmedi");
             Vector2 mid = Vector2.Lerp(new Vector2(bridge.EndA.x, bridge.EndA.z), new Vector2(bridge.EndB.x, bridge.EndB.z), 0.5f);
             Assert.IsFalse(IslandShape.Instance.Contains(mid, 0f), "Köprü bitmeden ortası yürünebilir");
+
+            // Köprü başı: karşı kıyı (batık, Demirci iskeleti, hurda) kısa süre gösterilir.
+            Teleport(bridge.transform.position + bridge.transform.forward * -0.5f);
+            yield return WaitFor(() => bridge.IsPreviewing, 2f);
+            Assert.IsTrue(bridge.IsPreviewing, "Köprü başında karşı kıyı gösterilmedi");
+            yield return new WaitForSeconds(1.3f);
+            Shot("D3_kopru_karsi_kiyi");
+            yield return WaitFor(() => !bridge.IsPreviewing, 4f);
 
             DevCommands.FillPlayerStack(Resource("plank"));
             Teleport(bridge.transform.position);
@@ -55,13 +61,17 @@ namespace KayipAda.Tests
             bridge.ForceComplete();
             yield return null;
             Assert.IsTrue(AreaManager.Instance.IsUnlocked(bridge.IslandArea), "Köprü bitince adacık açılmadı");
-            Assert.IsTrue(cloud.IsDispersed, "Bulut dağılmadı");
+            Assert.IsTrue(bridge.IsRevealing, "Köprü bitince karşı kıyı çekimi başlamadı");
             Assert.IsTrue(IslandShape.Instance.Contains(mid, 0f), "Köprünün üstü yürünebilir olmadı");
-            yield return new WaitForSeconds(Config.CloudFocusTime * 0.6f);
-            Shot("B_bulut_dagiliyor");
-            yield return WaitFor(() => !cloud.gameObject.activeSelf, 4f);
+            yield return new WaitForSeconds(Config.BridgeRevealGlide * 0.5f);
+            Shot("D3_kopru_kamera_kayiyor");
+            yield return new WaitForSeconds(Config.BridgeRevealGlide * 0.5f + 0.5f);
+            Assert.IsTrue(CelebrationBanner.Instance != null && CelebrationBanner.Instance.CurrentText.Contains("AÇILDI"), "\"AÇILDI!\" bandı çıkmadı");
+            Shot("D3_batik_koyu_acildi");
+            yield return WaitFor(() => !bridge.IsRevealing, 6f);
+            Assert.IsFalse(CameraFollow.Main.HasShot, "Kamera oyuncuya dönmedi");
             yield return WaitFor(() => IslandNavMesh.IsUpToDate, 5f);
-            Vector3 forge = new Vector3(-31f, 0f, 6f);
+            Vector3 forge = Find<UnlockPad>("Pad Forge").transform.position + Vector3.back * 1.5f;
             Assert.IsTrue(IslandNavMesh.HasCompletePath(Player.transform.position, forge), "Köprüden adacığa yol yok (NavMesh)");
 
             // Oyuncu köprüden yürüyerek adacığa geçer.
@@ -186,12 +196,8 @@ namespace KayipAda.Tests
             float speed = sawmill.SpeedMultiplier;
             Transform body = sawmill.transform.Find("Body");
             float scale = body.localScale.x;
-            UnlockPad lv2 = Find<UnlockPad>("Pad SawmillLv2");
-            Assert.IsNotNull(lv2, "Seviye karesi yok");
-            Teleport(lv2.transform.position + Vector3.back * 2.5f);
-            yield return new WaitForSeconds(0.5f);
-            Shot("B_seviye_karesi");
-            AreaManager.Instance.Unlock(lv2.Area);
+            Assert.IsNull(Find<UnlockPad>("Pad SawmillLv2"), "Eski seviye karesi duruyor (artık Yükselt tabelası)");
+            AreaManager.Instance.Unlock(sawmill.LevelAreas[0]);
             yield return new WaitForSeconds(0.8f);
             Assert.AreEqual(2, sawmill.Level, "Bina seviye atlamadı");
             Assert.Greater(sawmill.SpeedMultiplier, speed, "Seviyeyle hız artmadı");
@@ -265,8 +271,8 @@ namespace KayipAda.Tests
         public IEnumerator Capture_IsletsAndForge()
         {
             DevCommands.CompleteBridges();
-            DevCommands.ToggleClouds();
             AreaManager.Instance.Unlock(PadArea("Pad Forge"));
+            yield return new WaitForSeconds(4f); // köprü açılış çekimleri
             yield return new WaitForSeconds(2.5f);
             ProcessingBuilding forge = null;
             foreach (ProcessingBuilding b in Object.FindObjectsByType<ProcessingBuilding>(FindObjectsSortMode.None)) if (b.Type.Output.Id == "nail") forge = b;
@@ -276,31 +282,40 @@ namespace KayipAda.Tests
             yield return new WaitForSeconds(1.6f);
             Assert.IsTrue(forge.IsWorking, "Demirci çalışmıyor");
             Shot("B_demirci");
-            Teleport(new Vector3(29f, 0f, -14.5f));
+            Teleport(new Vector3(-30.5f, 0f, 5.2f));
             yield return new WaitForSeconds(1f);
             Shot("B_kayip_tapinak");
-            Teleport(new Vector3(-31f, 0f, 3.5f));
+            Teleport(new Vector3(6f, 0f, -30.5f));
             yield return new WaitForSeconds(1f);
             Shot("B_batik_koyu");
         }
 
-        // Bulut: kapalı bölgenin üstünde; bölge açılınca dağılır.
+        // Çalılık: kapalı bölgeyi kaplar (bulut yok); bölge açılınca çalılar kesilip savrulur, yol açılır, kamera döner.
         [UnityTest]
-        public IEnumerator Cloud_DispersesWhenRegionOpens()
+        public IEnumerator Thicket_ClearsWhenRegionOpens()
         {
-            RegionCloud rocky = null;
+            Assert.IsNull(GameObject.Find("Cloud Rocky"), "Eski bulut duruyor");
+            RegionThicket rocky = null;
             AreaDefinition area = PadArea("Pad Rocky");
-            foreach (RegionCloud c in RegionCloud.All) if (c.Area == area) rocky = c;
-            Assert.IsNotNull(rocky, "Kayalık bulutu yok");
-            Teleport(new Vector3(-6.5f, 0f, 1.2f));
+            foreach (RegionThicket c in RegionThicket.All) if (c.Area == area) rocky = c;
+            Assert.IsNotNull(rocky, "Kayalık çalılığı yok");
+            Assert.Greater(rocky.BushCount, 20, "Çalılık seyrek");
+            foreach (RegionThicket c in RegionThicket.All)
+                Assert.IsFalse(c.Area.Id.StartsWith("islet"), "Adacıkta örtü olmamalı");
+            Teleport(new Vector3(-6.5f, 0f, 1.4f));
             yield return new WaitForSeconds(0.6f);
-            Shot("B_bulut");
+            Shot("D3_calilik");
             AreaManager.Instance.Unlock(area);
             yield return new WaitForSeconds(0.9f);
-            Assert.IsTrue(rocky.IsRevealing, "Bulut dağılmaya başlamadı");
-            Shot("B_bulut_aciliyor");
-            yield return WaitFor(() => !rocky.gameObject.activeSelf, 5f);
-            Assert.IsFalse(rocky.gameObject.activeSelf, "Bulut kalkmadı");
+            Assert.IsTrue(rocky.IsRevealing, "Çalılar kesilmeye başlamadı");
+            Shot("D3_calilik_kesiliyor");
+            yield return WaitFor(() => !rocky.gameObject.activeSelf, 6f);
+            Assert.IsFalse(rocky.gameObject.activeSelf, "Çalılık kalkmadı");
+            Assert.IsFalse(CameraFollow.Main.HasShot, "Kamera oyuncuya dönmedi");
+            yield return new WaitForSeconds(0.5f);
+            Teleport(new Vector3(-6.5f, 0f, 5.2f));
+            yield return new WaitForSeconds(1.2f);
+            Shot("D3_tas_ocagi");
         }
     }
 }

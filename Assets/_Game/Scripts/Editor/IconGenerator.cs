@@ -107,6 +107,18 @@ namespace KayipAda.EditorTools
                     s.Add(new Box { C = new Vector2(64, 64), Half = new Vector2(34, 34), Radius = 6, Angle = 45, Fill = new Color(0.62f, 0.38f, 0.95f) });
                     s.Add(new Box { C = new Vector2(52, 76), Half = new Vector2(10, 22), Radius = 4, Angle = 45, Fill = new Color(0.86f, 0.75f, 1f) });
                     break;
+                case "chest": // hazine sandığı: kahverengi gövde, kavisli kapak, altın kilit
+                    s.Add(new Box { C = new Vector2(64, 50), Half = new Vector2(44, 26), Radius = 6, Fill = wood });
+                    s.Add(new Box { C = new Vector2(64, 86), Half = new Vector2(44, 16), Radius = 14, Fill = new Color(0.5f, 0.3f, 0.14f) });
+                    s.Add(new Box { C = new Vector2(64, 74), Half = new Vector2(46, 4), Radius = 2, Fill = new Color(0.95f, 0.75f, 0.25f) });
+                    s.Add(new Box { C = new Vector2(64, 64), Half = new Vector2(9, 12), Radius = 3, Fill = new Color(1f, 0.82f, 0.3f) });
+                    break;
+                case "figure": // altın figür (kanatlı baş)
+                    s.Add(new Circle { C = new Vector2(64, 74), R = 26, Fill = new Color(1f, 0.78f, 0.22f) });
+                    s.Add(new Box { C = new Vector2(30, 60), Half = new Vector2(20, 9), Radius = 8, Angle = 25, Fill = new Color(0.95f, 0.68f, 0.18f) });
+                    s.Add(new Box { C = new Vector2(98, 60), Half = new Vector2(20, 9), Radius = 8, Angle = -25, Fill = new Color(0.95f, 0.68f, 0.18f) });
+                    s.Add(new Box { C = new Vector2(64, 36), Half = new Vector2(14, 18), Radius = 6, Fill = new Color(0.9f, 0.65f, 0.15f) });
+                    break;
                 default:
                     s.Add(new Circle { C = new Vector2(64, 64), R = 40, Fill = Color.white });
                     break;
