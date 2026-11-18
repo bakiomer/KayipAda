@@ -43,9 +43,9 @@
 | Odun veren palmiye | Node_Palm_1 | Quaternius | Environment_PalmTree_1.fbx | 5,5 m (yükseklik) | ✅ |
 | Odun veren palmiye | Node_Palm_2 | Quaternius | Environment_PalmTree_1.fbx | 5,2 m (yükseklik) | ✅ |
 | Odun veren palmiye | Node_Palm_3 | Quaternius | Environment_PalmTree_1.fbx | 5,8 m (yükseklik) | ✅ |
-| Taş veren kaya | Node_Rock_1 | Quaternius | Environment_Rock_1.fbx | 1,7 m (yükseklik) | ✅ |
-| Taş veren kaya | Node_Rock_2 | Quaternius | Environment_Rock_2.fbx | 1,6 m (yükseklik) | ✅ |
-| Taş veren kaya | Node_Rock_3 | Quaternius | Environment_Rock_3.fbx | 1,8 m (yükseklik) | ✅ |
+| Taş veren kaya | Node_Rock_1 | Quaternius | Environment_Rock_1.fbx | 1,25 m (yükseklik) | ✅ |
+| Taş veren kaya | Node_Rock_2 | Quaternius | Environment_Rock_2.fbx | 1,2 m (yükseklik) | ✅ |
+| Taş veren kaya | Node_Rock_3 | Quaternius | Environment_Rock_3.fbx | 1,35 m (yükseklik) | ✅ |
 | Meyve ağacı (yuvarlak taçlı; üstünde kodla üretilen kırmızı/turuncu meyveler) — Quaternius'ta yok | Node_FruitTree | KenneyNature | tree_default.fbx | 2,6 m (yükseklik) | ✅ |
 | Keten/saz bitkisi (lif tarlası) — sarımsı-yeşile boyanır | FlaxClump | KenneyNature | crops_wheatStageB.fbx | 1,1 m (yükseklik) | ✅ |
 | Kesilen ağacın kütüğü (tükenince) | Stump | KenneyNature | stump_round.fbx | 0,55 m (yükseklik) | ✅ |
@@ -139,9 +139,9 @@
 | Çalılık: yuvarlak çalı | ThicketBushC | KenneyNature | plant_bushDetailed.fbx | 1,3 m (yükseklik) | ✅ |
 | Sarmaşık (yapraklı dallar) | Vine | KenneyNature | crops_leafsStageB.fbx | 1,2 m (yükseklik) | ✅ |
 | Sarmaşık / yosun (çalıların üstünde) | VineMoss | KenneyNature | hanging_moss.fbx | 1 m (en büyük kenar) | ✅ |
-| Taş ocağı kaya yüzü | QuarryCliffA | Quaternius | Environment_Cliff2.fbx | 3,6 m (yükseklik) | ✅ |
-| Taş ocağı kaya yüzü | QuarryCliffB | Quaternius | Environment_Cliff3.fbx | 3,2 m (yükseklik) | ✅ |
-| Taş ocağı kaya yüzü | QuarryCliffC | Quaternius | Environment_Cliff4.fbx | 3,4 m (yükseklik) | ✅ |
+| Taş ocağı çevresinde açık renkli kaya | QuarryRockA | KenneyNature | rock_largeA.fbx | 1,7 m (en büyük kenar) | ✅ |
+| Taş ocağı çevresinde açık renkli kaya | QuarryRockB | KenneyNature | rock_largeC.fbx | 1,4 m (en büyük kenar) | ✅ |
+| Taş ocağı çevresinde açık renkli dik kaya | QuarryRockC | KenneyNature | rock_tallB.fbx | 1,6 m (en büyük kenar) | ✅ |
 | Kazma (rafta) — Quaternius'ta yok | Pickaxe | KenneySurvival | tool-pickaxe.fbx | 0,95 m (en büyük kenar) | ✅ |
 | Kürek (rafta) | Shovel | KenneySurvival | tool-shovel.fbx | 0,95 m (en büyük kenar) | ✅ |
 | Kırık taş yığını (taş ocağı) | StonePile | KenneySurvival | resource-stone-large.fbx | 1 m (en büyük kenar) | ✅ |

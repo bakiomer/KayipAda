@@ -94,9 +94,9 @@ namespace KayipAda.EditorTools
         };
         public static readonly ModelSpec[] Rocks =
         {
-            M("Node_Rock_1", ModelPack.Quaternius, "Environment_Rock_1", 1.7f, SizeAxis.Height, true, true, "Taş veren kaya"),
-            M("Node_Rock_2", ModelPack.Quaternius, "Environment_Rock_2", 1.6f, SizeAxis.Height, true, true, "Taş veren kaya"),
-            M("Node_Rock_3", ModelPack.Quaternius, "Environment_Rock_3", 1.8f, SizeAxis.Height, true, true, "Taş veren kaya")
+            M("Node_Rock_1", ModelPack.Quaternius, "Environment_Rock_1", 1.25f, SizeAxis.Height, true, true, "Taş veren kaya"),
+            M("Node_Rock_2", ModelPack.Quaternius, "Environment_Rock_2", 1.2f, SizeAxis.Height, true, true, "Taş veren kaya"),
+            M("Node_Rock_3", ModelPack.Quaternius, "Environment_Rock_3", 1.35f, SizeAxis.Height, true, true, "Taş veren kaya")
         };
         public static readonly ModelSpec FiberPalm = Up(M("Node_FiberPalm", ModelPack.Quaternius, "Environment_PalmTree_1", 4.6f, SizeAxis.Height, false, true, "Lif veren palmiye (Palmiye Koyu)"));
         // Tükenen kaynak noktasının yerinde kalan parça: ağaçlarda kütük, kayalarda kırık taşlar.
@@ -196,9 +196,9 @@ namespace KayipAda.EditorTools
             M("Vine", ModelPack.KenneyNature, "crops_leafsStageB", 1.2f, SizeAxis.Height, true, false, "Sarmaşık (yapraklı dallar)"),
             M("VineMoss", ModelPack.KenneyNature, "hanging_moss", 1.0f, SizeAxis.Largest, true, false, "Sarmaşık / yosun (çalıların üstünde)"),
             // Taş ocağı (Kayalık).
-            M("QuarryCliffA", ModelPack.Quaternius, "Environment_Cliff2", 3.6f, SizeAxis.Height, true, true, "Taş ocağı kaya yüzü"),
-            M("QuarryCliffB", ModelPack.Quaternius, "Environment_Cliff3", 3.2f, SizeAxis.Height, true, true, "Taş ocağı kaya yüzü"),
-            M("QuarryCliffC", ModelPack.Quaternius, "Environment_Cliff4", 3.4f, SizeAxis.Height, true, true, "Taş ocağı kaya yüzü"),
+            M("QuarryRockA", ModelPack.KenneyNature, "rock_largeA", 1.7f, SizeAxis.Largest, true, true, "Taş ocağı çevresinde açık renkli kaya"),
+            M("QuarryRockB", ModelPack.KenneyNature, "rock_largeC", 1.4f, SizeAxis.Largest, true, true, "Taş ocağı çevresinde açık renkli kaya"),
+            M("QuarryRockC", ModelPack.KenneyNature, "rock_tallB", 1.6f, SizeAxis.Largest, true, true, "Taş ocağı çevresinde açık renkli dik kaya"),
             M("Pickaxe", ModelPack.KenneySurvival, "tool-pickaxe", 0.95f, SizeAxis.Largest, true, false, "Kazma (rafta) — Quaternius'ta yok"),
             M("Shovel", ModelPack.KenneySurvival, "tool-shovel", 0.95f, SizeAxis.Largest, true, false, "Kürek (rafta)"),
             M("StonePile", ModelPack.KenneySurvival, "resource-stone-large", 1.0f, SizeAxis.Largest, true, true, "Kırık taş yığını (taş ocağı)"),

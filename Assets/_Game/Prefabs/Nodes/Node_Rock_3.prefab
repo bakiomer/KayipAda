@@ -27,7 +27,7 @@ Transform:
   m_GameObject: {fileID: 1083643738009440727}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.08, z: 0}
+  m_LocalPosition: {x: 0, y: 0.81000006, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2370,9 +2370,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7c86279e9f7ac5a4d9ba67caf1c3cfbf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: KayipAda::KayipAda.NavObstacle
-  size: {x: 1.3, y: 1.3}
+  size: {x: 1.5292513, y: 1.1597804}
   oriented: 0
-  cornerRadius: 0
+  cornerRadius: 0.46391216
 --- !u!114 &8229165757796076539
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2388,8 +2388,8 @@ MonoBehaviour:
   config: {fileID: 11400000, guid: 1146e9de02183b3479a7be35060f6c07, type: 2}
   nodeType: {fileID: 11400000, guid: 14286a4bfdd0ae94a98e045094039f50, type: 2}
   visual: {fileID: 8559601078839358309}
-  spawnHeight: 0.9
-  standRadius: 1.5
+  spawnHeight: 0.675
+  standRadius: 1.45
   hitEffect: {fileID: 6267222239156746698}
   stockVisuals: []
   shrinks: 1
@@ -2458,10 +2458,10 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 5298046782013884269}
+  - {fileID: 4824673862053126369}
   m_Father: {fileID: 5267570194108281449}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1001 &5624089967671877766
+--- !u!1001 &5007464221541435146
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -2538,10 +2538,10 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 6f9489c3bfad6a5418de388f15cfd64c, type: 3}
---- !u!4 &5298046782013884269 stripped
+--- !u!4 &4824673862053126369 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 6f9489c3bfad6a5418de388f15cfd64c, type: 3}
-  m_PrefabInstance: {fileID: 5624089967671877766}
+  m_PrefabInstance: {fileID: 5007464221541435146}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &9201614317345114784
 PrefabInstance:
@@ -2553,27 +2553,27 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 2d286ce1c33852044917c09e23e5ff9e, type: 3}
       propertyPath: m_LocalScale.x
-      value: 294.24612
+      value: 220.6846
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 2d286ce1c33852044917c09e23e5ff9e, type: 3}
       propertyPath: m_LocalScale.y
-      value: 294.24612
+      value: 220.6846
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 2d286ce1c33852044917c09e23e5ff9e, type: 3}
       propertyPath: m_LocalScale.z
-      value: 294.24612
+      value: 220.6846
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 2d286ce1c33852044917c09e23e5ff9e, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.25983846
+      value: -0.19487886
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 2d286ce1c33852044917c09e23e5ff9e, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.006996691
+      value: 0.0052475333
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 2d286ce1c33852044917c09e23e5ff9e, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0.004342993
+      value: 0.0032572448
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 2d286ce1c33852044917c09e23e5ff9e, type: 3}
       propertyPath: m_LocalRotation.w

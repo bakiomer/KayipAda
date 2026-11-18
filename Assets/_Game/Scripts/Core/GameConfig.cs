@@ -305,6 +305,9 @@ namespace KayipAda
         [field: Tooltip("Makinenin dönme/vuruş hızı (1 = normal). Bina hızlandıkça ayrıca artar.")]
         [field: SerializeField, Min(0.1f)] public float MachineSpeed { get; private set; } = 1f;
 
+        [field: Tooltip("Makine animasyonunun üretim fazını izleme hızı (büyük = sıkı; küçük = daha yumuşak başlar/durur).")]
+        [field: SerializeField, Min(0.5f)] public float MachineFollow { get; private set; } = 5f;
+
         [field: Header("Karakter izi (ayak izi, yaprak, su halkası)")]
         [field: Tooltip("Ayak izi, yaprak ve su halkaları açık mı.")]
         [field: SerializeField] public bool TrailsEnabled { get; private set; } = true;

@@ -151,29 +151,23 @@ namespace KayipAda.EditorTools
         {
             Transform root = new GameObject("Quarry").transform;
             root.SetParent(parent, false);
-            // Arka planda kaya yüzü / uçurum: bölgenin kuzey kenarı boyunca, birbirine yaslanan kayalıklar.
-            string[] cliffs = { "QuarryCliffA", "QuarryCliffB", "QuarryCliffC", "QuarryCliffA", "QuarryCliffB" };
-            for (int i = 0; i < cliffs.Length; i++)
+            // Arka kenarda açık gri-bej, makul boyda kaya grupları (içine girilmez, kenarından kayılır).
+            Material light = ArtGenerator.GetLit("M_QuarryRockLight", null, new Color(0.78f, 0.75f, 0.68f));
+            string[] rocks = { "QuarryRockA", "QuarryRockC", "QuarryRockB", "QuarryRockA", "QuarryRockC", "QuarryRockB" };
+            for (int i = 0; i < rocks.Length; i++)
             {
-                float x = rect.xMin - 0.6f + (rect.width + 1.2f) * i / (cliffs.Length - 1f);
-                GameObject c = Prop(decor, cliffs[i], root, new Vector3(x, 0f, rect.yMax + 1.1f + (i % 2) * 0.5f), 180f + i * 23f, 1f + (i % 3) * 0.12f);
-                if (c != null) Block(root, c.transform.position, new Vector2(2.6f, 1.6f));
+                float x = rect.xMin + 0.8f + (rect.width - 1.6f) * i / (rocks.Length - 1f);
+                GameObject c = Prop(decor, rocks[i], root, new Vector3(x, 0f, rect.yMax + 0.4f + (i % 2) * 0.6f), i * 47f, 1f + (i % 3) * 0.15f);
+                if (c == null) continue;
+                Paint(c, light);
+                Bounds cb = PrefabFactory.WorldBounds(c);
+                GameObject blk = new GameObject("Block");
+                blk.transform.SetParent(root, false);
+                blk.transform.position = new Vector3(cb.center.x, 0f, cb.center.z);
+                NavObstacle o = blk.AddComponent<NavObstacle>();
+                BuilderUtil.SetVector2(o, "size", new Vector2(cb.size.x * 0.9f, cb.size.z * 0.9f));
+                BuilderUtil.SetFloat(o, "cornerRadius", Mathf.Min(cb.size.x, cb.size.z) * 0.4f);
             }
-            // Ahşap iskele kaya yüzüne dayalı: direkler + iki kat tahta + merdiven.
-            Transform scaffold = new GameObject("Scaffold").transform;
-            scaffold.SetParent(root, false);
-            Vector3 s0 = new Vector3(rect.xMin + 1.4f, 0f, rect.yMax - 0.2f);
-            for (int i = 0; i < 3; i++)
-                for (int k = 0; k < 2; k++)
-                    Part(scaffold, PrimitiveType.Cube, "Post", s0 + new Vector3(i * 1.2f, 1.25f, k * 0.9f), new Vector3(0.14f, 2.5f, 0.14f), Quaternion.identity, Wood);
-            for (int level = 1; level <= 2; level++)
-            {
-                Part(scaffold, PrimitiveType.Cube, "Deck", s0 + new Vector3(1.2f, level * 1.1f, 0.45f), new Vector3(2.7f, 0.09f, 1.15f), Quaternion.identity, Plank);
-                Part(scaffold, PrimitiveType.Cube, "Rail", s0 + new Vector3(1.2f, level * 1.1f + 0.55f, -0.05f), new Vector3(2.6f, 0.07f, 0.07f), Quaternion.identity, Wood);
-            }
-            for (int i = 0; i < 5; i++)
-                Part(scaffold, PrimitiveType.Cube, "Rung", s0 + new Vector3(-0.35f, 0.25f + i * 0.42f, -0.1f), new Vector3(0.5f, 0.06f, 0.06f), Quaternion.identity, Wood);
-            Block(root, s0 + new Vector3(1.2f, 0f, 0.45f), new Vector2(2.8f, 1.3f));
 
             // Raylar + maden arabası (batı kenarı boyunca, kaya yüzüne doğru).
             Transform rails = new GameObject("Rails").transform;

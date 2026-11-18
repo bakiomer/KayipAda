@@ -25,6 +25,8 @@ namespace KayipAda
         [SerializeField] private ParticleSystem workEffect;
         [Tooltip("Seviye kareleri: açıldıkça bina seviye atlar (Seviye 2, Seviye 3).")]
         [SerializeField] private AreaDefinition[] levelAreas = new AreaDefinition[0];
+        [Tooltip("Üretim hattının girişi: ham madde buraya uçar (boşsa ürün noktasına).")]
+        [SerializeField] private Transform intakePoint;
 
         // Herhangi bir bina ürün çıkarınca (yan görevler): ürün türü, adet.
         public static event System.Action<ResourceType, int> AnyProduced;
@@ -39,6 +41,10 @@ namespace KayipAda
         // Şu an işliyor mu (makineler sadece işlerken hareket eder)? İşlemin ilerlemesi 0..1.
         public bool IsWorking => working;
         public float Progress => progress;
+        // Bitmiş ürün sayısı (makine animasyonu "biten + ilerleme" ile üretime senkron döner).
+        public int ProducedCount { get; private set; }
+        // Üretim döngüsünün sürekli ölçüsü: her ürün 1 birim.
+        public float Cycle => ProducedCount + progress;
 
         // 1, 2, 3...: açılmış seviye karesi sayısı + 1.
         public int Level
@@ -171,10 +177,11 @@ namespace KayipAda
         private void FinishProcess()
         {
             Vector3 center = productSpawnPoint.position;
+            Vector3 intake = intakePoint != null ? intakePoint.position : center; // ham madde üretim hattının girişine
             for (int i = 0; i < type.InputAmount; i++)
             {
                 ResourceItem used = inputPile.RemoveTop();
-                if (used != null) used.FlyToAndDestroy(center, config.ItemFlyHeight * 0.5f, config.ItemFlyDuration);
+                if (used != null) used.FlyToAndDestroy(intake, config.ItemFlyHeight * 0.5f, config.ItemFlyDuration);
             }
 
             for (int i = 0; i < type.OutputAmount; i++)
@@ -182,7 +189,8 @@ namespace KayipAda
                 outputPile.TryAdd(type.Output.Spawn(center));
             }
 
-            if (bodyVisual != null) Tween.PunchScale(bodyVisual, config.NodeSquash, 0.3f);
+            ProducedCount++;
+            if (bodyVisual != null && intakePoint == null) Tween.PunchScale(bodyVisual, config.NodeSquash, 0.3f); // makineli binada makine kendisi oynar
             AudioManager.Play(SoundId.Produce, 0.4f);
             Produced?.Invoke();
             AnyProduced?.Invoke(type.Output, type.OutputAmount);

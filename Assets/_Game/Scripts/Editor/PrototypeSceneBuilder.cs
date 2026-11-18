@@ -635,7 +635,7 @@ namespace KayipAda.EditorTools
                                                      null, 0, null, ModelCatalog.Stump, ResourceNode.RegrowStyle.Sapling);
             p.Rocks = new GameObject[ModelCatalog.Rocks.Length];
             for (int i = 0; i < p.Rocks.Length; i++)
-                p.Rocks[i] = PrefabFactory.BuildNode(ModelCatalog.Rocks[i], rock, config, 1.9f, new Vector2(1.3f, 1.3f), 1.5f,
+                p.Rocks[i] = PrefabFactory.BuildNode(ModelCatalog.Rocks[i], rock, config, 1.9f, Vector2.zero, 1.45f,
                                                      null, 0, new Color(0.62f, 0.6f, 0.58f), ModelCatalog.Rubble, ResourceNode.RegrowStyle.Rise);
             p.FruitTree = PrefabFactory.BuildFruitBush(bush, config);
             ResourceNodeType fiberPalm = Data<ResourceNodeType>(NodeTypesFolder, "FiberPalm");
@@ -646,9 +646,9 @@ namespace KayipAda.EditorTools
 
             // Binalar ve alanlar
             p.Sawmill = PrefabFactory.BuildBuilding(ModelCatalog.Sawmill, Data<BuildingType>(BuildingTypesFolder, "Sawmill"), config,
-                                                    sawdust, FindDecor("LogPile"), new Vector3(-2.7f, 0f, 1.2f));
+                                                    sawdust, FindDecor("LogPile"), new Vector3(-2.7f, 0f, 1.2f), MachineBuilder.Kind.Saw);
             p.Workshop = PrefabFactory.BuildBuilding(ModelCatalog.Workshop, Data<BuildingType>(BuildingTypesFolder, "StoneWorkshop"), config,
-                                                     smoke, FindDecor("Workbench"), new Vector3(-2.6f, 0f, 0.8f));
+                                                     null, null, Vector3.zero, MachineBuilder.Kind.Crane);
             GameObject fiberDust = PrefabFactory.BuildWorkEffect("FiberDust", true, MapLayout.ItemFiberColor);
             p.RopeWorkshop = PrefabFactory.BuildBuilding(ModelCatalog.RopeWorkshop, Data<BuildingType>(BuildingTypesFolder, "RopeWorkshop"), config,
                                                          fiberDust, FindDecor("Bucket"), new Vector3(-2.3f, 0f, 1.4f), MachineBuilder.Kind.RopeWheel);
@@ -669,7 +669,7 @@ namespace KayipAda.EditorTools
             ResourceNodeType scrapType = Data<ResourceNodeType>(NodeTypesFolder, "Scrap");
             scrapType.EditorSetHitSound(SoundId.Anvil);
             EditorUtility.SetDirty(scrapType);
-            p.ScrapNode = PrefabFactory.BuildNode(ModelCatalog.ScrapWreck, scrapType, config, 1.9f, new Vector2(1.7f, 1.3f), 1.7f,
+            p.ScrapNode = PrefabFactory.BuildNode(ModelCatalog.ScrapWreck, scrapType, config, 1.9f, Vector2.zero, 1.7f,
                                                   null, 0, new Color(0.55f, 0.45f, 0.35f), null, ResourceNode.RegrowStyle.Rise);
             p.Forge = PrefabFactory.BuildBuilding(ModelCatalog.Forge, Data<BuildingType>(BuildingTypesFolder, "Forge"), config,
                                                   smoke, FindDecor("Barrel"), new Vector3(-2.3f, 0f, 1.4f), MachineBuilder.Kind.Anvil);

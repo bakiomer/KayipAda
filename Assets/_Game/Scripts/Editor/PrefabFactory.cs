@@ -1090,7 +1090,15 @@ namespace KayipAda.EditorTools
             }
 
             AddRoundTrigger(root, zoneRadius);
-            BuilderUtil.SetVector2(root.AddComponent<NavObstacle>(), "size", trunkSize);
+            NavObstacle trunk = root.AddComponent<NavObstacle>();
+            if (trunkSize.x <= 0f)
+            {
+                // Kaya/hurda: çarpışma modelin gerçek boyunda, köşeleri yuvarlak (içine girilmez, kenarından kayılır).
+                Bounds mb = WorldBounds(model);
+                trunkSize = new Vector2(mb.size.x * 0.9f, mb.size.z * 0.9f);
+                BuilderUtil.SetFloat(trunk, "cornerRadius", Mathf.Min(trunkSize.x, trunkSize.y) * 0.4f);
+            }
+            BuilderUtil.SetVector2(trunk, "size", trunkSize);
             ParticleSystem chips = CreateHitChips(root.transform, Mathf.Min(spec.Size * 0.6f, 2.2f), chipColor ?? new Color(0.45f, 0.75f, 0.25f));
 
             // Tükenince yerinde kalan parça (kütük / kırık taşlar); başta gizli.
@@ -1162,8 +1170,15 @@ namespace KayipAda.EditorTools
             body.SetParent(root.transform, false);
             body.localPosition = bodyPos;
             Vector3 productPos = bodyPos + Vector3.up * 1.2f;
-            if (machine == MachineBuilder.Kind.None) CreateModel(spec, body);
-            else productPos = bodyPos + MachineBuilder.Build(machine, body, building, config, spec.Size);
+            Transform intake = null;
+            if (machine == MachineBuilder.Kind.None || machine == MachineBuilder.Kind.Saw) CreateModel(spec, body);
+            if (machine != MachineBuilder.Kind.None)
+            {
+                // Makine + üretim hattı: ürün çıkış kızağının ucunda belirir, ham madde kızağın başına uçar.
+                MachineBuilder.Result line = MachineBuilder.Build(machine, body, building, config, type.Input, type.Output);
+                productPos = bodyPos + line.ProductPos;
+                intake = line.Intake;
+            }
             BuilderUtil.SetVector2(body.gameObject.AddComponent<NavObstacle>(), "size", new Vector2(spec.Size * 0.85f, spec.Size * 0.7f));
 
             if (decor != null)
@@ -1179,12 +1194,14 @@ namespace KayipAda.EditorTools
             spawn.localPosition = productPos;
 
             ProgressRing ring = CreateBuildingRing(root.transform, bodyPos + Vector3.up * (spec.Size + 1.3f)); // adın üstünde
-            CreateBoardSign(root.transform, bodyPos + Vector3.up * (spec.Size + 0.55f), type.DisplayName);
+            // Vinçli taş ocağında levha vincin üstünde kalsın (vinci kapatmasın).
+            float signY = machine == MachineBuilder.Kind.Crane ? 4.9f : spec.Size + 0.55f;
+            CreateBoardSign(root.transform, bodyPos + Vector3.up * signY, type.DisplayName);
 
             ParticleSystem fx = null;
             if (workFxPrefab != null)
             {
-                Vector3 fxPos = machine == MachineBuilder.Kind.None ? bodyPos + Vector3.up * (spec.Size * 0.7f) : productPos; // makinede lif tozu makaranın yanında
+                Vector3 fxPos = machine == MachineBuilder.Kind.None || machine == MachineBuilder.Kind.Saw ? bodyPos + Vector3.up * (spec.Size * 0.7f) : productPos;
                 fx = Instance(workFxPrefab, root.transform, fxPos).GetComponent<ParticleSystem>();
             }
 
@@ -1208,6 +1225,7 @@ namespace KayipAda.EditorTools
             BuilderUtil.SetField(building, "productSpawnPoint", spawn);
             BuilderUtil.SetField(building, "bodyVisual", body);
             BuilderUtil.SetField(building, "workEffect", fx);
+            BuilderUtil.SetField(building, "intakePoint", intake);
             return Save(root, Folder + "/Buildings/" + spec.Key + ".prefab");
         }
 

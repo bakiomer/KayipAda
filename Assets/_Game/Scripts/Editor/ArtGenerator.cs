@@ -507,6 +507,29 @@ namespace KayipAda.EditorTools
         }
 
         // Mat, ışık alan malzeme (URP Simple Lit: telefonda Lit'ten ucuz, parlama yok).
+        // Çizgili doku (burulan iplik: çapraz çizgi; yelken bezi: düz şerit). Tekrarlanır; makine kaydırır.
+        public static Texture2D StripeTexture(string name, Color a, Color b, int stripes, bool diagonal)
+        {
+            string path = GeneratedFolder + "/" + name + ".png";
+            const int size = 64;
+            Texture2D tex = new Texture2D(size, size, TextureFormat.RGB24, false);
+            for (int y = 0; y < size; y++)
+                for (int x = 0; x < size; x++)
+                {
+                    float t = diagonal ? (x + y) / (float)size : y / (float)size;
+                    float f = t * stripes;
+                    tex.SetPixel(x, y, Mathf.FloorToInt(f) % 2 == 0 ? a : b);
+                }
+            BuilderUtil.WritePng(tex, path);
+            TextureImporter importer = (TextureImporter)AssetImporter.GetAtPath(path);
+            importer.wrapMode = TextureWrapMode.Repeat;
+            importer.filterMode = FilterMode.Bilinear;
+            importer.mipmapEnabled = false;
+            importer.textureCompression = TextureImporterCompression.Uncompressed;
+            importer.SaveAndReimport();
+            return BuilderUtil.Load<Texture2D>(path);
+        }
+
         public static Material GetLit(string name, Texture texture, Color color)
         {
             return GetMaterial(name, "Universal Render Pipeline/Simple Lit", m =>
