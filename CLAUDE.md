@@ -1,7 +1,13 @@
 # Kayıp Ada — Oyun Tasarımı ve Kod Kuralları
 
 > **Yön: 3D low-poly** (2D kutulardan geçildi; 2D son hali `main` dalında "2D son durum" kaydında).
-> **Şu anki durum:** Düzeltme + Keşif + Oyuncu testi düzeltme turu (Düzeltme 3) yapıldı:
+> **Şu anki durum:** Düzeltme + Keşif + Düzeltme 3 + Bina kimliği / üretim hattı / doğal başlangıç turu yapıldı:
+> - Bina turu: her işleme binasında görünür üretim hattı (giriş kızağı → makine → çıkış kızağı) ve üretime SENKRON
+>   makine (taş ocağı vinci + çukur, su çarklı halat düzeneği, hasır çardaklı dokuma tezgahı, kiremit çatılı demirci);
+>   çizgili tente sadece Pazar'da; Ambar burunda kapalı depo + yük asansörü; yerdeki direkli bölge tabelaları kalktı
+>   (tanıtım kartı açma karesinde); yakınlığa göre halka/ikon/Yükselt tabelası görünürlüğü; kamp adanın merkezinde
+>   (ateş, büyüyen barınak, görev panosu, ateş başında dinlenen işçiler); çalılık kalktı → kapalı alanlarda küçük doğal
+>   ipuçları ve açılınca kamera + yaprak girdabı + yerden çıkan ağaç/kaya + parça parça kurulan bina; gemi kıyıya yakın.
 > - Düzeltme 3: bulut yerine kapalı bölgelerde çalılık (açılınca kesilir); bölge kimlikleri (taş ocağı, kemerli bahçe
 >   kapısı + kuyu, kurutma rafları); Halat Atölyesi tarlanın kuzeyine, Dokuma Tezgahı güneyine; seviye kareleri yerine
 >   "Yükselt" tabelası + alt panel; Batık Koyu Bıçkıhane'nin güneyinden dar uzun köprüyle (karşı kıyı önizlemesi, açılış
@@ -13,7 +19,7 @@
 >   halat çarkı / dokuma tezgahı (sadece üretirken döner); açık Liman Pazarı; ayak izi/yaprak/su halkası; toplanma kadrajı.
 > - Keşif: bulutlu bölgeler, iki adacık (köprüyle), Demirci (hurda → çivi), 8 sandık, 5 koleksiyon, 15 yan görev,
 >   bina seviyeleri (3), altın figür, kristal + 11 kostüm.
-> Testler `Docs/Screenshots` (keşif `Docs/Screenshots/Kesif`, Düzeltme 3 önce/sonra `Docs/Screenshots/Duzeltme3`). İş `3d` dalında.
+> Testler `Docs/Screenshots` (keşif `Kesif`, Düzeltme 3 `Duzeltme3`, bina turu `Binalar` önce/sonra). İş `3d` dalında.
 
 ## Proje
 - **Motor:** Unity 6 (6000.6), **URP 3D** (Universal Renderer, mobil ayarlı `Assets/_Game/Settings/URP_Mobile`)
@@ -36,7 +42,8 @@ Oyuncu bir adaya düşmüş bir kazazede kaptandır. Amaç: adadan kaçmak için
 3. Pazara girince yığın tek tek tezgaha uçar ve satılır → para zıplar, "+5" yazısı çıkar.
 4. Para ile yeni bölgeler, binalar, işçiler (Tayfa Barakası) ve geliştirmeler açılır.
 5. Son hedef: üretim zincirleriyle gemiyi 5 aşamada inşa etmek; gemi bitince suya indirme töreniyle adadan kaçmak.
-6. İsteğe bağlı keşif: çalılıklı bölgeler, köprüyle adacıklar, gizli sandıklar, koleksiyon, yan görevler, altın figür, Ambar.
+6. İsteğe bağlı keşif: kapalı bölgeler (açılınca canlanır), köprüyle adacıklar, gizli sandıklar, koleksiyon, yan görevler,
+   altın figür, Ambar. Oyuncu adanın merkezindeki kampta başlar (görev panosu, Geliştirme Tezgahı, Tayfa Barakası).
 
 ### Üretim zincirleri
 | Ham madde (nereden) | Bina | Ürün |
@@ -71,21 +78,26 @@ Tutulan işçi kapıdan çıkar, kısa sevinir (konfeti), işe koşar. Sayılar 
 Kamptaki tezgahta sadece oyuncu geliştirmeleri (+ Bina Hızı) kaldı.
 
 ### Keşif
-- **Çalılık** (`RegionThicket`): kapalı ana ada bölgeleri (Kayalık, Bahçe, Koy) sık çalı + sarmaşıkla kaplı, geçilmez
-  (içi kısmen görünür). Açılınca kamera kısa odaklanır, çalılar girişten başlayarak kesilip savrulur, yapraklar saçılır.
-  Adacıklarda örtü yok (köprü kurulmadan ulaşılamaz). Bulutlar kaldırıldı.
-- **Bölge kimlikleri** (`RegionBuilder`): Kayalık = taş ocağı (arkada kaya yüzü, ahşap iskele, raylar + maden arabası,
-  kazma rafı, taş yığınları); Meyve Bahçesi (alçak süslü çit, kemerli ahşap kapı, sulama kuyusu, meyve kasaları, ağaç
+- **Doğal başlangıç ve açılma** (`UnlockableArea`): kapalı alanlarda hazır yapı/kaynak noktası yok; sadece küçük ipuçları
+  (Kayalık: toprak, taş parçaları, çekiç-kürek simgeli kazık; Bahçe: yabani ot, işlenmemiş tarla; Koy: süs palmiyeleri,
+  taşlar, devrik kütük; Halat/Dokuma: halat kangalı/iplik yumağı; Demirci/adacık: soğuk taşlar; Ambar burnu: kırık
+  sandıklar). Açılınca (~2,6 sn): kamera odak → yaprak girdabı + rüzgâr → ipuçları toz bulutuyla kaybolur → zemin
+  yayılır, ağaçlar fidandan büyür, kayalar topraktan yükselir, süsler zıplar, bina alttan üste parça parça kurulur →
+  kamera döner. Köprü bitince adacıkta da aynı. Kayıttan yüklenince efektsiz. Çalılık ve bulutlar kaldırıldı.
+- **Bölge kimlikleri** (`RegionBuilder`): Kayalık = taş ocağı (arkada açık gri-bej kaya grupları, raylar + maden arabası,
+  kazma rafı, taş yığınları; kayalar oyuncu boyunda, içine girilmez); Meyve Bahçesi (alçak süslü çit, kemerli ahşap kapı, sulama kuyusu, meyve kasaları, ağaç
   sıraları); Palmiye Koyu / keten tarlası (kurutma rafları, bağlı lif demetleri). Kayalık ve Koy'da çit yok.
-- **Tanıtım tabelaları** (`InfoSign`): kapalı bölgelerin ve köprülerin girişinde; yaklaşınca kart (ad, kaynaklar ve
-  binalar ikonlarla, gizli sandık "? ?", açma bedeli). Rehber oku tabelayı önce gösterir.
+- **Tanıtım kartları** (`InfoSign`): kapalı bölgenin açma karesine ya da köprü başına yaklaşınca kart (ad, kaynaklar ve
+  binalar ikonlarla, gizli sandık "? ?", açma bedeli). Yerde direkli bölge tabelası yok; sadece binaların başlık levhaları.
 - **Adacıklar ve köprüler**: Batık Koyu (güney; Bıçkıhane'nin güneyinden dar uzun köprü; hurda + Demirci) ve Kayıp
   Tapınak (batı; harabe, sandıklar, altın kafatası, altın figür parçaları). Köprü başına gelince kamera karşı kıyıyı
   gösterir (batık, Demirci iskeleti, hurda). Kalaslar köprü başından karşıya tek tek tahta olur (kalın direkler, halat
   korkuluk). Bitince kamera köprü boyunca kayar, karşıdakiler zıplayarak belirir, "BATIK KOYU AÇILDI!", kamera döner.
 - **Uzun iskele** (`Pier`): geminin batısında denize uzanır, ucuna kadar yürünür (halat korkuluk, fenerler, variller);
   ucunda kaptan dürbünü; yanında onarılacak sandal (yan görev "Sandalı Onar").
-- **Ambar** (`Storage`): gemi teslim alanının doğusunda, Kayalık'tan sonra 450 (rehber göstermez). Bırakma alanında
+- **Ambar** (`Storage`): adanın kuzeydoğusunda ana adaya bağlı küçük burunda (IslandShape cape), gemiye yakın; kapalı
+  ahşap depo + makaralı yük asansörü (bırakınca sandık kalkar, alınca iner), dışarıda dolulukla büyüyen yığınlar.
+  Kayalık'tan sonra 450 (rehber göstermez). Bırakma alanında
   sırttakiler ambara akar; alma alanında alttan panel (ikon + miktar, "Al"). Kapasite 100/160/240 (Yükselt tabelası);
   doluyken "Ambar dolu!". Taşıyıcılar ambardan gemiye ve bina girişlerine taşır. Kayıtta; kaçışta boşalır.
 - **Sandıklar** (8, parlar; yaklaşınca açılır: para + kristal, bazılarından nadir kostüm) ve **koleksiyon** (5 eşya; dönen
@@ -99,6 +111,19 @@ Kamptaki tezgahta sadece oyuncu geliştirmeleri (+ Bina Hızı) kaldı.
 - **Altın figür**: tapınaktaki 3 parça → geminin burnunda altın figür, kaçışta "EFSANEVİ GEMİ!" + ek kristal.
 - **Kristal** kalıcı ikinci para (sadece sandık, görev, koleksiyon, kaçış). **Kostümler** (`Data/Costumes`): 7 karakter +
   4 yelken/bayrak; bazıları sadece sandıktan. Bu turda mağaza yok; Test Menüsü'nden giyilir.
+
+### Binalar ve üretim hattı
+- Her işleme binasında: giriş alanı → makaralı kızak → makine → çıkış kızağı → çıkış yığını. Malzemenin/ürünün kopyası
+  kızakta kayar. Makine fazı = biten ürün + ilerleme (`ProcessingBuilding.Cycle`): ürün tamamlanınca animasyon da biter
+  (son çekiç vuruşu, bobinin dolması, rulonun son katı); hız binanın hızı ve seviyesiyle gelir; giriş boş/çıkış doluyken
+  durur, yumuşak başlar/durur (`GameConfig.MachineFollow`). Makineler kodla (`MachineBuilder`): Taş Atölyesi vinç + çukur +
+  yontma tezgahı, Halat su çarkı + makaralar + burulan iplikler + bobin, Dokuma tezgahı (çerçeve, mekik, kırmızı-beyaz
+  çizgili rulo), Demirci (ocak, körük, eksantrikli çekiç, kıvılcım), Bıçkıhane (model + hat).
+- **Yakınlık görünürlüğü** (`InteractionVisibility`): yakında halkalar/ikonlar tam ve Yükselt tabelası açık; uzakta soluk
+  ve küçük (gizlenmez), tabela yok. Eşikler `GameConfig` > "Yakınlık görünürlüğü".
+- **Kamp** (`CampSite`): merkezde ateş (alev, kıvılcım, duman, kodla üretilen çıtırtı), tabureler; barınak gemi 2. aşamada
+  kulübe, 4. aşamada ev olur (kutlama; `SaveData.CampLevel`). Boştaki işçi `CampRestAfter` sn sonra ateşin başında
+  `CampRestTime` sn dinlenir. Görev panosu (`QuestBoard` + `QuestBoardPanel`): aktif ve tamamlanan yan görevler.
 
 ## Sesler
 - Hepsi **CC0** (ya da ticari kullanıma açık); kaynak/yazar/lisans **Docs/Lisanslar.md**'de. 8-bit/chiptune ses kullanılmaz.
@@ -197,6 +222,7 @@ Docs/GeceRaporu.md   Gece çalışmasının raporu
 Docs/Screenshots/    Otomatik ekran görüntüleri (testler üretir)
 Docs/Screenshots/Kesif/  Keşif turu ekran görüntüleri
 Docs/Screenshots/Duzeltme3/  Oyuncu testi düzeltme turu: once/ ve sonra/
+Docs/Screenshots/Binalar/  Bina turu: once/ ve sonra/ (binalar, açılma anları, yakınlık görünürlüğü)
 ```
 
 ### Ayar dosyaları (`Data/`)
@@ -241,7 +267,9 @@ SoundLibrary.asset   Hangi olayda hangi ses (Docs/Modeller.md'de liste; komut sa
 | `Crab` / `Flyer` / `IslandLife` | Life | Yengeç (yan yürür, kaçıp kuma gömülür), martı/kelebek uçuşu, canlıları oluşturan yönetici (+ zıplayan balık, martı sesi) |
 | `ConfettiOverlay` | UI | Ekranı kaplayan konfeti (final ve kaçış ekranı), arayüzün en üstünde |
 | `BurstText` / `SettingsPanel` | UI | Ekran ortasında esneyen "AÇILDI!" yazısı; sağ üstte "AYAR" (titreşim/ses) |
-| `RegionThicket` / `InfoSign` / `Pier` | Discovery | Kapalı bölge çalılığı; tanıtım tabelası kartı; denize uzanan iskele (yürünebilir) |
+| `InfoSign` / `Pier` | Discovery | Tanıtım kartı (açma karesinde / köprü başında); denize uzanan iskele (yürünebilir) |
+| `Machine` | Buildings | Üretim hattı + üretime senkron makine (Crane, RopeWheel, Loom, Anvil, Saw) |
+| `InteractionVisibility` / `CampSite` / `QuestBoard` / `QuestBoardPanel` | Core / Quests / UI | Yakınlık görünürlüğü; kamp (ateş, büyüyen barınak, dinlenme); görev panosu |
 | `BuildingUpgradeSign` / `BuildingUpgradePanel` | Buildings / UI | Binanın (ya da Ambar'ın) "Yükselt" tabelası; alttan açılan yükseltme paneli (yürümeyi engellemez) |
 | `Storage` / `StorageDropZone` / `StoragePickZone` / `StoragePanel` | Zones / UI | Ambar: içerik, kapasite, kayıt; bırakma ve alma alanları; alttan Ambar paneli |
 | `SeaSettings` / `TextUtil` | Core | Deniz/kıyı shader yoğunlukları (GameConfig → global); Türkçe büyük harf |
@@ -267,7 +295,7 @@ SoundLibrary.asset   Hangi olayda hangi ses (Docs/Modeller.md'de liste; komut sa
 | `WorkerType` / `Worker` / `LumberjackWorker` / `CarrierWorker` | Workers | İşçi ayarları; ortak temel (`GoTo`, `Wait`, törende `Gather`); Oduncu (Lifçi de aynı sınıf: koy palmiyeleri → Halat Atölyesi) ve Taşıyıcı (tüm bina ürünleri → gemi ya da Pazar) |
 | `WorkerMover` / `WorkerSpawner` | Workers | XZ'de yol bularak yürüme; tutulan sayıya ulaşana kadar baraka kapısından işçi çıkarma (oyun içinde tutulan sevinir) |
 | `CrewManager` / `CrewCard` | Workers / Upgrades | Tutulan işçi sayıları (kayıt), fiyat, kilit; barakadaki işçi kartı (UpgradePanel kartları da yönetir) |
-| `Machine` / `RecipeBalloon` | Buildings | Halat çarkı / dokuma tezgahı / örs: sadece bina işlerken hareket + ses; yaklaşınca "3 [lif] → 1 [halat]" balonu |
+| `RecipeBalloon` | Buildings | Yaklaşınca "3 [lif] → 1 [halat]" balonu |
 | `TrailPool` / `TrailEmitter` | Core / Characters | Kumda ayak izi, kıyıda su halkası, çimende yaprak (en fazla 20, havuz; `GameConfig.TrailsEnabled`) |
 | `ProfileManager` | Core | Kalıcı profil: kristal, bulunan sandıklar, koleksiyon, kostümler (kaçıştan sonra da kalır) |
 | `CostumeDefinition` / `PlayerCostume` / `SailCostume` | Costumes | Kostüm ayarı; oyuncu modelini değiştirir; yelken/bayrak rengini boyar |
@@ -307,9 +335,9 @@ SoundLibrary.asset   Hangi olayda hangi ses (Docs/Modeller.md'de liste; komut sa
 | `MapLayout` | Harita yerleşimi (konumlar, bölgeler, yollar) |
 | `UiFactory` / `BuilderUtil` / `DocsWriter` | TMP/arayüz yardımcıları; alan atama yardımcıları; Docs/Modeller.md yazıcısı |
 | `CampBuilder` | Tayfa Barakası, işçi kartı resimleri (karakter kodla çekilir), açık Liman Pazarı (satıcı el sallar) |
-| `MachineBuilder` | Halat çarkı, dokuma tezgahı, Demirci ocağı (tente + direkler; hareketli parçalar `Machine`'e bağlanır) |
+| `MachineBuilder` | Makineler ve üretim hattı (vinç + çukur, su çarkı, çardaklı tezgah, kiremit çatılı demirci, kızaklar) |
 | `DiscoveryBuilder` | Adacık zemini/dokusu, köprüler, sandık ve koleksiyon prefab'ları, tapınak, onarım yerleri, altın figür |
-| `RegionBuilder` | Çalılık, taş ocağı / bahçe / koy kimliği, tanıtım kartı, Yükselt tabelası, Ambar, uzun iskele, kızak rayları + beşik |
+| `RegionBuilder` | Taş ocağı / bahçe / koy kimliği, kapalı alan ipuçları ve zemin, tanıtım kartı, Yükselt tabelası, Ambar, kamp, görev panosu, uzun iskele, kızak |
 | `UiBuilder` | Geliştirme paneli, aşama kutlama yazısı, kaçış ekranı |
 | `GameMenus` | **Tools > Kayıp Ada > Hızlı Test Modu** (aç/kapat, fiyatlar %8, malzeme %20) ve **Kaydı Sil** |
 | `DevMenus` | **Tools > Kayıp Ada > Test > …**: Test Menüsü'nün aynı komutları (sadece Play modunda) |
@@ -328,7 +356,7 @@ SoundLibrary.asset   Hangi olayda hangi ses (Docs/Modeller.md'de liste; komut sa
   **Tools > Kayıp Ada > Test** menüsünde. Komutlar: Sınırsız Para, +1000 Para, Tüm Bölgeleri Aç, Tüm Binaları Aç,
   Her İşçiden 1 Tane, Sırttaki Yığını Seçili Malzemeyle Doldur, Gemi Aşamasını Tamamla, Final Törenine Atla,
   Oyun Hızı x1/x2/x5, +100 Kristal, Tüm Kostümleri Aç, Sıradaki Kostümü Giy, Tüm Sandıkları Göster (ışık sütunu),
-  Koleksiyonu Tamamla, Görevleri Tamamla, Köprüleri Tamamla, Çalılıkları Kaldır/Getir, Ambarı Aç ve Doldur,
+  Koleksiyonu Tamamla, Görevleri Tamamla, Köprüleri Tamamla, Kampı Büyüt, Ambarı Aç ve Doldur,
   Kaydı Sil ve Yeniden Başlat.
   Sayılar `GameConfig` > "Test Menüsü".
 - Satış sürümü: Build Settings'te **Development Build kapalı** olmalı; o zaman menü hiç görünmez.
@@ -365,7 +393,9 @@ Sahne elle kurulmaz. **Tools > Kayıp Ada > Prototip Sahnesini Kur**:
 - Gemi iskelenin doğusunda kumsalda, **kıyıya paralel** (burnu 20° denize dönük), ahşap kızağın (altlık + denize uzanan
   raylar) üstünde; teslim alanı geminin kara tarafında, inşa iskelesinden uzakta açık zeminde. Gemi + kızak + iskele tek, dönük,
   köşeleri yuvarlak engel (deniz tarafında kıyıya kadar; dar boşluk yok); törende kalkar; gemi yana kayıp suya iner.
-- Bölgeler kapalıyken çalılıkla kaplı (geçilmez). Sadece Bahçe'de alçak süslü çit + kemerli kapı (karenin tarafında).
+- Bölgeler kapalıyken sadece doğal ipuçları (Koy'un geçidinde devrik kütük). Bahçe açılınca alçak süslü çit + kemerli kapı.
+- Kamp merkezde: ateş (0, -2.9), barınak kuzeyde, görev panosu güneybatıda, Geliştirme Tezgahı güneydoğuda, Tayfa
+  Barakası batıda (kapısı ateşe dönük). Oyuncu ateşin güneyinde başlar.
 - Çarpışma: binalar, ağaç/kaya gövdeleri, büyük süs palmiyesi ve kayalar, çitler, tabelalar, gemi `NavObstacle`; otlar,
   çiçekler, çakıllar, keten tarlası geçilebilir. Oyuncu engele çarpınca yanından kayar; işçiler NavMesh ile dolaşır.
 - Bina düzeni (kök = binanın önü): gövde arkada (z +0.9), giriş solda-önde, çıkış sağda-önde (z -1.5), halka üstte.

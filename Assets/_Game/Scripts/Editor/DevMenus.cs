@@ -39,7 +39,7 @@ namespace KayipAda.EditorTools
         [MenuItem(Menu + "Koleksiyonu Tamamla", false, 164)] private static void Collection() => DevCommands.CompleteCollection();
         [MenuItem(Menu + "Görevleri Tamamla", false, 165)] private static void Quests() => DevCommands.CompleteQuests();
         [MenuItem(Menu + "Köprüleri Tamamla", false, 166)] private static void Bridges() => DevCommands.CompleteBridges();
-        [MenuItem(Menu + "Çalılıkları Kaldır-Getir", false, 167)] private static void Thickets() => DevCommands.ToggleThickets();
+        [MenuItem(Menu + "Kampı Büyüt", false, 167)] private static void Camp() => DevCommands.GrowCamp();
         [MenuItem(Menu + "Ambarı Aç ve Doldur", false, 168)] private static void Storage() => DevCommands.FillStorage();
 
         [MenuItem(Menu + "Yığını Doldur/Kalas", false, 140)] private static void FillPlank() => Fill("Plank");

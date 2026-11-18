@@ -101,6 +101,14 @@ Ana yolu ve keşfi birlikte yapan oyuncu için tahmin **~50 dakika** (hedef 45-6
   en hızlı ~35 dakikaya iner; 30 dakikanın altına düşmez.
 - Ambar doluyken bırakma durur ("Ambar dolu!"); kaçışta ambar boşalır.
 
+## Bina kimliği ve doğal başlangıç turu (kontrol)
+- Fiyatlar, tarifler, üretim süreleri ve gemi miktarları değişmedi; makineler sadece görünüş (animasyon üretim hızına
+  senkron, üretimi yavaşlatmaz). Kayıt/kaçış akışı aynı.
+- Kamp adanın merkezine taşındı: Geliştirme Tezgahı ve Tayfa Barakası başlangıca 3-5 m (eskiden ~12 m) → ilk dakikalarda
+  ~20-30 sn kazanç. Ambar burna taşındı (isteğe bağlı, rehber göstermez).
+- Bölge açılma efekti ~2,6 sn sürer (oyuncu yürümeye devam edebilir); 8 açılışta toplam ~20 sn.
+- Sonuç: ilk kaçış tahmini hâlâ **~38 dakika** (hızlı oyuncu ~30, yavaş ~45) → hedef 30-45 dk içinde.
+
 ## Boş bekleme kontrolü
 - Her an en az bir iş var: toplanacak kaynak, gemiye taşınacak malzeme ya da satılacak ürün.
 - En uzun para bekleme: Taş Atölyesi (800) ve Dokuma Tezgahı (900) öncesi ~2-2,5 dakika. Bu sürede oyuncu elle

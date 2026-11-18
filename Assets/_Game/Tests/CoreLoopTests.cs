@@ -64,7 +64,7 @@ namespace KayipAda.Tests
         public IEnumerator Building_ProcessesRawMaterial()
         {
             AreaManager.Instance.Unlock(PadArea("Pad Sawmill"));
-            yield return null;
+            yield return new WaitForSeconds(1.2f); // açılma efekti: bina parça parça kurulur
             ProcessingBuilding sawmill = null;
             foreach (ProcessingBuilding b in Object.FindObjectsByType<ProcessingBuilding>(FindObjectsSortMode.None))
             {

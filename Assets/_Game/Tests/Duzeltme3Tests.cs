@@ -229,16 +229,16 @@ namespace KayipAda.Tests
         [UnityTest]
         public IEnumerator Regions_IdentityAndClearEntrances()
         {
-            Assert.IsNotNull(GameObject.Find("Area Rocky/Quarry/Rails/MineCart"), "Taş ocağında maden arabası yok");
-            Assert.IsNotNull(GameObject.Find("Area Rocky/Quarry/PickaxeRack"), "Kazma rafı yok");
-            Assert.IsNotNull(GameObject.Find("Area Orchard/Arch"), "Bahçenin kemerli kapısı yok");
-            Assert.IsNotNull(GameObject.Find("Area Orchard/OrchardProps/WellRing"), "Bahçe kuyusu yok");
-            Assert.IsNotNull(GameObject.Find("Area Cove/CoveProps/DryingRack"), "Kurutma rafı yok");
-            Assert.IsNull(GameObject.Find("Area Rocky/Fence"), "Kayalıkta yüksek çit kalmış");
-
+            Assert.IsNull(GameObject.Find("Area Rocky/Content/Quarry"), "Kapalıyken taş ocağı görünüyor");
             DevCommands.UnlockAllRegions();
             DevCommands.UnlockAllBuildings();
             yield return new WaitForSeconds(3.5f);
+            Assert.IsNotNull(GameObject.Find("Area Rocky/Content/Quarry/Rails/MineCart"), "Taş ocağında maden arabası yok");
+            Assert.IsNotNull(GameObject.Find("Area Rocky/Content/Quarry/PickaxeRack"), "Kazma rafı yok");
+            Assert.IsNotNull(GameObject.Find("Area Orchard/Content/Arch"), "Bahçenin kemerli kapısı yok");
+            Assert.IsNotNull(GameObject.Find("Area Orchard/Content/OrchardProps/WellRing"), "Bahçe kuyusu yok");
+            Assert.IsNotNull(GameObject.Find("Area Cove/Content/CoveProps/DryingRack"), "Kurutma rafı yok");
+            Assert.IsNull(GameObject.Find("Area Rocky/Fence"), "Kayalıkta yüksek çit kalmış");
             ProcessingBuilding rope = null, loom = null;
             foreach (ProcessingBuilding b in Object.FindObjectsByType<ProcessingBuilding>(FindObjectsSortMode.None))
             {

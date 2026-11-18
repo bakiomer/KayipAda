@@ -126,6 +126,7 @@ namespace KayipAda
         }
 
         public int Progress(QuestDefinition q) => progress.TryGetValue(q.Id, out int n) ? n : 0;
+        public bool IsCompleted(QuestDefinition q) => q != null && completed.Contains(q.Id);
 
         private void SetProgress(QuestDefinition q, int value)
         {

@@ -29,7 +29,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 180316001303084802}
+  - {fileID: 131277932960141577}
   m_Father: {fileID: 4929924021287975073}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &3066827054128496076
@@ -61,7 +61,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 131277932960141577}
+  - {fileID: 3616897879353581793}
   m_Father: {fileID: 4929924021287975073}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &7110423050623102101
@@ -2461,7 +2461,7 @@ ParticleSystemRenderer:
   m_MeshWeighting1: 1
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
---- !u!1001 &363143469973133545
+--- !u!1001 &457359354410219234
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -2534,12 +2534,12 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 1c8484331dcb99d43bd47a1698d3b8b2, type: 3}
---- !u!4 &180316001303084802 stripped
+--- !u!4 &131277932960141577 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 1c8484331dcb99d43bd47a1698d3b8b2, type: 3}
-  m_PrefabInstance: {fileID: 363143469973133545}
+  m_PrefabInstance: {fileID: 457359354410219234}
   m_PrefabAsset: {fileID: 0}
---- !u!1001 &457359354410219234
+--- !u!1001 &3871815883320362762
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -2616,8 +2616,8 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 228bd383800341643bd4673610f640d7, type: 3}
---- !u!4 &131277932960141577 stripped
+--- !u!4 &3616897879353581793 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 228bd383800341643bd4673610f640d7, type: 3}
-  m_PrefabInstance: {fileID: 457359354410219234}
+  m_PrefabInstance: {fileID: 3871815883320362762}
   m_PrefabAsset: {fileID: 0}

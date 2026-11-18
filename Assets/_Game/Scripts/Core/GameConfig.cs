@@ -438,6 +438,19 @@ namespace KayipAda
         [field: Tooltip("Oyuncu tabelaya bu kadar yaklaşınca tanıtım kartı açılır (metre).")]
         [field: SerializeField, Min(0.5f)] public float InfoCardDistance { get; private set; } = 3.4f;
 
+        [field: Header("Kamp")]
+        [field: Tooltip("Boşta kalan işçi bu kadar bekleyince ateşin başına gelir (saniye).")]
+        [field: SerializeField, Min(0.5f)] public float CampRestAfter { get; private set; } = 4f;
+        [field: Tooltip("Ateşin başında dinlenme süresi (saniye).")]
+        [field: SerializeField, Min(0.5f)] public float CampRestTime { get; private set; } = 5f;
+
+        [field: Header("Bölge açılma efekti")]
+        [field: Tooltip("Açılma sırasının toplam süresi (kamera odak + yaprak girdabı + belirme), saniye.")]
+        [field: SerializeField, Min(1f)] public float RevealTime { get; private set; } = 2.6f;
+        [field: Tooltip("Odak çekiminde kameranın yüksekliği ve uzaklığı (metre).")]
+        [field: SerializeField, Min(1f)] public float RevealShotHeight { get; private set; } = 14f;
+        [field: SerializeField, Min(1f)] public float RevealShotDistance { get; private set; } = 12f;
+
         [field: Header("Yakınlık görünürlüğü")]
         [field: Tooltip("Oyuncu bu kadar yakınken binanın halkaları/ikonları tam görünür, Yükselt tabelası açılır (metre).")]
         [field: SerializeField, Min(1f)] public float InteractNear { get; private set; } = 6f;

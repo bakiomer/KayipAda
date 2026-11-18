@@ -667,5 +667,41 @@ namespace KayipAda.EditorTools
             so.ApplyModifiedPropertiesWithoutUndo();
             return panel;
         }
+    
+        // ---------------------------------------------------------------- Görev panosu paneli (kamp)
+
+        public static QuestBoardPanel CreateQuestBoardPanel()
+        {
+            GameObject root = new GameObject("QuestBoardPanel", typeof(RectTransform));
+            root.transform.SetParent(Safe, false);
+            UiFactory.Stretch((RectTransform)root.transform);
+            Image sheet = UiFactory.CreateImage("Sheet", root.transform, ArtGenerator.LoadSprite(ArtGenerator.RoundedRectPath), PanelColor);
+            sheet.type = Image.Type.Sliced;
+            sheet.raycastTarget = true;
+            Anchor(sheet.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 24f), new Vector2(-48f, 760f));
+            TextMeshProUGUI title = UiFactory.CreateUIText("Title", sheet.transform, "GÖREV PANOSU", 54f, UiFactory.Gold);
+            Anchor(title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -20f), new Vector2(0f, 76f));
+            TextMeshProUGUI activeHead = UiFactory.CreateUIText("ActiveHead", sheet.transform, "Aktif", 40f, UiFactory.Cream);
+            activeHead.alignment = TextAlignmentOptions.MidlineLeft;
+            Anchor(activeHead.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 1f), new Vector2(40f, -100f), new Vector2(-80f, 50f));
+            TextMeshProUGUI active = UiFactory.CreateUIText("Active", sheet.transform, "", 40f, Color.white);
+            active.alignment = TextAlignmentOptions.TopLeft;
+            active.textWrappingMode = TextWrappingModes.Normal;
+            active.richText = true;
+            Anchor(active.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 1f), new Vector2(60f, -155f), new Vector2(-100f, 160f));
+            TextMeshProUGUI doneHead = UiFactory.CreateUIText("DoneHead", sheet.transform, "Tamamlanan", 40f, UiFactory.Cream);
+            doneHead.alignment = TextAlignmentOptions.MidlineLeft;
+            Anchor(doneHead.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 1f), new Vector2(40f, -330f), new Vector2(-80f, 50f));
+            TextMeshProUGUI done = UiFactory.CreateUIText("Done", sheet.transform, "", 34f, new Color(0.7f, 0.95f, 0.65f));
+            done.alignment = TextAlignmentOptions.TopLeft;
+            done.textWrappingMode = TextWrappingModes.Normal;
+            Anchor(done.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 1f), new Vector2(60f, -385f), new Vector2(-100f, 360f));
+            QuestBoardPanel panel = root.AddComponent<QuestBoardPanel>();
+            BuilderUtil.SetField(panel, "sheet", sheet.rectTransform);
+            BuilderUtil.SetField(panel, "title", title);
+            BuilderUtil.SetField(panel, "activeText", active);
+            BuilderUtil.SetField(panel, "doneText", done);
+            return panel;
+        }
     }
 }

@@ -144,14 +144,11 @@ namespace KayipAda
             }
         }
 
-        public static bool ThicketsHidden { get; private set; }
-
-        // Kapalı bölgelerin çalılıklarını kaldır / geri getir (açık bölgelerde zaten yok).
-        public static void ToggleThickets()
+        // Kampı bir seviye büyüt (çadır → kulübe → ev).
+        public static void GrowCamp()
         {
-            if (!Use()) return;
-            ThicketsHidden = !ThicketsHidden;
-            RegionThicket.SetAllHidden(ThicketsHidden);
+            if (!Use() || CampSite.Instance == null) return;
+            CampSite.Instance.ForceGrow();
         }
 
         private static void Unlock(AreaDefinition area)

@@ -289,33 +289,5 @@ namespace KayipAda.Tests
             yield return new WaitForSeconds(1f);
             Shot("B_batik_koyu");
         }
-
-        // Çalılık: kapalı bölgeyi kaplar (bulut yok); bölge açılınca çalılar kesilip savrulur, yol açılır, kamera döner.
-        [UnityTest]
-        public IEnumerator Thicket_ClearsWhenRegionOpens()
-        {
-            Assert.IsNull(GameObject.Find("Cloud Rocky"), "Eski bulut duruyor");
-            RegionThicket rocky = null;
-            AreaDefinition area = PadArea("Pad Rocky");
-            foreach (RegionThicket c in RegionThicket.All) if (c.Area == area) rocky = c;
-            Assert.IsNotNull(rocky, "Kayalık çalılığı yok");
-            Assert.Greater(rocky.BushCount, 20, "Çalılık seyrek");
-            foreach (RegionThicket c in RegionThicket.All)
-                Assert.IsFalse(c.Area.Id.StartsWith("islet"), "Adacıkta örtü olmamalı");
-            Teleport(new Vector3(-6.5f, 0f, 1.4f));
-            yield return new WaitForSeconds(0.6f);
-            Shot("D3_calilik");
-            AreaManager.Instance.Unlock(area);
-            yield return new WaitForSeconds(0.9f);
-            Assert.IsTrue(rocky.IsRevealing, "Çalılar kesilmeye başlamadı");
-            Shot("D3_calilik_kesiliyor");
-            yield return WaitFor(() => !rocky.gameObject.activeSelf, 6f);
-            Assert.IsFalse(rocky.gameObject.activeSelf, "Çalılık kalkmadı");
-            Assert.IsFalse(CameraFollow.Main.HasShot, "Kamera oyuncuya dönmedi");
-            yield return new WaitForSeconds(0.5f);
-            Teleport(new Vector3(-6.5f, 0f, 5.2f));
-            yield return new WaitForSeconds(1.2f);
-            Shot("D3_tas_ocagi");
-        }
     }
 }

@@ -32,6 +32,8 @@ namespace KayipAda
         [SerializeField] private ParticleSystem goldBurstPrefab;
         [Tooltip("Final töreninde ekranı kaplayan konfeti (kameranın önünde).")]
         [SerializeField] private ParticleSystem screenConfettiPrefab;
+        [Tooltip("Bölge açılırken yaprak girdabı (yarıçapa göre ölçeklenir).")]
+        [SerializeField] private ParticleSystem leafSwirlPrefab;
         [Tooltip("'+5' yazılarının rengi.")]
         [SerializeField] private Color coinTextColor = new Color(1f, 0.85f, 0.2f);
 
@@ -72,6 +74,17 @@ namespace KayipAda
         public void Firework(Vector3 position) => PlayOnce(fireworkPrefab, position, 5f);
 
         public void Dust(Vector3 position) => PlayOnce(puffPrefab, position, 2f);
+
+        // Bölge açılırken rüzgârla dönen yeşil yaprak girdabı ve ışıltı (radius: alanın yarıçapı, metre).
+        public void LeafSwirl(Vector3 position, float radius)
+        {
+            if (leafSwirlPrefab == null) return;
+            ParticleSystem ps = Instantiate(leafSwirlPrefab, position + Vector3.up * 0.3f, Quaternion.identity);
+            ps.transform.localScale = Vector3.one * Mathf.Max(0.5f, radius);
+            ps.Play();
+            Destroy(ps.gameObject, 3f);
+            Sparkle(position + Vector3.up);
+        }
 
         public void GoldBurst(Vector3 position) => PlayOnce(goldBurstPrefab, position, 3f);
 

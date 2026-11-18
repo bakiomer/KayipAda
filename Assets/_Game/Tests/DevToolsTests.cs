@@ -139,36 +139,34 @@ namespace KayipAda.Tests
         [UnityTest]
         public IEnumerator Collision_ClosedAreaFenceBlocksUntilUnlocked()
         {
-            Rect rocky = new Rect(-11f, 6f, 9f, 9f); // MapLayout.RockyRect (çit yok; kapalıyken çalılık engeller)
-            Vector2 north = new Vector2(0f, 1f);
-
-            // Çalılığa doğru yürü: geçemez.
-            Teleport(new Vector3(-3.5f, 0f, rocky.yMin - 1.2f));
-            Player.ScriptedInput = north;
-            yield return new WaitForSeconds(1.5f);
-            Assert.Less(Player.transform.position.z, rocky.yMin, "Oyuncu kapalı bölgenin çalılığından geçti");
-
-            // Karenin önünden (eski kapı) yürü: geçemez.
-            Teleport(new Vector3(-6.5f, 0f, rocky.yMin - 0.9f));
-            yield return new WaitForSeconds(1.5f);
-            Assert.Less(Player.transform.position.z, rocky.yMin, "Oyuncu kapalı bölgeye girdi");
-            Player.ScriptedInput = Vector2.zero;
+            Rect rocky = new Rect(-11f, 6f, 9f, 9f); // MapLayout.RockyRect
+            // Kapalı Kayalık'ta toplanacak taş yok (sadece toprak ve küçük taş parçaları).
+            foreach (ResourceNode node in Object.FindObjectsByType<ResourceNode>(FindObjectsSortMode.None))
+                Assert.IsFalse(rocky.Contains(new Vector2(node.transform.position.x, node.transform.position.z)), "Kapalı Kayalık'ta kaynak noktası var: " + node.name);
             Shot("E_kapi_kapali");
 
-            // Kayma: çalılığa çapraz yürüyünce takılmadan yanından kayar (x değişir).
-            Teleport(new Vector3(-6.5f, 0f, rocky.yMin - 0.6f));
+            // Palmiye Koyu'nun geçidi devrik kütükle kapalı: kütüğe doğru yürünce geçilmez.
+            Transform log = GameObject.Find("Area Cove/Locked/FallenLog").transform;
+            Teleport(log.position + Vector3.left * 1.6f);
+            Player.ScriptedInput = new Vector2(1f, 0f);
+            yield return new WaitForSeconds(1.2f);
+            Player.ScriptedInput = Vector2.zero;
+            Assert.Less(Player.transform.position.x, log.position.x - 0.3f, "Devrik kütükten geçildi");
+
+            // Kayma: kütüğe çapraz yürüyünce takılmadan kenarından kayar.
+            Teleport(log.position + Vector3.left * 1.2f);
             Player.ScriptedInput = new Vector2(0.7f, 0.7f);
-            float startX = Player.transform.position.x;
+            float startZ = Player.transform.position.z;
             yield return new WaitForSeconds(0.8f);
             Player.ScriptedInput = Vector2.zero;
-            Assert.Greater(Player.transform.position.x - startX, 1f, "Oyuncu çalılığa çapraz yürürken kaymadı (takıldı)");
+            Assert.Greater(Player.transform.position.z - startZ, 1f, "Kütüğe çapraz yürürken takıldı");
 
-            // Bölge açılınca çalılık kesilir, içeri girilir.
+            // Kayalık açılınca taşlar topraktan yükselir; içeri girilir ve taş toplanır.
             AreaManager.Instance.Unlock(PadArea("Pad Rocky"));
-            yield return new WaitForSeconds(2.5f);
+            yield return new WaitForSeconds(3.2f);
             Shot("E_kapi_acildi");
             Teleport(new Vector3(-6.5f, 0f, rocky.yMin - 0.9f));
-            Player.ScriptedInput = north;
+            Player.ScriptedInput = new Vector2(0f, 1f);
             yield return new WaitForSeconds(1.2f);
             Player.ScriptedInput = Vector2.zero;
             Assert.Greater(Player.transform.position.z, rocky.yMin + 0.8f, "Bölge açılınca içeri girilemedi");
@@ -197,7 +195,7 @@ namespace KayipAda.Tests
             foreach (ConstructionSite site in ConstructionSite.All)
                 Assert.IsTrue(IslandNavMesh.HasCompletePath(start, site.transform.position), site.name + " (teslim alanı) ulaşılamıyor");
             DevCommands.CompleteBridges(); // adacıklar
-            yield return new WaitForSeconds(5f); // köprü açılış çekimleri
+            yield return new WaitForSeconds(6f); // köprü açılış çekimleri ve adacık açılma efekti
             yield return WaitFor(() => IslandNavMesh.IsUpToDate, 5f);
             Assert.IsTrue(IslandNavMesh.IsUpToDate, "NavMesh güncellenmedi");
             foreach (TreasureChest chest in TreasureChest.All)

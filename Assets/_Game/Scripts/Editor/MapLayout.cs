@@ -26,18 +26,21 @@ namespace KayipAda.EditorTools
         public const float SandWidth = 3.4f;     // kıyıdan içeri kum şeridi
         public const float PathWidth = 1.7f;
 
-        public static readonly Vector3 PlayerStart = new Vector3(0f, 0f, -6f);
+        public static readonly Vector3 PlayerStart = new Vector3(0f, 0f, -6.2f);
 
         // Başlangıç sahili
-        public static readonly Vector3[] Palms = { new Vector3(-4.5f, 0f, -1f), new Vector3(0f, 0f, 1.8f), new Vector3(4.5f, 0f, -1f) };
+        public static readonly Vector3[] Palms = { new Vector3(-3.9f, 0f, 3.4f), new Vector3(3.6f, 0f, 1.8f), new Vector3(-7.8f, 0f, -7.6f) };
         public static readonly Vector3 Market = new Vector3(-5f, 0f, -11.5f);
         public static readonly Vector3 Sawmill = new Vector3(5f, 0f, -12f);
-        public static readonly Vector3 Camp = new Vector3(-11f, 0f, -5f);
+        // Kamp (adanın merkezi): ateş, büyüyen barınak (çadır → kulübe → ev), görev panosu; oyuncu burada başlar.
+        public static readonly Vector3 Camp = new Vector3(0f, 0f, -2.9f);          // kamp ateşi
+        public static readonly Vector3 CampShelter = new Vector3(0f, 0f, 0.9f);    // barınak (ateşin kuzeyinde)
+        public static readonly Vector3 QuestBoard = new Vector3(-2.6f, 0f, -5.1f); // görev panosu (önündeki alan)
 
         // Tayfa Barakası: kampın kuzeyinde. Kök = oyuncunun girdiği alan; ev bunun BarracksDepth kadar arkasında.
-        public static readonly Vector3 Barracks = new Vector3(-12.2f, 0f, -0.6f);
+        public static readonly Vector3 Barracks = new Vector3(-4.6f, 0f, -2.3f);
         public const float BarracksDepth = 2.6f;
-        public const float BarracksYaw = 20f;                  // baraka hafifçe kampa/yola dönük
+        public const float BarracksYaw = -110f;                // baraka kapısı kamp ateşine dönük (ev batıda)
         public const float BarracksHouseYaw = 0f;              // ev modelinin kapısı alana baksın diye dönüş
         public static readonly Vector2 BarracksObstacle = new Vector2(4.7f, 1.8f);
 
@@ -66,11 +69,11 @@ namespace KayipAda.EditorTools
         public static readonly Vector3 Loom = new Vector3(13.0f, 0f, -7.9f);
 
         // Kampın yanındaki geliştirme tezgahı
-        public static readonly Vector3 UpgradeStation = new Vector3(-8f, 0f, -2.2f);
+        public static readonly Vector3 UpgradeStation = new Vector3(3.0f, 0f, -4.7f);
 
         // Tersane: gemi iskelenin doğusunda kumsalda, kızağın üstünde; pruvası denize bakar.
         public const float ShipX = 6.5f;
-        public const float ShipInland = 3.2f;   // geminin ortası kıyıdan bu kadar içeride
+        public const float ShipInland = 1.9f;   // geminin ortası kıyıdan bu kadar içeride (gemiyle deniz arasında kum şeridi kalmaz)
         public const float ShipBowTilt = 20f;   // gemi kıyıya paralel; burnu bu kadar (derece) denize dönük
         public const float ShipCradleHeight = 0.35f; // kızak altlığının yüksekliği (gemi bunun üstünde)
         public const float ShipObstacleLength = 0.92f; // gemi engelinin boyu (gemi boyunun oranı; uçlar sivri)
@@ -136,7 +139,7 @@ namespace KayipAda.EditorTools
         public static readonly Vector3[] FigureParts = { new Vector3(-34.2f, 0f, 7.0f), new Vector3(-28.0f, 0f, 6.4f), new Vector3(-29.0f, 0f, 12.9f) };
 
         // Kırık yapılar (yan görev): kuyu, çit (kök = teslim alanı; kırık yapı arkasında). Sandal: uzun iskelenin yanında.
-        public static readonly Vector3 Well = new Vector3(3.2f, 0f, -3.4f);
+        public static readonly Vector3 Well = new Vector3(6.0f, 0f, -2.6f);
         public static readonly Vector3 BrokenFence = new Vector3(-10.2f, 0f, -12f);
 
         // Denize uzanan uzun iskele (kuzey kıyı, geminin batısında): x, karadaki başlangıcı kıyıdan ne kadar içeride, boyu.
@@ -200,8 +203,7 @@ namespace KayipAda.EditorTools
             new[] { new Vector2(5f, -10.5f), new Vector2(9.6f, -9.8f), new Vector2(13.0f, -9.7f) },   // dokuma tezgahı
             new[] { new Vector2(0f, 20f), new Vector2(-2.2f, 22.6f) },                                  // uzun iskele
             new[] { new Vector2(5f, -13.5f), new Vector2(5.4f, -17.2f) },                               // batık koyu köprüsü
-            new[] { new Vector2(0f, -6f), new Vector2(-6.5f, -6.2f), new Vector2(-10f, -5.6f) },     // kamp
-            new[] { new Vector2(-6.5f, -6.2f), new Vector2(-9.6f, -2.6f), new Vector2(-12.2f, -0.9f) }  // tayfa barakası
+            new[] { new Vector2(0f, -4.6f), new Vector2(-2.4f, -3.4f), new Vector2(-4.6f, -2.3f) }     // kamp → tayfa barakası
         };
 
         // Bölge zemin tonları (doku üretiminde)

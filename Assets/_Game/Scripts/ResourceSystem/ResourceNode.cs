@@ -147,6 +147,18 @@ namespace KayipAda
             if (stage == 0 && Effects.Instance != null) Effects.Instance.Dust(transform.position);
         }
 
+        // Bölge açılınca: ağaç küçük fidandan büyüyerek, kaya yerin altından yükselerek belirir.
+        public void PlayGrowIn(float delay)
+        {
+            growInDelay = delay;
+            size = 0.02f;
+            riseIn = regrowStyle == RegrowStyle.Rise || name.StartsWith("Node_Rock") || name.StartsWith("Node_Scrap") ? 1f : 0f;
+            if (regrowStyle == RegrowStyle.Rise) riseIn = 1f;
+        }
+
+        private float growInDelay = -1f;
+        private float riseIn;
+
         private float GrowStart(float total) => total * config.NodeStumpStayFraction + config.NodeStumpSinkTime * 0.6f;
 
         private void UpdateGather()
@@ -225,7 +237,14 @@ namespace KayipAda
         // Boyut (tükenince küçülür) + vuruş sallanması ve sıkışması.
         private void UpdateVisual()
         {
-            size = Mathf.Lerp(size, TargetSize(), 1f - Mathf.Exp(-8f * Time.deltaTime));
+            if (growInDelay > 0f)
+            {
+                growInDelay -= Time.deltaTime;
+                size = 0.02f;
+                if (growInDelay <= 0f) { Hit(); if (Effects.Instance != null) Effects.Instance.Dust(transform.position); }
+            }
+            else if (riseIn > 0f) riseIn = Mathf.MoveTowards(riseIn, 0f, Time.deltaTime * 1.6f);
+            size = Mathf.Lerp(size, growInDelay > 0f ? 0.02f : TargetSize(), 1f - Mathf.Exp(-(riseIn > 0f ? 14f : 5f) * Time.deltaTime));
             UpdateStockVisuals();
             bool visible = size > 0.02f;
             if (visual.gameObject.activeSelf != visible) visual.gameObject.SetActive(visible);
@@ -245,8 +264,11 @@ namespace KayipAda
                                             visualBaseScale.z * wide * (1f - squash * 0.6f));
             visual.localRotation = visualBaseRotation * Quaternion.AngleAxis(wave * config.NodeShakeAngle, shakeAxis);
 
+            // Açılışta kaya yerin altından yükselir.
+            if (riseIn > 0f && regrowStyle == RegrowStyle.Rise && !IsDepleted)
+                visual.localPosition = visualBasePosition + Vector3.down * (riseIn * riseIn * config.NodeRiseDepth);
             // Kaya yerin altından yavaşça yükselir.
-            if (regrowStyle == RegrowStyle.Rise)
+            else if (regrowStyle == RegrowStyle.Rise)
             {
                 float rise = 1f;
                 if (IsDepleted)

@@ -33,6 +33,13 @@ namespace KayipAda
 
         private bool gathering;
         private bool celebrating;
+        private float idleTime;
+        private bool resting;
+        private float restTimer;
+        private Transform seat;
+
+        // Boşta kalınca kamp ateşinin başında kısa süre dinleniyor mu?
+        public bool IsResting => resting;
         private float cheerTimer;
         private CharacterVisual visual;
 
@@ -41,6 +48,7 @@ namespace KayipAda
             // Her karede: Play sırasında ayar dosyasında yapılan değişiklik hemen etkilesin.
             ApplyStats();
             if (celebrating) { UpdateCelebration(); return; }
+            if (resting) { UpdateRest(); return; }
             if (!gathering) Think();
         }
 
@@ -67,6 +75,7 @@ namespace KayipAda
         // Final töreni: işi bırakıp verilen noktada toplan.
         public void Gather(Vector3 point)
         {
+            StopRest();
             gathering = true;
             celebrating = false;
             Stack.WorkTarget = null;
@@ -79,6 +88,7 @@ namespace KayipAda
         // Bir alana yürü. İşçi bu alanı hedef alır; alan da sadece hedefi olan işçiye hizmet eder.
         protected void GoTo(InteractionZone zone)
         {
+            idleTime = 0f;
             Stack.WorkTarget = zone;
             Mover.MoveTo(zone.GetStandPoint(transform.position));
         }
@@ -88,6 +98,33 @@ namespace KayipAda
         {
             Stack.WorkTarget = null;
             Mover.Stop();
+            // Uzun süre boş kalınca kamp ateşinin başına gelip dinlenir (sonra işe döner).
+            idleTime += Time.deltaTime;
+            CampSite camp = CampSite.Instance;
+            if (camp == null || !Stack.IsEmpty || idleTime < camp.RestAfter) return;
+            seat = camp.ClaimSeat(this);
+            if (seat == null) { idleTime = 0f; return; }
+            resting = true;
+            restTimer = camp.RestTime;
+            Mover.MoveTo(seat.position);
+        }
+
+        private void UpdateRest()
+        {
+            if (!Mover.HasArrived) return;
+            CampSite camp = CampSite.Instance;
+            if (visual == null) visual = GetComponentInChildren<CharacterVisual>();
+            if (visual != null && camp != null) visual.Face(camp.FirePosition - transform.position);
+            restTimer -= Time.deltaTime;
+            if (restTimer <= 0f) StopRest();
+        }
+
+        private void StopRest()
+        {
+            if (!resting) return;
+            resting = false;
+            idleTime = 0f;
+            if (CampSite.Instance != null) CampSite.Instance.ReleaseSeat(this);
         }
 
         private void ApplyStats()

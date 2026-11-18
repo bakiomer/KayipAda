@@ -33,6 +33,7 @@ namespace KayipAda
         public int ShipStage;
         public List<IdValue> ShipDelivered = new List<IdValue>();
         public List<IdValue> Storage = new List<IdValue>(); // Ambar içeriği (kaynak → adet)
+        public int CampLevel; // kamp: 0 çadır, 1 kulübe, 2 ev
         public float PlayTime;
         public int EarnedCoins; // bu adada kazanılan toplam para (kaçış ekranında sayılır)
 
@@ -63,6 +64,7 @@ namespace KayipAda
             ShipStage = 0;
             ShipDelivered.Clear();
             Storage.Clear();
+            CampLevel = 0;
             PlayTime = 0f;
             EarnedCoins = 0;
         }

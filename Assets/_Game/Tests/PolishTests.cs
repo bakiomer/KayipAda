@@ -119,6 +119,7 @@ namespace KayipAda.Tests
             foreach (UnlockPad pad in Object.FindObjectsByType<UnlockPad>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
                 foreach (TMP_Text t in pad.GetComponentsInChildren<TMP_Text>(true))
+                    if (pad.transform.Find("InfoCard") == null || !t.transform.IsChildOf(pad.transform.Find("InfoCard"))) // tanıtım kartı ayrı (yaklaşınca açılır)
                     Assert.AreNotEqual(pad.Area.DisplayName, t.text, pad.name + " karesinde bölge adı yazıyor (sadece tabelada olmalı)");
             }
         }

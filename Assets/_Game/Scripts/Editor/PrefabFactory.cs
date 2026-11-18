@@ -1578,6 +1578,38 @@ namespace KayipAda.EditorTools
         }
 
         // Çimende adımda uçuşan birkaç yaprak/ot parçası (Emit ile, kendisi yayın yapmaz).
+        // Bölge açılırken rüzgârla dönen yeşil yaprak girdabı (yörüngesel hız, ölçekle büyür).
+        public static GameObject BuildLeafSwirl()
+        {
+            ParticleSystem ps = NewParticles("LeafSwirl", "M_Confetti", ArtGenerator.SquarePath, out GameObject root);
+            ParticleSystem.MainModule main = ps.main;
+            main.loop = false;
+            main.playOnAwake = false;
+            main.duration = 1f;
+            main.scalingMode = ParticleSystemScalingMode.Hierarchy;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(1.0f, 1.6f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(0.6f, 1.6f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.035f, 0.065f); // yarıçapla ölçeklenir
+            main.startColor = new ParticleSystem.MinMaxGradient(new Color(0.3f, 0.62f, 0.2f), new Color(0.6f, 0.85f, 0.3f));
+            main.gravityModifier = -0.15f;
+            main.maxParticles = 70;
+            main.startRotation = new ParticleSystem.MinMaxCurve(0f, 6.28f);
+            ParticleSystem.EmissionModule emission = ps.emission;
+            emission.rateOverTime = 0f;
+            emission.SetBursts(new[] { new ParticleSystem.Burst(0f, 40), new ParticleSystem.Burst(0.25f, 25) });
+            ParticleSystem.ShapeModule shape = ps.shape;
+            shape.shapeType = ParticleSystemShapeType.Circle;
+            shape.radius = 1f;
+            shape.rotation = new Vector3(-90f, 0f, 0f);
+            ParticleSystem.VelocityOverLifetimeModule vel = ps.velocityOverLifetime;
+            vel.enabled = true;
+            vel.orbitalY = new ParticleSystem.MinMaxCurve(3.5f);
+            vel.radial = new ParticleSystem.MinMaxCurve(0.6f);
+            vel.y = new ParticleSystem.MinMaxCurve(1.2f);
+            FadeOut(ps);
+            return Save(root, Folder + "/FX/LeafSwirl.prefab");
+        }
+
         public static GameObject BuildLeafBurst()
         {
             ParticleSystem ps = NewParticles("LeafBurst", "M_Confetti", ArtGenerator.SquarePath, out GameObject root);

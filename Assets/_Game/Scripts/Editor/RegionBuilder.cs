@@ -52,82 +52,6 @@ namespace KayipAda.EditorTools
             BuilderUtil.SetVector2(go.AddComponent<NavObstacle>(), "size", size);
         }
 
-        // ================================================================ Çalılık
-
-        public static RegionThicket BuildThicket(string name, Rect rect, AreaDefinition area, GameConfig config, Vector3 entrance,
-                                                 Dictionary<string, GameObject> decor, int seed)
-        {
-            GameObject root = new GameObject("Thicket " + name);
-            Vector3 center = new Vector3(rect.center.x, 0f, rect.center.y);
-            root.transform.position = center;
-            System.Random r = new System.Random(seed);
-            string[] bushKeys = { "ThicketBushA", "ThicketBushB", "ThicketBushC", "ThicketBushA" };
-            List<Transform> bushes = new List<Transform>();
-            const float step = 1.55f;
-            int nx = Mathf.Max(2, Mathf.RoundToInt(rect.width / step)), nz = Mathf.Max(2, Mathf.RoundToInt(rect.height / step));
-            for (int ix = 0; ix < nx; ix++)
-            {
-                for (int iz = 0; iz < nz; iz++)
-                {
-                    bool edge = ix == 0 || iz == 0 || ix == nx - 1 || iz == nz - 1;
-                    // İç kısımda arada boşluk: içerisi kısmen görünür.
-                    if (!edge && r.NextDouble() < 0.28) continue;
-                    float fx = (ix + 0.5f) / nx, fz = (iz + 0.5f) / nz;
-                    Vector3 pos = new Vector3(rect.xMin + fx * rect.width + R(r, 0.35f), 0f, rect.yMin + fz * rect.height + R(r, 0.35f));
-                    string key = bushKeys[r.Next(bushKeys.Length)];
-                    float s = edge ? 1f + R(r, 0.12f) : 0.75f + R(r, 0.15f); // kenarlar daha yüksek ve sık
-                    GameObject bush = Prop(decor, key, root.transform, pos, (float)r.NextDouble() * 360f, s);
-                    if (bush == null) continue;
-                    bush.name = "Bush";
-                    Paint(bush, (ix * 7 + iz * 3) % 3 == 0 ? LeafDark : LeafMid);
-                    bushes.Add(bush.transform);
-                    // Sarmaşık: bazı çalıların üstüne yapraklı dal / yosun.
-                    if (edge && r.NextDouble() < 0.45)
-                    {
-                        GameObject vine = Prop(decor, r.NextDouble() < 0.5 ? "Vine" : "VineMoss", root.transform,
-                                               pos + new Vector3(R(r, 0.3f), 0f, R(r, 0.3f)), (float)r.NextDouble() * 360f, 0.9f + R(r, 0.15f));
-                        if (vine != null) { vine.name = "Vine"; Paint(vine, LeafVine); bushes.Add(vine.transform); }
-                    }
-                }
-            }
-            BuilderUtil.SetShadows(root, false);
-            foreach (Transform b in bushes) BuilderUtil.SetShadows(b.gameObject, b.name == "Bush" && b.localScale.x > 0.95f);
-
-            // Engel: bölgenin tamamı (kapalıyken kimse giremez).
-            GameObject blocker = new GameObject("Blocker");
-            blocker.transform.SetParent(root.transform, false);
-            NavObstacle obstacle = blocker.AddComponent<NavObstacle>();
-            BuilderUtil.SetVector2(obstacle, "size", rect.size + Vector2.one * 0.3f);
-            BuilderUtil.SetFloat(obstacle, "cornerRadius", 0.6f);
-
-            // Kesilince saçılan yapraklar.
-            GameObject leavesGo = (GameObject)PrefabUtility.InstantiatePrefab(BuilderUtil.Load<GameObject>("Assets/_Game/Prefabs/FX/LeafBurst.prefab"));
-            leavesGo.name = "Leaves";
-            leavesGo.transform.SetParent(root.transform, false);
-            ParticleSystem leaves = leavesGo.GetComponent<ParticleSystem>();
-            ParticleSystem.MainModule main = leaves.main;
-            main.maxParticles = 160;
-            main.startSize = new ParticleSystem.MinMaxCurve(0.09f, 0.18f);
-            main.startSpeed = new ParticleSystem.MinMaxCurve(1.6f, 3.4f);
-            main.startLifetime = new ParticleSystem.MinMaxCurve(0.8f, 1.4f);
-            main.simulationSpace = ParticleSystemSimulationSpace.World;
-            ParticleSystem.ShapeModule shape = leaves.shape;
-            shape.radius = 0.5f;
-
-            Transform entranceT = new GameObject("Entrance").transform;
-            entranceT.SetParent(root.transform, false);
-            entranceT.position = entrance;
-
-            RegionThicket thicket = root.AddComponent<RegionThicket>();
-            BuilderUtil.SetField(thicket, "config", config);
-            BuilderUtil.SetField(thicket, "area", area);
-            BuilderUtil.SetArray(thicket, "bushes", bushes.ToArray());
-            BuilderUtil.SetArray(thicket, "blockers", new Object[] { obstacle });
-            BuilderUtil.SetField(thicket, "leaves", leaves);
-            BuilderUtil.SetField(thicket, "entrance", entranceT);
-            return thicket;
-        }
-
         private static float R(System.Random r, float amount) => ((float)r.NextDouble() * 2f - 1f) * amount;
 
         // Çalılık yaprakları doğal, koyu tonlarda (Kenney paletinin parlak yeşili yerine).
@@ -619,6 +543,287 @@ namespace KayipAda.EditorTools
             return go.AddComponent<T>();
         }
 
+        // ================================================================ Kamp (adanın merkezi)
+
+        // Kamp ateşi (taş halka, odunlar, titreşen alev, kıvılcım, duman, çıtırtı), çevresinde kütük tabureler ve dinlenme
+        // yerleri; kuzeyde büyüyen barınak: enkazdan çadır → ahşap kulübe → küçük ev (bayrak, fener, sandıklar).
+        public static CampSite BuildCamp(Vector3 fire, Vector3 shelter, GameConfig config, Dictionary<string, GameObject> decor, GameObject flagPrefab, GameObject tentPrefab)
+        {
+            Transform root = new GameObject("Camp").transform;
+            root.position = fire;
+            Material stone = ArtGenerator.GetLit("M_QuarryStoneMid", null, new Color(0.66f, 0.63f, 0.57f));
+            Material flameA = ArtGenerator.GetLit("M_FlameOuter", null, new Color(1f, 0.55f, 0.15f));
+            Material flameB = ArtGenerator.GetLit("M_FlameInner", null, new Color(1f, 0.85f, 0.35f));
+            Material ember = ArtGenerator.GetLit("M_Ember", null, new Color(1f, 0.5f, 0.15f));
+            Transform fireT = new GameObject("Fire").transform;
+            fireT.SetParent(root, false);
+            for (int i = 0; i < 9; i++)
+            {
+                float a = i * Mathf.PI * 2f / 9f;
+                Part(fireT, PrimitiveType.Cube, "Stone", new Vector3(Mathf.Cos(a) * 0.7f, 0.12f, Mathf.Sin(a) * 0.7f), new Vector3(0.34f, 0.24f, 0.28f), Quaternion.Euler(0f, -a * Mathf.Rad2Deg, 8f), stone);
+            }
+            for (int i = 0; i < 4; i++)
+                Part(fireT, PrimitiveType.Cylinder, "Log", new Vector3(0f, 0.18f, 0f), new Vector3(0.14f, 0.45f, 0.14f), Quaternion.Euler(70f, i * 45f, 0f), Wood);
+            Part(fireT, PrimitiveType.Cylinder, "Coals", new Vector3(0f, 0.08f, 0f), new Vector3(0.7f, 0.04f, 0.7f), Quaternion.identity, ember);
+            Transform flame = new GameObject("Flame").transform;
+            flame.SetParent(fireT, false);
+            flame.localPosition = new Vector3(0f, 0.2f, 0f);
+            Part(flame, PrimitiveType.Sphere, "Outer", new Vector3(0f, 0.38f, 0f), new Vector3(0.55f, 0.8f, 0.55f), Quaternion.identity, flameA);
+            Part(flame, PrimitiveType.Sphere, "Inner", new Vector3(0f, 0.3f, 0f), new Vector3(0.32f, 0.55f, 0.32f), Quaternion.identity, flameB);
+            BuilderUtil.SetShadows(fireT.gameObject, false);
+            ParticleSystem sparks = Particles(fireT, "Sparks", new Vector3(0f, 0.7f, 0f), new Color(1f, 0.8f, 0.3f), new Color(1f, 0.45f, 0.1f), 0.8f, 1.8f, 0.07f, -0.2f, 1.1f, 20, 7f);
+            ParticleSystem smoke = Particles(fireT, "Smoke", new Vector3(0f, 1.1f, 0f), new Color(0.6f, 0.6f, 0.62f, 0.35f), new Color(0.75f, 0.75f, 0.78f, 0.25f), 0.3f, 0.6f, 0.45f, -0.04f, 2.2f, 10, 3f);
+            ParticleSystem.MainModule sm = sparks.main; sm.playOnAwake = true;
+            ParticleSystem.MainModule mm = smoke.main; mm.playOnAwake = true;
+            GameObject fireBlock = new GameObject("Block");
+            fireBlock.transform.SetParent(root, false);
+            BuilderUtil.SetVector2(fireBlock.AddComponent<NavObstacle>(), "size", new Vector2(1.5f, 1.5f));
+            BuilderUtil.SetFloat(fireBlock.GetComponent<NavObstacle>(), "cornerRadius", 0.7f);
+            AudioSource crackle = fireT.gameObject.AddComponent<AudioSource>();
+            crackle.spatialBlend = 1f;
+            crackle.rolloffMode = AudioRolloffMode.Linear;
+            crackle.minDistance = 2f;
+            crackle.maxDistance = 12f;
+            crackle.volume = 0.35f;
+            crackle.playOnAwake = false;
+
+            // Kütük tabureler ve dinlenme yerleri (ateşin etrafında).
+            List<Transform> seats = new List<Transform>();
+            float[] angles = { 200f, 250f, 300f, 340f };
+            foreach (float deg in angles)
+            {
+                float a = deg * Mathf.Deg2Rad;
+                Vector3 p = new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a));
+                Part(root, PrimitiveType.Cylinder, "Stool", p * 1.55f + Vector3.up * 0.2f, new Vector3(0.45f, 0.2f, 0.45f), Quaternion.identity, Wood);
+                Transform seat = new GameObject("Seat").transform;
+                seat.SetParent(root, false);
+                seat.localPosition = p * 2.05f;
+                seats.Add(seat);
+            }
+
+            // Barınak seviyeleri (aynı yerde, biri görünür).
+            Transform shelterRoot = new GameObject("Shelter").transform;
+            shelterRoot.SetParent(root, false);
+            shelterRoot.position = shelter;
+            GameObject tent = new GameObject("Level0_Tent");
+            tent.transform.SetParent(shelterRoot, false);
+            Transform tentModel = new GameObject("TentModel").transform;
+            tentModel.SetParent(tent.transform, false);
+            tentModel.localRotation = Quaternion.Euler(0f, 180f, 0f);
+            if (tentPrefab != null) ((GameObject)PrefabUtility.InstantiatePrefab(tentPrefab)).transform.SetParent(tentModel, false);
+            else PrefabFactory.CreateModel(ModelCatalog.Tent, tentModel);
+            Part(tent.transform, PrimitiveType.Cube, "WreckPlank", new Vector3(1.35f, 0.08f, -0.3f), new Vector3(1.1f, 0.1f, 0.28f), Quaternion.Euler(0f, 25f, 8f), PlankDark);
+            Part(tent.transform, PrimitiveType.Cube, "WreckPlank", new Vector3(-1.4f, 0.08f, -0.1f), new Vector3(0.9f, 0.1f, 0.25f), Quaternion.Euler(0f, -40f, -6f), Plank);
+            Prop(decor, "Barrel", tent.transform, shelterRoot.TransformPoint(new Vector3(-1.5f, 0f, 0.6f)), 0f, 0.8f);
+
+            GameObject hut = new GameObject("Level1_Hut");
+            hut.transform.SetParent(shelterRoot, false);
+            Part(hut.transform, PrimitiveType.Cube, "Floor", new Vector3(0f, 0.08f, 0.2f), new Vector3(2.6f, 0.16f, 2.0f), Quaternion.identity, PlankDark);
+            Part(hut.transform, PrimitiveType.Cube, "Walls", new Vector3(0f, 0.95f, 0.4f), new Vector3(2.4f, 1.6f, 1.6f), Quaternion.identity, Plank);
+            Part(hut.transform, PrimitiveType.Cube, "Door", new Vector3(0f, 0.75f, -0.42f), new Vector3(0.7f, 1.2f, 0.05f), Quaternion.identity, Wood);
+            for (int sz = -1; sz <= 1; sz += 2)
+                Part(hut.transform, PrimitiveType.Cube, "Roof", new Vector3(0f, 2.0f, 0.4f + sz * 0.5f), new Vector3(2.8f, 0.12f, 1.25f), Quaternion.Euler(sz * 30f, 0f, 0f), PlankDark);
+            Prop(decor, "Barrel", hut.transform, shelterRoot.TransformPoint(new Vector3(1.6f, 0f, -0.2f)), 0f, 0.8f);
+
+            GameObject house = new GameObject("Level2_House");
+            house.transform.SetParent(shelterRoot, false);
+            Material roof = ArtGenerator.GetLit("M_RoofTile", null, new Color(0.56f, 0.2f, 0.2f));
+            Part(house.transform, PrimitiveType.Cube, "Foundation", new Vector3(0f, 0.15f, 0.3f), new Vector3(3.2f, 0.3f, 2.4f), Quaternion.identity, stone);
+            Part(house.transform, PrimitiveType.Cube, "Walls", new Vector3(0f, 1.25f, 0.3f), new Vector3(3.0f, 1.9f, 2.2f), Quaternion.identity, Plank);
+            Part(house.transform, PrimitiveType.Cube, "Door", new Vector3(0f, 0.95f, -0.83f), new Vector3(0.8f, 1.35f, 0.05f), Quaternion.identity, Wood);
+            for (int sx = -1; sx <= 1; sx += 2)
+                Part(house.transform, PrimitiveType.Cube, "Window", new Vector3(sx * 0.95f, 1.35f, -0.82f), new Vector3(0.45f, 0.45f, 0.04f), Quaternion.identity, Lantern);
+            for (int sz = -1; sz <= 1; sz += 2)
+                Part(house.transform, PrimitiveType.Cube, "Roof", new Vector3(0f, 2.55f, 0.3f + sz * 0.65f), new Vector3(3.5f, 0.14f, 1.6f), Quaternion.Euler(sz * 32f, 0f, 0f), roof);
+            Part(house.transform, PrimitiveType.Cube, "LanternPost", new Vector3(1.75f, 1.0f, -0.9f), new Vector3(0.08f, 2.0f, 0.08f), Quaternion.identity, Wood);
+            Part(house.transform, PrimitiveType.Cube, "Lantern", new Vector3(1.75f, 2.05f, -0.9f), new Vector3(0.2f, 0.28f, 0.2f), Quaternion.identity, Lantern);
+            if (flagPrefab != null)
+            {
+                GameObject f = (GameObject)PrefabUtility.InstantiatePrefab(flagPrefab);
+                f.transform.SetParent(house.transform, false);
+                f.transform.localPosition = new Vector3(-1.2f, 2.6f, 0.6f);
+                f.transform.localScale = Vector3.one * 0.55f;
+            }
+            Prop(decor, "Chest", house.transform, shelterRoot.TransformPoint(new Vector3(-1.9f, 0f, -0.3f)), 20f, 0.8f);
+            Prop(decor, "Barrel", house.transform, shelterRoot.TransformPoint(new Vector3(1.9f, 0f, 0.6f)), 0f, 0.8f);
+            hut.SetActive(false);
+            house.SetActive(false);
+            BuilderUtil.SetShadows(shelterRoot.gameObject, true);
+            GameObject shelterBlock = new GameObject("Block");
+            shelterBlock.transform.SetParent(shelterRoot, false);
+            shelterBlock.transform.localPosition = new Vector3(0f, 0f, 0.3f);
+            BuilderUtil.SetVector2(shelterBlock.AddComponent<NavObstacle>(), "size", new Vector2(3.2f, 2.4f));
+            BuilderUtil.SetFloat(shelterBlock.GetComponent<NavObstacle>(), "cornerRadius", 0.5f);
+
+            CampSite camp = root.gameObject.AddComponent<CampSite>();
+            BuilderUtil.SetField(camp, "config", config);
+            BuilderUtil.SetArray(camp, "levels", new Object[] { tent, hut, house });
+            BuilderUtil.SetArray(camp, "seats", seats.ToArray());
+            BuilderUtil.SetField(camp, "fire", fireT);
+            BuilderUtil.SetField(camp, "flame", flame);
+            BuilderUtil.SetField(camp, "crackle", crackle);
+            return camp;
+        }
+
+        private static ParticleSystem Particles(Transform parent, string name, Vector3 pos, Color a, Color b, float speedMin, float speedMax,
+                                                float size, float gravity, float lifetime, int max, float rate)
+        {
+            GameObject go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            go.transform.localPosition = pos;
+            ParticleSystem ps = go.AddComponent<ParticleSystem>();
+            ParticleSystem.MainModule main = ps.main;
+            main.loop = true;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(lifetime * 0.6f, lifetime);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(speedMin, speedMax);
+            main.startSize = new ParticleSystem.MinMaxCurve(size * 0.6f, size);
+            main.startColor = new ParticleSystem.MinMaxGradient(a, b);
+            main.gravityModifier = gravity;
+            main.maxParticles = max;
+            ParticleSystem.EmissionModule emission = ps.emission;
+            emission.rateOverTime = rate;
+            ParticleSystem.ShapeModule shape = ps.shape;
+            shape.shapeType = ParticleSystemShapeType.Cone;
+            shape.angle = 12f;
+            shape.radius = 0.15f;
+            shape.rotation = new Vector3(-90f, 0f, 0f);
+            ParticleSystemRenderer pr = go.GetComponent<ParticleSystemRenderer>();
+            pr.sharedMaterial = ArtGenerator.GetTransparent("M_Spark", ArtGenerator.LoadSprite(ArtGenerator.SoftCirclePath)?.texture, Color.white);
+            pr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            return ps;
+        }
+
+        // Görev panosu: iki direk, tahta pano, üstünde kâğıtlar; önündeki alana girince panel açılır.
+        public static QuestBoard BuildQuestBoard(Vector3 position, float yaw, GameConfig config)
+        {
+            GameObject root = new GameObject("QuestBoard");
+            root.transform.SetPositionAndRotation(position, Quaternion.Euler(0f, yaw, 0f));
+            Transform board = new GameObject("Board").transform;
+            board.SetParent(root.transform, false);
+            board.localPosition = new Vector3(0f, 0f, 1.1f);
+            Material paper = ArtGenerator.GetLit("M_Paper", null, new Color(0.96f, 0.92f, 0.78f));
+            for (int s = -1; s <= 1; s += 2)
+                Part(board, PrimitiveType.Cube, "Post", new Vector3(s * 0.75f, 0.9f, 0f), new Vector3(0.14f, 1.8f, 0.14f), Quaternion.identity, Wood);
+            Part(board, PrimitiveType.Cube, "Panel", new Vector3(0f, 1.25f, 0f), new Vector3(1.6f, 0.95f, 0.08f), Quaternion.identity, SignWood);
+            Part(board, PrimitiveType.Cube, "Top", new Vector3(0f, 1.78f, 0f), new Vector3(1.8f, 0.1f, 0.25f), Quaternion.identity, Wood);
+            for (int i = 0; i < 4; i++)
+                Part(board, PrimitiveType.Cube, "Note", new Vector3(-0.5f + i * 0.33f, 1.2f + (i % 2) * 0.18f, -0.05f), new Vector3(0.26f, 0.34f, 0.02f), Quaternion.Euler(0f, 0f, (i - 1.5f) * 6f), paper);
+            Part(board, PrimitiveType.Cube, "Star", new Vector3(0f, 1.62f, -0.06f), new Vector3(0.16f, 0.16f, 0.02f), Quaternion.Euler(0f, 0f, 45f), ArtGenerator.GetLit("M_Gold", null, new Color(1f, 0.78f, 0.22f)));
+            BuilderUtil.SetShadows(board.gameObject, true);
+            PrefabFactory.CreateBoardSign(board, new Vector3(0f, 2.45f, 0f), "Görevler");
+            GameObject blk = new GameObject("Block");
+            blk.transform.SetParent(board, false);
+            BuilderUtil.SetVector2(blk.AddComponent<NavObstacle>(), "size", new Vector2(1.8f, 0.4f));
+            PrefabFactory.AddGroundDecal("Ring", root.transform, new Vector3(0f, 0.02f, 0f), new Vector2(1.8f, 1.8f), new Color(1f, 0.85f, 0.4f, 0.6f), ArtGenerator.RingPath, 0f);
+            SphereCollider trigger = root.AddComponent<SphereCollider>();
+            trigger.isTrigger = true;
+            trigger.radius = 1.0f;
+            trigger.center = new Vector3(0f, 0.6f, 0f);
+            QuestBoard qb = root.AddComponent<QuestBoard>();
+            BuilderUtil.SetField(qb, "config", config);
+            return qb;
+        }
+
+        // ================================================================ Kapalı alan ipuçları ve açılınca yayılan zemin
+
+        public enum HintKind { Quarry, Orchard, Cove, RopeCoil, YarnBall, ColdStones, Logs }
+
+        // Neyin açılacağını ele vermeyen küçük doğal ipuçları (kapalıyken görünür, açılınca toz bulutuyla kaybolur).
+        public static void AddHints(Transform locked, HintKind kind, Rect rect, Dictionary<string, GameObject> decor, int seed)
+        {
+            System.Random r = new System.Random(seed);
+            Vector3 c = new Vector3(rect.center.x, 0f, rect.center.y);
+            Material dirt = ArtGenerator.GetLit("M_Dirt", null, new Color(0.55f, 0.42f, 0.28f));
+            switch (kind)
+            {
+                case HintKind.Quarry:
+                    PrefabFactory.AddGroundDecal("DirtPatch", locked, locked.InverseTransformPoint(c), new Vector2(rect.width * 0.7f, rect.height * 0.6f), new Color(0.55f, 0.42f, 0.28f, 0.45f), ArtGenerator.SoftCirclePath, 0f);
+                    for (int i = 0; i < 9; i++)
+                        Prop(decor, i % 2 == 0 ? "RockTiny" : "Pebble_A", locked, c + new Vector3(R(r, rect.width * 0.35f), 0f, R(r, rect.height * 0.3f)), (float)r.NextDouble() * 360f, 0.8f + (float)r.NextDouble() * 0.5f);
+                    // İnşaat işareti kazığı (çekiç-kürek simgeli küçük levha).
+                    Vector3 stake = new Vector3(rect.center.x + 1.2f, 0f, rect.yMin + 1.2f);
+                    Part(locked, PrimitiveType.Cube, "Stake", locked.InverseTransformPoint(stake) + Vector3.up * 0.45f, new Vector3(0.1f, 0.9f, 0.1f), Quaternion.identity, Wood);
+                    Part(locked, PrimitiveType.Cube, "StakeBoard", locked.InverseTransformPoint(stake) + new Vector3(0f, 0.85f, -0.06f), new Vector3(0.55f, 0.4f, 0.05f), Quaternion.identity, SignWood);
+                    Part(locked, PrimitiveType.Cube, "HammerIcon", locked.InverseTransformPoint(stake) + new Vector3(-0.08f, 0.85f, -0.1f), new Vector3(0.05f, 0.3f, 0.02f), Quaternion.Euler(0f, 0f, 35f), Iron);
+                    Part(locked, PrimitiveType.Cube, "ShovelIcon", locked.InverseTransformPoint(stake) + new Vector3(0.08f, 0.85f, -0.1f), new Vector3(0.05f, 0.3f, 0.02f), Quaternion.Euler(0f, 0f, -35f), Wood);
+                    break;
+                case HintKind.Orchard:
+                    PrefabFactory.AddGroundDecal("DirtPatch", locked, locked.InverseTransformPoint(c), new Vector2(rect.width * 0.6f, rect.height * 0.55f), new Color(0.55f, 0.42f, 0.28f, 0.4f), ArtGenerator.SoftCirclePath, 0f);
+                    for (int i = 0; i < 4; i++) // işlenmemiş tarla sıraları
+                        Part(locked, PrimitiveType.Cube, "Furrow", locked.InverseTransformPoint(c + new Vector3(-1.5f + i, 0.03f, 0f)), new Vector3(0.3f, 0.06f, rect.height * 0.45f), Quaternion.Euler(0f, (float)r.NextDouble() * 6f - 3f, 0f), dirt);
+                    for (int i = 0; i < 7; i++)
+                        Prop(decor, i % 3 == 0 ? "Grass" : "GrassTuft", locked, c + new Vector3(R(r, rect.width * 0.4f), 0f, R(r, rect.height * 0.4f)), (float)r.NextDouble() * 360f, 0.9f);
+                    break;
+                case HintKind.Cove:
+                    Prop(decor, "DecorPalm", locked, c + new Vector3(-1.4f, 0f, 1.6f), 30f, 0.85f);
+                    Prop(decor, "DecorPalm", locked, c + new Vector3(1.6f, 0f, -1.2f), 140f, 0.75f);
+                    for (int i = 0; i < 3; i++) Prop(decor, "SmallRock", locked, c + new Vector3(R(r, 2f), 0f, R(r, 2.5f)), i * 80f, 1f);
+                    // Kapalı geçiş: devrik kütük (karenin tarafında).
+                    Transform log = new GameObject("FallenLog").transform;
+                    log.SetParent(locked, false);
+                    log.position = new Vector3(rect.xMin + 0.3f, 0f, rect.center.y);
+                    Part(log, PrimitiveType.Cylinder, "Trunk", new Vector3(0f, 0.3f, 0f), new Vector3(0.6f, 1.6f, 0.6f), Quaternion.Euler(90f, 0f, 0f), Wood);
+                    Part(log, PrimitiveType.Cylinder, "Cut", new Vector3(0f, 0.3f, -1.6f), new Vector3(0.62f, 0.02f, 0.62f), Quaternion.Euler(90f, 0f, 0f), Plank);
+                    BuilderUtil.SetVector2(log.gameObject.AddComponent<NavObstacle>(), "size", new Vector2(0.7f, 3.2f));
+                    break;
+                case HintKind.RopeCoil:
+                    Part(locked, PrimitiveType.Cylinder, "RopeCoil", new Vector3(-0.6f, 0.06f, 0.2f), new Vector3(0.45f, 0.06f, 0.45f), Quaternion.identity, Rope);
+                    break;
+                case HintKind.YarnBall:
+                    Part(locked, PrimitiveType.Sphere, "Yarn", new Vector3(0.4f, 0.12f, 0.3f), new Vector3(0.25f, 0.25f, 0.25f), Quaternion.identity, ArtGenerator.GetLit("M_Yarn0", null, new Color(0.85f, 0.2f, 0.17f)));
+                    break;
+                case HintKind.ColdStones:
+                    for (int i = 0; i < 4; i++) Part(locked, PrimitiveType.Cube, "ColdStone", new Vector3(-0.8f + i * 0.4f, 0.1f, 0.4f + (i % 2) * 0.3f), new Vector3(0.3f, 0.2f, 0.26f), Quaternion.Euler(0f, i * 40f, 0f), ArtGenerator.GetLit("M_ColdStone", null, new Color(0.35f, 0.34f, 0.36f)));
+                    break;
+                case HintKind.Logs:
+                    for (int i = 0; i < 2; i++) Part(locked, PrimitiveType.Cylinder, "Log", new Vector3(-0.5f + i * 0.5f, 0.15f, 0.6f), new Vector3(0.3f, 0.6f, 0.3f), Quaternion.Euler(90f, 20f * i, 0f), Wood);
+                    break;
+            }
+            BuilderUtil.SetShadows(locked.gameObject, false);
+        }
+
+        // Açılınca yayılarak belirecek zemin yamaları (içerikte "Ground": kum yol, tarla sıraları, toprak).
+        public static void AddGround(Transform content, Rect rect, Color tint, bool rows)
+        {
+            Transform g = new GameObject("Ground").transform;
+            g.SetParent(content, false);
+            g.position = new Vector3(rect.center.x, 0f, rect.center.y);
+            PrefabFactory.AddGroundDecal("Patch", g, Vector3.up * 0.01f, new Vector2(rect.width * 0.95f, rect.height * 0.95f), tint, ArtGenerator.SoftCirclePath, 0f);
+            if (!rows) return;
+            Material dirt = ArtGenerator.GetLit("M_TilledRow", null, new Color(0.5f, 0.36f, 0.22f));
+            for (int i = 0; i < 3; i++)
+                Part(g, PrimitiveType.Cube, "Row", new Vector3(-rect.width * 0.3f + i * rect.width * 0.3f, 0.02f, 0f), new Vector3(0.45f, 0.05f, rect.height * 0.75f), Quaternion.identity, dirt);
+        }
+
+        // Alçak süslü çit (Meyve Bahçesi): dikdörtgen boyunca, kapı tarafında geçiş açık (içerikte; açılınca belirir).
+        public static void LowFence(Transform parent, Rect rect, Vector3 gate, GameObject fencePrefab)
+        {
+            Transform root = new GameObject("LowFence").transform;
+            root.SetParent(parent, false);
+            Vector3[] c =
+            {
+                new Vector3(rect.xMin, 0f, rect.yMin), new Vector3(rect.xMax, 0f, rect.yMin),
+                new Vector3(rect.xMax, 0f, rect.yMax), new Vector3(rect.xMin, 0f, rect.yMax)
+            };
+            for (int i = 0; i < 4; i++)
+            {
+                Vector3 a = c[i], b = c[(i + 1) % 4];
+                float len = Vector3.Distance(a, b);
+                int n = Mathf.Max(1, Mathf.RoundToInt(len / 2f));
+                float yaw = Quaternion.LookRotation(b - a).eulerAngles.y - 90f;
+                for (int k = 0; k < n; k++)
+                {
+                    Vector3 p = Vector3.Lerp(a, b, (k + 0.5f) / n);
+                    if (Vector3.Distance(p, gate) < MapLayout.GateWidth * 0.6f) continue; // kapı aralığı açık
+                    GameObject piece = (GameObject)PrefabUtility.InstantiatePrefab(fencePrefab);
+                    piece.transform.SetParent(root, false);
+                    piece.transform.position = p;
+                    piece.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
+                    piece.transform.localScale = new Vector3(len / n / 2f, 0.8f, 1f);
+                }
+            }
+        }
+
         // ================================================================ Denize uzanan iskele
 
         // Uzun ahşap iskele (kıyıdan denize): kalın direkler, tahta güverte, halat korkuluklar, fenerler, variller,
@@ -719,7 +924,7 @@ namespace KayipAda.EditorTools
                     post.transform.position = p + Vector3.down * 0.6f;
                 }
             }
-            for (float d = 0.4f; d < landBehind + seaLength; d += 1.3f)
+            for (float d = 0.4f; d < landBehind * 2f + 0.6f; d += 1.3f) // traversler sadece gemi altında (suda yok)
             {
                 float k = d / (landBehind + seaLength);
                 Vector3 c = ground - slideDir * landBehind + slideDir * d + Vector3.down * (1.4f * k) + Vector3.up * 0.02f;
