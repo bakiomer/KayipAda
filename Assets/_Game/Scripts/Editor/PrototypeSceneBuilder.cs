@@ -738,7 +738,7 @@ namespace KayipAda.EditorTools
             // Ada şekli (zemin, su ve yerleşim bunu kullanır)
             GameObject islandGo = new GameObject("Island");
             IslandShape island = islandGo.AddComponent<IslandShape>();
-            island.EditorSetup(MapLayout.IslandCenter, MapLayout.IslandRadius, MapLayout.Islets);
+            island.EditorSetup(MapLayout.IslandCenter, MapLayout.IslandRadius, MapLayout.Islets, MapLayout.Cape);
 
             CreateLighting();
             CreateGroundAndWater(islandGo, island);
@@ -879,23 +879,7 @@ namespace KayipAda.EditorTools
             RegionBuilder.BuildThicket("Orchard", MapLayout.OrchardRect, orchard, config, MapLayout.OrchardPad, p.Decor, 12);
             RegionBuilder.BuildThicket("Cove", MapLayout.CoveRect, cove, config, MapLayout.CovePad, p.Decor, 13);
 
-            // Tanıtım tabelaları: yaklaşınca kart (kaynaklar, binalar, gizli sandık, açma bedeli).
-            Sprite coinIcon = ArtGenerator.LoadSprite(ArtGenerator.CoinIconPath);
-            RegionBuilder.AddInfoCard(rockySign, rocky, config, rocky.DisplayName, new List<RegionBuilder.InfoRow>
-            {
-                new RegionBuilder.InfoRow { Icon = Icon("Stone"), Text = "Taş" },
-                new RegionBuilder.InfoRow { Icon = Icon("Stone"), Icon2 = Icon("Brick"), Text = "Taş Atölyesi" }
-            }, ChestsIn(MapLayout.RockyRect), coinIcon, rocky.Price.ToString());
-            RegionBuilder.AddInfoCard(orchardSign, orchard, config, orchard.DisplayName, new List<RegionBuilder.InfoRow>
-            {
-                new RegionBuilder.InfoRow { Icon = Icon("Fruit"), Text = "Meyve (erzak)" }
-            }, ChestsIn(MapLayout.OrchardRect), coinIcon, orchard.Price.ToString());
-            RegionBuilder.AddInfoCard(coveSign, cove, config, cove.DisplayName, new List<RegionBuilder.InfoRow>
-            {
-                new RegionBuilder.InfoRow { Icon = Icon("Fiber"), Text = "Lif (keten)" },
-                new RegionBuilder.InfoRow { Icon = Icon("Fiber"), Icon2 = Icon("Rope"), Text = "Halat Atölyesi" },
-                new RegionBuilder.InfoRow { Icon = Icon("Fiber"), Icon2 = Icon("Cloth"), Text = "Dokuma Tezgahı" }
-            }, ChestsIn(MapLayout.CoveRect), coinIcon, cove.Price.ToString());
+
             // Açma kareleri: bölge girişlerinde ve binaların yerinde.
             Transform pads = new GameObject("UnlockPads").transform;
             CreatePad(p.UnlockPad, pads, "Pad Rocky", MapLayout.RockyPad, rocky, null, reserved);
@@ -905,6 +889,24 @@ namespace KayipAda.EditorTools
             CreatePad(p.UnlockPad, pads, "Pad Cove", MapLayout.CovePad, cove, stage1, reserved);
             CreatePad(p.UnlockPad, pads, "Pad RopeWorkshop", MapLayout.RopeWorkshop + MapLayout.BuildingPadOffset, ropeArea, stage2, reserved);
             CreatePad(p.UnlockPad, pads, "Pad Loom", MapLayout.Loom + MapLayout.BuildingPadOffset, loomArea, stage3, reserved);
+
+            // Tanıtım kartları: açma karesine yaklaşınca kart (kaynaklar, binalar, gizli sandık, açma bedeli).
+            Sprite coinIcon = ArtGenerator.LoadSprite(ArtGenerator.CoinIconPath);
+            RegionBuilder.AddInfoCard(pads.Find("Pad Rocky").gameObject, rocky, config, rocky.DisplayName, new List<RegionBuilder.InfoRow>
+            {
+                new RegionBuilder.InfoRow { Icon = Icon("Stone"), Text = "Taş" },
+                new RegionBuilder.InfoRow { Icon = Icon("Stone"), Icon2 = Icon("Brick"), Text = "Taş Atölyesi" }
+            }, ChestsIn(MapLayout.RockyRect), coinIcon, rocky.Price.ToString(), 3.6f);
+            RegionBuilder.AddInfoCard(pads.Find("Pad Orchard").gameObject, orchard, config, orchard.DisplayName, new List<RegionBuilder.InfoRow>
+            {
+                new RegionBuilder.InfoRow { Icon = Icon("Fruit"), Text = "Meyve (erzak)" }
+            }, ChestsIn(MapLayout.OrchardRect), coinIcon, orchard.Price.ToString(), 3.6f);
+            RegionBuilder.AddInfoCard(pads.Find("Pad Cove").gameObject, cove, config, cove.DisplayName, new List<RegionBuilder.InfoRow>
+            {
+                new RegionBuilder.InfoRow { Icon = Icon("Fiber"), Text = "Lif (keten)" },
+                new RegionBuilder.InfoRow { Icon = Icon("Fiber"), Icon2 = Icon("Rope"), Text = "Halat Atölyesi" },
+                new RegionBuilder.InfoRow { Icon = Icon("Fiber"), Icon2 = Icon("Cloth"), Text = "Dokuma Tezgahı" }
+            }, ChestsIn(MapLayout.CoveRect), coinIcon, cove.Price.ToString(), 3.6f);
 
             // Kamp, geliştirme tezgahı ve işçiler
             Place(p.Camp, null, MapLayout.Camp, 0f);
@@ -1057,12 +1059,12 @@ namespace KayipAda.EditorTools
             }, island, config, signPrefab, reserved);
 
             // Köprü tanıtım kartları (adacıklarda örtü yok; köprü kurulmadan ulaşılamaz).
-            RegionBuilder.AddInfoCard(refs.FirstBridge.transform.Find("Sign").gameObject, islet1, config, MapLayout.IsletNames[0], new List<RegionBuilder.InfoRow>
+            RegionBuilder.AddInfoCard(refs.FirstBridge.gameObject, islet1, config, MapLayout.IsletNames[0], new List<RegionBuilder.InfoRow>
             {
                 new RegionBuilder.InfoRow { Icon = Icon("Scrap"), Text = "Hurda Metal" },
                 new RegionBuilder.InfoRow { Icon = Icon("Scrap"), Icon2 = Icon("Nail"), Text = "Demirci" }
             }, 2, Icon("Plank"), "40");
-            RegionBuilder.AddInfoCard(templeBridge.transform.Find("Sign").gameObject, islet2, config, MapLayout.IsletNames[1], new List<RegionBuilder.InfoRow>
+            RegionBuilder.AddInfoCard(templeBridge.gameObject, islet2, config, MapLayout.IsletNames[1], new List<RegionBuilder.InfoRow>
             {
                 new RegionBuilder.InfoRow { Icon = IconGenerator.Create("figure"), Text = "Altın figür parçaları" },
                 new RegionBuilder.InfoRow { Icon = IconGenerator.Create("crystal"), Text = "Eski harabe" }
@@ -1112,12 +1114,18 @@ namespace KayipAda.EditorTools
             AreaDefinition storageArea = Data<AreaDefinition>(AreasFolder, "Storage");
             List<ResourceType> storeTypes = new List<ResourceType>();
             foreach (string id in DevResourceOrder) storeTypes.Add(Data<ResourceType>(ResourceTypesFolder, id));
-            RegionBuilder.BuildStorage(MapLayout.Storage, storageArea,
+            // Burnun ucundan içeride; ön yüzü (bırak/al alanları) adanın içine, bina denize doğru.
+            Vector2 capeTip = island.CoastPoint(MapLayout.Cape.x);
+            Vector2 inward = (island.Center - capeTip).normalized;
+            Vector2 storePos2 = capeTip + inward * MapLayout.StorageInland;
+            Vector3 storePos = new Vector3(storePos2.x, 0f, storePos2.y);
+            float storeYaw = Quaternion.LookRotation(new Vector3(-inward.x, 0f, -inward.y)).eulerAngles.y;
+            RegionBuilder.BuildStorage(storePos, storeYaw, storageArea,
                 new[] { Data<AreaDefinition>(AreasFolder, "StorageLv2"), Data<AreaDefinition>(AreasFolder, "StorageLv3") },
                 storeTypes.ToArray(), config, p.Decor, p.Decor[ModelCatalog.ShipFlag.Key]);
-            CreatePad(p.UnlockPad, pads, "Pad Storage", MapLayout.Storage + MapLayout.BuildingPadOffset, storageArea, Data<AreaDefinition>(AreasFolder, "Rocky"), reserved);
+            CreatePad(p.UnlockPad, pads, "Pad Storage", storePos + new Vector3(inward.x, 0f, inward.y) * 0.4f, storageArea, Data<AreaDefinition>(AreasFolder, "Rocky"), reserved);
             BuilderUtil.SetBool(pads.Find("Pad Storage").GetComponent<UnlockPad>(), "guideIgnore", true);
-            Reserve(reserved, MapLayout.Storage + new Vector3(0f, 0f, 1f), 3.6f);
+            Reserve(reserved, storePos - new Vector3(inward.x, 0f, inward.y) * 1.6f, 4.2f);
             UiBuilder.CreateStoragePanel(config, storeTypes.Count);
 
             // Sandal: uzun iskelenin yanında, karada teslim alanı (yan görev "pier" kimliğiyle; eski kayıtlar uyumlu).
@@ -1435,7 +1443,7 @@ namespace KayipAda.EditorTools
 
             // Tabela: kapının yanında, biraz dışarıda (açma karesini kapatmasın).
             Vector3 signPos = gateCenter + along * (MapLayout.GateWidth * 0.5f + 1.5f) + outward * 0.9f;
-            sign = CreateSign(signPrefab, root.transform, root.transform.TransformPoint(signPos), area.DisplayName);
+            sign = null; // yerdeki direkli bölge tabelası yok (tanıtım kartı açma karesinde)
 
             GameObject content = new GameObject("Content");
             content.transform.SetParent(root.transform, false);

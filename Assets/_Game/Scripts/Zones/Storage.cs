@@ -24,12 +24,21 @@ namespace KayipAda
         [SerializeField] private ResourceType[] types = new ResourceType[0];
         [Tooltip("Parçaların uçtuğu / çıktığı nokta (kapı).")]
         [SerializeField] private Transform door;
-        [Tooltip("Doluluğa göre görünen yığınlar (kasa, fıçı, çuval).")]
+        [Tooltip("Doluluğa göre görünen yığınlar (kasa, fıçı, çuval; dışarıda).")]
         [SerializeField] private Transform[] fillVisuals = new Transform[0];
+        [Tooltip("Yük asansörünün sandığı: bırakılınca yukarı kalkıp içeri girer, alınınca iner.")]
+        [SerializeField] private Transform hoistCrate;
+        [SerializeField] private Transform hoistLow;
+        [SerializeField] private Transform hoistHigh;
+        [SerializeField] private Transform hoistRope;
+        [SerializeField] private Transform hoistPulley;
 
         private readonly Dictionary<ResourceType, int> counts = new Dictionary<ResourceType, int>();
         private float warnTimer;
         private Vector3[] fillScales;
+        private float hoist;        // 0 = aşağıda, 1 = yukarıda
+        private float hoistTarget;
+        private float hoistHold;
 
         public event Action Changed;
 
@@ -79,6 +88,32 @@ namespace KayipAda
         private void Update()
         {
             if (warnTimer > 0f) warnTimer -= Time.deltaTime;
+            UpdateHoist();
+        }
+
+        // Yük asansörü: hedefe doğru gider; bir süre bekleyince aşağıda (yükleme) konumuna döner.
+        private void UpdateHoist()
+        {
+            if (hoistCrate == null || hoistLow == null || hoistHigh == null) return;
+            if (hoistHold > 0f) hoistHold -= Time.deltaTime;
+            else hoistTarget = 0f;
+            float before = hoist;
+            hoist = Mathf.MoveTowards(hoist, hoistTarget, Time.deltaTime * 2.2f);
+            hoistCrate.position = Vector3.Lerp(hoistLow.position, hoistHigh.position, Mathf.SmoothStep(0f, 1f, hoist));
+            if (hoistPulley != null) hoistPulley.localRotation *= Quaternion.Euler(0f, 0f, (hoist - before) * 720f);
+            if (hoistRope != null)
+            {
+                Vector3 top = hoistHigh.position + Vector3.up * 0.9f, low = hoistCrate.position + Vector3.up * 0.3f;
+                hoistRope.position = (top + low) * 0.5f;
+                hoistRope.localScale = new Vector3(hoistRope.localScale.x, Mathf.Max(0.05f, (top - low).magnitude * 0.5f), hoistRope.localScale.z);
+            }
+        }
+
+        // Bırakma: sandık yukarı kalkıp içeri girer. Alma: sandık yukarıdan iner.
+        private void PulseHoist(bool up)
+        {
+            if (up) { hoistTarget = 1f; hoistHold = 0.5f; }
+            else { hoist = 1f; hoistTarget = 0f; hoistHold = 0f; }
         }
 
         // Bir parçayı ambara koyar: parça kapıya uçar, sayı hemen artar (fazla dolmasın). Doluysa false.
@@ -86,7 +121,9 @@ namespace KayipAda
         {
             if (item == null || !IsOpen || IsFull) return false;
             counts[item.Type] = CountOf(item.Type) + 1;
-            item.FlyToAndDestroy(DoorPosition, config.ItemFlyHeight, config.ItemFlyDuration);
+            Vector3 into = hoistCrate != null ? hoistCrate.position + Vector3.up * 0.4f : DoorPosition;
+            item.FlyToAndDestroy(into, config.ItemFlyHeight, config.ItemFlyDuration);
+            PulseHoist(true);
             AudioManager.Play(SoundId.Drop, 0.6f);
             Changed?.Invoke();
             RefreshFill(true);
@@ -112,7 +149,8 @@ namespace KayipAda
             counts[type] = CountOf(type) - 1;
             Changed?.Invoke();
             RefreshFill(true);
-            return type.Spawn(DoorPosition);
+            if (hoist < 0.2f) PulseHoist(false);
+            return type.Spawn(hoistCrate != null ? hoistCrate.position + Vector3.up * 0.4f : DoorPosition);
         }
 
         // Dolu uyarısı (sık tekrarlamaz).

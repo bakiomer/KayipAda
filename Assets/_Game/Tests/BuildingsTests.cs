@@ -96,5 +96,58 @@ namespace KayipAda.Tests
             yield return new WaitForSeconds(1f);
             Shot("BN_kayalik");
         }
+            // Yakınlık görünürlüğü: uzakta halkalar soluk ve küçük (gizli değil), Yükselt tabelası yok; yakında hepsi tam.
+        [UnityTest]
+        public IEnumerator Proximity_VisibilityByDistance()
+        {
+            AreaManager.Instance.Unlock(PadArea("Pad Sawmill"));
+            yield return new WaitForSeconds(1f);
+            ProcessingBuilding saw = Building("plank");
+            InteractionVisibility vis = saw.GetComponent<InteractionVisibility>();
+            Assert.IsNotNull(vis, "Bıçkıhane'de yakınlık görünürlüğü yok");
+            CanvasGroup group = saw.GetComponentInChildren<CanvasGroup>();
+            Assert.IsNotNull(group);
+            Teleport(saw.transform.position + new Vector3(-4f, 0f, 15f));
+            yield return new WaitForSeconds(1.5f);
+            Assert.Less(vis.Nearness, 0.2f, "Uzakken tam görünüyor");
+            Assert.IsFalse(vis.SignVisible, "Uzakken Yükselt tabelası görünüyor");
+            Assert.Greater(group.alpha, 0.2f, "Uzakta halkalar tamamen gizlenmemeli");
+            Assert.Less(group.alpha, 0.7f, "Uzakta halkalar soluk olmalı");
+            Teleport(saw.transform.position + new Vector3(0f, 0f, -9f));
+            yield return new WaitForSeconds(0.6f);
+            Shot("BN_yakinlik_uzak");
+            Teleport(saw.transform.position + new Vector3(-2.2f, 0f, -2.4f)); // köprü başının önizleme alanından uzakta
+            yield return new WaitForSeconds(1.5f);
+            Assert.Greater(vis.Nearness, 0.9f, "Yakındayken tam görünmüyor");
+            Assert.IsTrue(vis.SignVisible, "Yakındayken Yükselt tabelası görünmüyor");
+            Assert.Greater(group.alpha, 0.95f);
+            Shot("BN_yakinlik_yakin");
+        }
+
+        // Ambar burnun üstünde, gemiye yakın; bırak/al alanlarına ulaşılır; kıyı dalgaları burnun kenarında da var.
+        [UnityTest]
+        public IEnumerator Storage_OnCapeNearShip()
+        {
+            Storage storage = Storage.Instance;
+            Assert.IsNotNull(storage);
+            Vector2 p = new Vector2(storage.transform.position.x, storage.transform.position.z);
+            Assert.Less(IslandShape.Instance.SignedDistance(p), -1f, "Ambar karada değil");
+            // Burun: ambarın denize bakan arkası da kara (ana adaya bağlı çıkıntı).
+            Vector3 back = storage.transform.position + storage.transform.forward * 3.4f;
+            Assert.Less(IslandShape.Instance.SignedDistance(new Vector2(back.x, back.z)), 0.2f, "Ambarın arkası denizde");
+            float toShip = Vector3.Distance(storage.transform.position, ShipBuilder.Instance.Delivery.transform.position);
+            Assert.Less(toShip, 18f, "Ambar gemiye uzak");
+            AreaManager.Instance.Unlock(storage.Area);
+            yield return new WaitForSeconds(1.5f);
+            yield return WaitFor(() => IslandNavMesh.IsUpToDate, 5f);
+            Vector3 start = Player.transform.position;
+            Assert.IsTrue(IslandNavMesh.HasCompletePath(start, FindAny<StorageDropZone>().transform.position), "Bırakma alanına ulaşılamıyor");
+            Assert.IsTrue(IslandNavMesh.HasCompletePath(start, FindAny<StoragePickZone>().transform.position), "Alma alanına ulaşılamıyor");
+            Assert.IsTrue(IslandNavMesh.HasCompletePath(FindAny<StoragePickZone>().transform.position, ShipBuilder.Instance.Delivery.transform.position), "Ambardan gemiye yol yok");
+            DevCommands.FillStorage();
+            Teleport(storage.transform.position - storage.transform.forward * 3.5f);
+            yield return new WaitForSeconds(1.2f);
+            Shot("BN_ambar");
+        }
     }
 }

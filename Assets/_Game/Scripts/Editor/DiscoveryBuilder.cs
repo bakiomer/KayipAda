@@ -265,20 +265,6 @@ namespace KayipAda.EditorTools
             endB.SetParent(root.transform, false);
             endB.position = b;
 
-            // Bölge tabelası (köprü başında, kenarda).
-            if (signPrefab != null)
-            {
-                GameObject sign = (GameObject)PrefabUtility.InstantiatePrefab(signPrefab);
-                sign.name = "Sign";
-                sign.transform.SetParent(root.transform, false);
-                sign.transform.localPosition = new Vector3(-2.2f, 0f, 0.6f);
-                sign.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
-                TMPro.TextMeshPro text = UiFactory.CreateWorldText("Title", sign.transform, new Vector3(0f, 1.6f, -0.12f), MapLayout.IsletNames[spec.Islet], 4.5f, Color.white);
-                ((RectTransform)text.transform).sizeDelta = new Vector2(2.4f, 0.8f);
-                text.transform.localRotation = Quaternion.identity;
-                BuilderUtil.SetVector2(sign.AddComponent<NavObstacle>(), "size", new Vector2(0.5f, 0.5f));
-            }
-
             BridgeBuilder bridge = root.AddComponent<BridgeBuilder>();
             BuilderUtil.SetField(bridge, "config", config);
             BuilderUtil.SetString(bridge, "id", spec.Id);

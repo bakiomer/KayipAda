@@ -27,6 +27,8 @@ namespace KayipAda
         };
         [Tooltip("Adacıklar: her biri (merkez X, merkez Z, yarıçap X, yarıçap Z). Kıyı dalgaları ana adayla aynı (fazı kaydırılmış).")]
         [SerializeField] private Vector4[] islets = new Vector4[0];
+        [Tooltip("Ana adanın burnu (Ambar): (açı radyan, yarı genişlik radyan, çıkıntı oranı, -). Çıkıntı 0 ise yok.")]
+        [SerializeField] private Vector4 cape = Vector4.zero;
 
         // Açık (tamamlanmış) köprüler: iki uç (XZ) ve yarı genişlik.
         private struct Bridge { public Vector2 A, B; public float HalfWidth; }
@@ -44,11 +46,12 @@ namespace KayipAda
 
 #if UNITY_EDITOR
         // Sadece sahne kurma komutu için: şekli ayarlar.
-        public void EditorSetup(Vector2 newCenter, Vector2 newRadius, Vector4[] newIslets)
+        public void EditorSetup(Vector2 newCenter, Vector2 newRadius, Vector4[] newIslets, Vector4 newCape)
         {
             center = newCenter;
             radius = newRadius;
             islets = newIslets ?? new Vector4[0];
+            cape = newCape;
             Instance = this;
         }
 #endif
@@ -71,6 +74,12 @@ namespace KayipAda
         {
             float f = 1f;
             foreach (Vector3 w in waves) f += w.y * Mathf.Cos(w.x * angle + w.z + phase * w.x);
+            // Ana adanın burnu: yumuşak (çan biçimli) kıyı çıkıntısı, ana adaya geniş ve doğal bağlı.
+            if (phase == 0f && cape.z > 0f && cape.y > 0f)
+            {
+                float d = Mathf.DeltaAngle(angle * Mathf.Rad2Deg, cape.x * Mathf.Rad2Deg) * Mathf.Deg2Rad / cape.y;
+                f += cape.z * Mathf.Exp(-d * d);
+            }
             return f;
         }
 

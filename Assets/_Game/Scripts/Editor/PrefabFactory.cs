@@ -477,7 +477,7 @@ namespace KayipAda.EditorTools
             fx.SetParent(root.transform, false);
             fx.localPosition = new Vector3(0f, 1.4f, 1.6f);
 
-            UiFactory.CreateWorldLabel("Label", root.transform, new Vector3(0f, 3f, 1.6f), "GELİŞTİR", 5f, new Color(0.55f, 0.9f, 1f));
+            CreateBoardSign(root.transform, new Vector3(0f, 2.9f, 1.6f), "Geliştirme");
 
             UpgradeStation station = root.AddComponent<UpgradeStation>();
             BuilderUtil.SetField(station, "config", config);
@@ -1226,6 +1226,13 @@ namespace KayipAda.EditorTools
             BuilderUtil.SetField(building, "bodyVisual", body);
             BuilderUtil.SetField(building, "workEffect", fx);
             BuilderUtil.SetField(building, "intakePoint", intake);
+            // Yakınlık görünürlüğü: halka ve ikon tuvalleri uzakta soluk/küçük, yakında tam; Yükselt tabelası yakında.
+            List<Object> groups = new List<Object>();
+            foreach (Canvas c in root.GetComponentsInChildren<Canvas>(true))
+                if (c.name == "Marker" || c.name == "FloatIcon") groups.Add(c.gameObject.AddComponent<CanvasGroup>());
+            InteractionVisibility vis = root.AddComponent<InteractionVisibility>();
+            BuilderUtil.SetField(vis, "config", config);
+            BuilderUtil.SetArray(vis, "groups", groups.ToArray());
             return Save(root, Folder + "/Buildings/" + spec.Key + ".prefab");
         }
 
@@ -1418,7 +1425,7 @@ namespace KayipAda.EditorTools
             fire.localPosition = new Vector3(2f, 0f, -0.9f);
             CreateModel(ModelCatalog.Campfire, fire);
 
-            UiFactory.CreateWorldLabel("Label", root.transform, new Vector3(0f, 3.4f, 0f), "KAMP", 5f, Color.white);
+
             return Save(root, Folder + "/World/Camp.prefab");
         }
 

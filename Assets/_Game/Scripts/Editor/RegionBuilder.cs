@@ -234,9 +234,7 @@ namespace KayipAda.EditorTools
                 float angle = Mathf.Atan2(p1.y - p0.y, p1.x - p0.x) * Mathf.Rad2Deg;
                 Part(arch, PrimitiveType.Cube, "Arc", mid, new Vector3(Vector3.Distance(p0, p1) + 0.05f, 0.18f, 0.24f), Quaternion.Euler(0f, 0f, angle), Wood);
             }
-            Part(arch, PrimitiveType.Cube, "Board", new Vector3(0f, h + 0.25f, -0.15f), new Vector3(1.5f, 0.42f, 0.06f), Quaternion.identity, SignWood);
-            TMPro.TextMeshPro text = UiFactory.CreateWorldText("Title", arch, new Vector3(0f, h + 0.25f, -0.19f), "Bahçe", 2.6f, Color.white);
-            ((RectTransform)text.transform).sizeDelta = new Vector2(1.4f, 0.4f);
+
             // Kemerin üstünde yapraklar ve birkaç meyve.
             for (int i = 0; i < 4; i++)
             {
@@ -336,12 +334,12 @@ namespace KayipAda.EditorTools
 
         // Tabelanın üstünde açılan küçük kart: ad, satırlar (ikon + yazı, istenirse "ikon → ikon"), sandıklar (?), bedel.
         public static InfoSign AddInfoCard(GameObject sign, AreaDefinition area, GameConfig config, string title, List<InfoRow> rows,
-                                           int chests, Sprite priceIcon, string priceText)
+                                           int chests, Sprite priceIcon, string priceText, float cardHeight = 4.7f)
         {
             float rowH = 74f, width = 560f;
             int lines = rows.Count + (chests > 0 ? 1 : 0);
             float height = 120f + lines * rowH + 96f;
-            Canvas canvas = UiFactory.CreateWorldCanvas("InfoCard", sign.transform, new Vector3(0f, 4.7f, 0f), Quaternion.identity, new Vector2(width, height));
+            Canvas canvas = UiFactory.CreateWorldCanvas("InfoCard", sign.transform, new Vector3(0f, cardHeight, 0f), Quaternion.identity, new Vector2(width, height));
             canvas.gameObject.AddComponent<Billboard>();
             canvas.sortingOrder = 5;
             Image bg = UiFactory.CreateImage("Card", canvas.transform, ArtGenerator.LoadSprite(ArtGenerator.RoundedRectPath), new Color(0.16f, 0.1f, 0.05f, 0.92f));
@@ -448,86 +446,152 @@ namespace KayipAda.EditorTools
 
         // ================================================================ Ambar (depo)
 
-        // Korsan temalı ambar: ahşap taban, üç duvar (önü açık: içindeki kasa/fıçı yığınları görünür), kırmızı-siyah
-        // çatı, korsan bayrağı, "Ambar" tabelası. Önünde solda bırakma alanı (içeri ok), sağda alma alanı (dışarı ok).
-        // Kapalıyken silik zemin + açma karesi (UnlockableArea). Yanında "Yükselt" tabelası (kapasite).
-        public static Storage BuildStorage(Vector3 position, AreaDefinition area, AreaDefinition[] levels, ResourceType[] types,
+        // Kapalı, sağlam ahşap depo: taş temel, tahta duvarlar, büyük çift kanatlı kapı, koyu çatı, çatı katı kapağı.
+        // Önünde makaralı/halatlı yük asansörü (bırakılınca sandık kalkıp içeri girer, alınınca iner). Çevresinde sandık
+        // ve çuval yığınları; doluluk arttıkça dışarıdaki yığın büyür. Solda bırakma, sağda alma alanı.
+        // Kök: burnun girişinde (alanların hizası); bina burnun ucuna doğru (yerel +Z) uzanır.
+        public static Storage BuildStorage(Vector3 position, float yaw, AreaDefinition area, AreaDefinition[] levels, ResourceType[] types,
                                            GameConfig config, Dictionary<string, GameObject> decor, GameObject flagPrefab)
         {
             GameObject root = new GameObject("Storage");
-            root.transform.position = position;
+            root.transform.SetPositionAndRotation(position, Quaternion.Euler(0f, yaw, 0f));
             GameObject locked = new GameObject("Locked");
             locked.transform.SetParent(root.transform, false);
-            PrefabFactory.AddGroundDecal("Footprint", locked.transform, new Vector3(0f, 0f, 1.2f), new Vector2(4.6f, 3.6f), new Color(1f, 1f, 1f, 0.22f));
+            // Kapalıyken: boş zemin + birkaç kırık sandık (binayı ele vermez).
+            for (int i = 0; i < 3; i++)
+            {
+                GameObject broken = Prop(decor, "Crate", locked.transform, root.transform.TransformPoint(new Vector3(-1.2f + i * 1.3f, 0f, 1.4f + (i % 2) * 0.8f)), yaw + i * 50f, 0.75f);
+                if (broken != null) broken.transform.localRotation = Quaternion.Euler(i == 1 ? 18f : -12f, i * 50f, i == 0 ? 25f : 0f);
+            }
             GameObject content = new GameObject("Content");
             content.transform.SetParent(root.transform, false);
 
+            Material stone = ArtGenerator.GetLit("M_QuarryStoneMid", null, new Color(0.66f, 0.63f, 0.57f));
+            Material roof = ArtGenerator.GetLit("M_StorageRoofDark", null, new Color(0.3f, 0.2f, 0.14f));
+            Material door = ArtGenerator.GetLit("M_DarkWood", null, new Color(0.38f, 0.24f, 0.13f));
             Transform house = new GameObject("House").transform;
             house.SetParent(content.transform, false);
-            house.localPosition = new Vector3(0f, 0f, 1.5f);
-            Material roofRed = ArtGenerator.GetLit("M_StorageRoof", null, new Color(0.62f, 0.18f, 0.15f));
-            Material roofDark = ArtGenerator.GetLit("M_StorageRoofDark", null, new Color(0.18f, 0.14f, 0.12f));
-            Part(house, PrimitiveType.Cube, "Floor", new Vector3(0f, 0.1f, 0f), new Vector3(4.0f, 0.2f, 2.8f), Quaternion.identity, PlankDark);
-            Part(house, PrimitiveType.Cube, "Back", new Vector3(0f, 1.25f, 1.3f), new Vector3(4.0f, 2.1f, 0.16f), Quaternion.identity, Plank);
+            house.localPosition = new Vector3(0f, 0f, 1.9f);
+            float w = 3.8f, d = 2.8f, h = 2.4f;
+            Part(house, PrimitiveType.Cube, "Foundation", new Vector3(0f, 0.15f, 0f), new Vector3(w + 0.3f, 0.3f, d + 0.3f), Quaternion.identity, stone);
+            Part(house, PrimitiveType.Cube, "Walls", new Vector3(0f, 0.3f + h * 0.5f, 0f), new Vector3(w, h, d), Quaternion.identity, Plank);
+            for (int i = 0; i < 5; i++) // dikey tahta çizgileri (ön yüz)
+                Part(house, PrimitiveType.Cube, "Batten", new Vector3(-w * 0.5f + 0.3f + i * (w - 0.6f) / 4f, 0.3f + h * 0.5f, -d * 0.5f - 0.03f), new Vector3(0.09f, h, 0.05f), Quaternion.identity, Wood);
+            for (int sx = -1; sx <= 1; sx += 2)
+                Part(house, PrimitiveType.Cube, "Corner", new Vector3(sx * w * 0.5f, 0.3f + h * 0.5f, -d * 0.5f), new Vector3(0.22f, h + 0.1f, 0.22f), Quaternion.identity, Wood);
+            // Büyük çift kanatlı kapı (kapalı, demir menteşeli).
+            Part(house, PrimitiveType.Cube, "DoorFrame", new Vector3(0f, 0.3f + 0.95f, -d * 0.5f - 0.06f), new Vector3(1.9f, 1.9f, 0.08f), Quaternion.identity, Wood);
             for (int sx = -1; sx <= 1; sx += 2)
             {
-                Part(house, PrimitiveType.Cube, "Side", new Vector3(sx * 1.92f, 1.25f, 0f), new Vector3(0.16f, 2.1f, 2.8f), Quaternion.identity, Plank);
-                Part(house, PrimitiveType.Cube, "FrontPost", new Vector3(sx * 1.92f, 1.25f, -1.36f), new Vector3(0.24f, 2.3f, 0.24f), Quaternion.identity, Wood);
+                Part(house, PrimitiveType.Cube, "DoorLeaf", new Vector3(sx * 0.43f, 0.3f + 0.9f, -d * 0.5f - 0.1f), new Vector3(0.82f, 1.75f, 0.07f), Quaternion.identity, door);
+                Part(house, PrimitiveType.Cube, "Brace", new Vector3(sx * 0.43f, 0.3f + 0.9f, -d * 0.5f - 0.14f), new Vector3(0.1f, 1.8f, 0.03f), Quaternion.Euler(0f, 0f, sx * 28f), Wood);
+                Part(house, PrimitiveType.Cube, "Hinge", new Vector3(sx * 0.75f, 0.3f + 1.3f, -d * 0.5f - 0.15f), new Vector3(0.22f, 0.07f, 0.03f), Quaternion.identity, Iron);
             }
-            for (int i = 0; i < 4; i++)
-                Part(house, PrimitiveType.Cube, "Batten", new Vector3(-1.5f + i, 1.25f, 1.2f), new Vector3(0.07f, 2.1f, 0.05f), Quaternion.identity, Wood);
-            Part(house, PrimitiveType.Cube, "Lintel", new Vector3(0f, 2.3f, -1.36f), new Vector3(4.1f, 0.22f, 0.24f), Quaternion.identity, Wood);
+            // Çatı (iki eğimli) + çatı katı kapağı ve yük kirişi.
             for (int sz = -1; sz <= 1; sz += 2)
-                Part(house, PrimitiveType.Cube, "Roof", new Vector3(0f, 2.75f, sz * 0.78f), new Vector3(4.5f, 0.14f, 1.85f), Quaternion.Euler(sz * 28f, 0f, 0f), sz < 0 ? roofRed : roofDark);
-            Part(house, PrimitiveType.Cube, "Ridge", new Vector3(0f, 3.18f, 0f), new Vector3(4.6f, 0.16f, 0.2f), Quaternion.identity, Wood);
-            for (int i = 0; i < 3; i++)
-                Part(house, PrimitiveType.Cube, "Stripe", new Vector3(-1.4f + i * 1.4f, 2.77f, -0.8f), new Vector3(0.35f, 0.16f, 1.86f), Quaternion.Euler(-28f, 0f, 0f), roofDark);
+                Part(house, PrimitiveType.Cube, "Roof", new Vector3(0f, 0.3f + h + 0.55f, sz * 0.78f), new Vector3(w + 0.6f, 0.16f, d * 0.62f), Quaternion.Euler(sz * 32f, 0f, 0f), roof);
+            Part(house, PrimitiveType.Cube, "Gable", new Vector3(0f, 0.3f + h + 0.35f, -d * 0.5f + 0.05f), new Vector3(w * 0.7f, 0.7f, 0.1f), Quaternion.identity, Plank);
+            Part(house, PrimitiveType.Cube, "LoftDoor", new Vector3(0f, 0.3f + h + 0.3f, -d * 0.5f - 0.02f), new Vector3(0.8f, 0.55f, 0.06f), Quaternion.identity, door);
+            Part(house, PrimitiveType.Cube, "HoistBeam", new Vector3(0f, 0.3f + h + 0.85f, -d * 0.5f - 0.75f), new Vector3(0.22f, 0.22f, 1.7f), Quaternion.identity, Wood);
+            Transform pulley = new GameObject("Pulley").transform;
+            pulley.SetParent(house, false);
+            pulley.localPosition = new Vector3(0f, 0.3f + h + 0.62f, -d * 0.5f - 1.45f);
+            Part(pulley, PrimitiveType.Cylinder, "Wheel", Vector3.zero, new Vector3(0.42f, 0.06f, 0.42f), Quaternion.Euler(0f, 0f, 90f), door);
+            Part(pulley, PrimitiveType.Cube, "Spoke", Vector3.zero, new Vector3(0.08f, 0.4f, 0.06f), Quaternion.identity, Iron);
             if (flagPrefab != null)
             {
                 GameObject flag = (GameObject)PrefabUtility.InstantiatePrefab(flagPrefab);
                 flag.transform.SetParent(house, false);
-                flag.transform.localPosition = new Vector3(1.6f, 3.1f, 0f);
-                flag.transform.localScale = Vector3.one * 0.6f;
+                flag.transform.localPosition = new Vector3(w * 0.5f - 0.2f, 0.3f + h + 0.9f, 0.3f);
+                flag.transform.localScale = Vector3.one * 0.55f;
             }
-            PrefabFactory.CreateBoardSign(house, new Vector3(0f, 2.3f, -1.52f), "Ambar");
+            PrefabFactory.CreateBoardSign(house, new Vector3(0f, 0.3f + h + 1.9f, -0.2f), "Ambar");
             BuilderUtil.SetShadows(house.gameObject, true);
+            // Yük asansörü: halat makaradan sarkar, sandık bırakma/alma arasında, kapının önünde.
+            Transform low = new GameObject("HoistLow").transform;
+            low.SetParent(content.transform, false);
+            low.localPosition = new Vector3(0f, 0.25f, 1.9f - d * 0.5f - 1.45f);
+            Transform high = new GameObject("HoistHigh").transform;
+            high.SetParent(content.transform, false);
+            high.localPosition = low.localPosition + Vector3.up * (h + 0.05f);
+            Transform crate = new GameObject("HoistCrate").transform;
+            crate.SetParent(content.transform, false);
+            crate.localPosition = low.localPosition;
+            Prop(decor, "Crate", crate, crate.position, yaw, 0.75f);
+            GameObject rope = Part(content.transform, PrimitiveType.Cylinder, "HoistRope", low.localPosition + Vector3.up * 1.2f, new Vector3(0.05f, 1.2f, 0.05f), Quaternion.identity, Rope);
+
             GameObject body = new GameObject("Block");
             body.transform.SetParent(content.transform, false);
-            body.transform.localPosition = new Vector3(0f, 0f, 1.5f);
+            body.transform.localPosition = new Vector3(0f, 0f, 1.9f);
             NavObstacle obstacle = body.AddComponent<NavObstacle>();
-            BuilderUtil.SetVector2(obstacle, "size", new Vector2(4.2f, 3.0f));
-            BuilderUtil.SetFloat(obstacle, "cornerRadius", 0.4f);
+            BuilderUtil.SetVector2(obstacle, "size", new Vector2(w + 0.4f, d + 0.4f));
+            BuilderUtil.SetBool(obstacle, "oriented", true);
+            BuilderUtil.SetFloat(obstacle, "cornerRadius", 0.45f);
 
-            // Doluluğa göre görünen yığınlar (içeride).
-            string[] keys = { "Crate", "Barrel", "CrateBottles", "Barrel", "Crate", "Chest", "Barrel", "Crate" };
+            // Dışarıdaki yığınlar (binanın iki yanında): doluluk arttıkça görünür.
+            string[] keys = { "Crate", "Barrel", "Crate", "CrateBottles", "Barrel", "Chest", "Crate", "Barrel" };
             List<Transform> fill = new List<Transform>();
+            Material sack = ArtGenerator.GetLit("M_Sack", null, new Color(0.8f, 0.7f, 0.5f));
             for (int i = 0; i < keys.Length; i++)
             {
-                Vector3 local = new Vector3(-1.35f + (i % 4) * 0.9f, 0.2f, 2.35f - (i / 4) * 0.95f);
-                GameObject item = Prop(decor, keys[i], house, root.transform.TransformPoint(local), i * 33f, 0.85f);
-                if (item != null) fill.Add(item.transform);
+                int side = i % 2 == 0 ? -1 : 1;
+                Vector3 local = new Vector3(side * (w * 0.5f + 0.75f), 0f, 1.0f + (i / 2) * 0.75f);
+                Transform slot = new GameObject("Pile " + i).transform;
+                slot.SetParent(content.transform, false);
+                slot.localPosition = local;
+                GameObject item = Prop(decor, keys[i], slot, slot.position, yaw + i * 33f, 0.8f);
+                if (i % 3 == 1) // çuvallar
+                    Part(slot, PrimitiveType.Sphere, "Sack", new Vector3(0.3f, 0.25f, 0f), new Vector3(0.5f, 0.45f, 0.42f), Quaternion.identity, sack);
+                fill.Add(slot);
             }
+            GameObject sideBlock = new GameObject("PileBlock");
+            sideBlock.transform.SetParent(content.transform, false);
+            for (int sd = -1; sd <= 1; sd += 2)
+            {
+                GameObject pb = new GameObject("PileBlock");
+                pb.transform.SetParent(content.transform, false);
+                pb.transform.localPosition = new Vector3(sd * (w * 0.5f + 0.75f), 0f, 1.75f);
+                NavObstacle po = pb.AddComponent<NavObstacle>();
+                BuilderUtil.SetVector2(po, "size", new Vector2(1.0f, 2.4f));
+                BuilderUtil.SetBool(po, "oriented", true);
+            }
+            Object.DestroyImmediate(sideBlock);
 
             StorageDropZone drop = CreateStorageZone<StorageDropZone>(content.transform, "DropZone", new Vector3(-1.45f, 0f, -0.75f), new Color(0.45f, 0.85f, 1f), true, "Bırak");
             StoragePickZone pick = CreateStorageZone<StoragePickZone>(content.transform, "PickZone", new Vector3(1.45f, 0f, -0.75f), new Color(1f, 0.82f, 0.25f), false, "Al");
-            Transform door = new GameObject("Door").transform;
-            door.SetParent(content.transform, false);
-            door.localPosition = new Vector3(0f, 1.0f, 1.0f);
+            Transform doorPoint = new GameObject("Door").transform;
+            doorPoint.SetParent(content.transform, false);
+            doorPoint.localPosition = new Vector3(0f, 1.0f, 0.5f);
 
             Storage storage = root.AddComponent<Storage>();
             BuilderUtil.SetField(storage, "config", config);
             BuilderUtil.SetField(storage, "area", area);
             BuilderUtil.SetArray(storage, "levelAreas", levels);
             BuilderUtil.SetArray(storage, "types", types);
-            BuilderUtil.SetField(storage, "door", door);
+            BuilderUtil.SetField(storage, "door", doorPoint);
             BuilderUtil.SetArray(storage, "fillVisuals", fill.ToArray());
+            BuilderUtil.SetField(storage, "hoistCrate", crate);
+            BuilderUtil.SetField(storage, "hoistLow", low);
+            BuilderUtil.SetField(storage, "hoistHigh", high);
+            BuilderUtil.SetField(storage, "hoistRope", rope.transform);
+            BuilderUtil.SetField(storage, "hoistPulley", pulley);
             BuilderUtil.SetField(drop, "config", config);
             BuilderUtil.SetField(drop, "storage", storage);
             BuilderUtil.SetField(pick, "config", config);
             BuilderUtil.SetField(pick, "storage", storage);
 
-            BuildingUpgradeSign sign = AddUpgradeSign(content, config, new Vector3(2.95f, 0f, 0.4f));
+            BuildingUpgradeSign sign = AddUpgradeSign(content, config, new Vector3(2.95f, 0f, -0.4f));
             BuilderUtil.SetField(sign, "storage", storage);
+            InteractionVisibility vis = content.AddComponent<InteractionVisibility>();
+            BuilderUtil.SetField(vis, "config", config);
+            List<Object> labels = new List<Object>(), marks = new List<Object>();
+            foreach (InteractionZone z in new InteractionZone[] { drop, pick })
+            {
+                foreach (TMPro.TMP_Text t in z.GetComponentsInChildren<TMPro.TMP_Text>(true)) labels.Add(t);
+                foreach (Transform t in z.transform) if (t.name == "Ring" || t.name == "Arrow" || t.name == "Glow") marks.Add(t);
+            }
+            BuilderUtil.SetArray(vis, "texts", labels.ToArray());
+            BuilderUtil.SetArray(vis, "scaled", marks.ToArray());
 
             content.SetActive(false);
             UnlockableArea unlockable = root.AddComponent<UnlockableArea>();

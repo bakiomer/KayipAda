@@ -438,6 +438,15 @@ namespace KayipAda
         [field: Tooltip("Oyuncu tabelaya bu kadar yaklaşınca tanıtım kartı açılır (metre).")]
         [field: SerializeField, Min(0.5f)] public float InfoCardDistance { get; private set; } = 3.4f;
 
+        [field: Header("Yakınlık görünürlüğü")]
+        [field: Tooltip("Oyuncu bu kadar yakınken binanın halkaları/ikonları tam görünür, Yükselt tabelası açılır (metre).")]
+        [field: SerializeField, Min(1f)] public float InteractNear { get; private set; } = 6f;
+        [field: Tooltip("Bu kadar uzakta halkalar/ikonlar en soluk ve en küçük halde (metre).")]
+        [field: SerializeField, Min(2f)] public float InteractFar { get; private set; } = 13f;
+        [field: Tooltip("Uzaktaki halkaların saydamlığı ve boyu (gizlenmez).")]
+        [field: SerializeField, Range(0f, 1f)] public float InteractFarAlpha { get; private set; } = 0.42f;
+        [field: SerializeField, Range(0.3f, 1f)] public float InteractFarScale { get; private set; } = 0.82f;
+
         [field: Header("Ambar (depo)")]
         [field: Tooltip("Ambar seviyesine göre kapasite (birim).")]
         [field: SerializeField] public int[] StorageCapacity { get; private set; } = { 100, 160, 240 };

@@ -140,8 +140,10 @@ namespace KayipAda.EditorTools
         public static readonly Vector3 BrokenFence = new Vector3(-10.2f, 0f, -12f);
 
         // Denize uzanan uzun iskele (kuzey kıyı, geminin batısında): x, karadaki başlangıcı kıyıdan ne kadar içeride, boyu.
-        // Ambar (depo): gemi teslim alanının doğusunda, bahçenin kuzeyinde (kök = bırakma/alma alanlarının hizası).
-        public static readonly Vector3 Storage = new Vector3(10.6f, 0f, 17.0f);
+        // Ambar burnu: üretim alanlarından (doğu) gemiye giden yolun kıyıdan geçtiği yerde, ana adadan denize uzanan küçük
+        // kara çıkıntısı. (açı derece, yarı genişlik derece, çıkıntı oranı). Ambar burnun ucundan bu kadar içeride.
+        public static readonly Vector4 Cape = new Vector4(40f * Mathf.Deg2Rad, 9f * Mathf.Deg2Rad, 0.27f, 0f);
+        public const float StorageInland = 3.6f;
 
         public const float PierX = -2.2f;
         public const float PierInland = 2.0f;
@@ -193,6 +195,8 @@ namespace KayipAda.EditorTools
             new[] { new Vector2(0f, 4.4f), new Vector2(5.25f, 4.4f), new Vector2(5.25f, 10.5f) },    // meyve bahçesi
             new[] { new Vector2(0f, -6f), new Vector2(6.5f, -5.8f), new Vector2(9.0f, -1.2f) },       // palmiye koyu
             new[] { new Vector2(5.25f, 4.4f), new Vector2(9.6f, 4.9f), new Vector2(12.6f, 5.4f) },    // halat atölyesi
+            new[] { new Vector2(12.6f, 5.4f), new Vector2(14.2f, 11f), new Vector2(15.4f, 16.6f) },   // ambar burnu
+            new[] { new Vector2(15.4f, 16.6f), new Vector2(9.5f, 17.6f), new Vector2(3.5f, 16.8f) },  // ambar → gemi
             new[] { new Vector2(5f, -10.5f), new Vector2(9.6f, -9.8f), new Vector2(13.0f, -9.7f) },   // dokuma tezgahı
             new[] { new Vector2(0f, 20f), new Vector2(-2.2f, 22.6f) },                                  // uzun iskele
             new[] { new Vector2(5f, -13.5f), new Vector2(5.4f, -17.2f) },                               // batık koyu köprüsü
