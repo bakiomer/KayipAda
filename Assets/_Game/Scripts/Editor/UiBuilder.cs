@@ -13,7 +13,7 @@ namespace KayipAda.EditorTools
 {
     public static class UiBuilder
     {
-        public static readonly Color PanelColor = new Color(0.10f, 0.13f, 0.19f, 0.96f);
+        public static readonly Color PanelColor = new Color(0.10f, 0.13f, 0.19f, 1f); // opak: arkadaki dünya yazıları görünmesin
         public static readonly Color RowColor = new Color(1f, 1f, 1f, 0.07f);
         public static readonly Color Green = new Color(0.36f, 0.78f, 0.36f);
 
@@ -63,10 +63,6 @@ namespace KayipAda.EditorTools
             root.transform.SetParent(Safe, false);
             UiFactory.Stretch((RectTransform)root.transform);
 
-            Image dimmer = UiFactory.CreateImage("Dimmer", root.transform, null, new Color(0f, 0f, 0f, 0.35f));
-            dimmer.raycastTarget = true;
-            UiFactory.Stretch(dimmer.rectTransform);
-            dimmer.gameObject.AddComponent<Button>().transition = Selectable.Transition.None;
 
             float rowHeight = 150f, gap = 16f;
             float cardsHeight = workers.Count > 0 ? CardHeight + gap : 0f;
@@ -102,7 +98,6 @@ namespace KayipAda.EditorTools
             UpgradePanel panel = root.AddComponent<UpgradePanel>();
             BuilderUtil.SetField(panel, "config", config);
             BuilderUtil.SetField(panel, "sheet", sheet.rectTransform);
-            BuilderUtil.SetField(panel, "dimmer", dimmer.gameObject);
             BuilderUtil.SetField(panel, "closeButton", close);
             BuilderUtil.SetArray(panel, "rows", rows.ToArray());
             BuilderUtil.SetArray(panel, "cards", cards.ToArray());
@@ -550,6 +545,14 @@ namespace KayipAda.EditorTools
             return panel;
         }
     
+        // Panelin sağ üst köşesine kırmızı X (paneli kapatır).
+        private static Button AddCloseButton(Transform sheet)
+        {
+            Button close = CreateButton("Close", sheet, "X", Vector2.zero, new Vector2(90f, 90f), new Color(0.85f, 0.3f, 0.3f), 50f);
+            Anchor((RectTransform)close.transform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-20f, -20f), new Vector2(90f, 90f));
+            return close;
+        }
+
         // ---------------------------------------------------------------- Bina yükseltme paneli (Yükselt tabelası)
 
         // Alttan kayan, yürümeyi engellemeyen küçük panel: bina adı, seviye noktaları, hız/kapasite artışı, Yükselt butonu.
@@ -568,12 +571,12 @@ namespace KayipAda.EditorTools
             Anchor(title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 1f), new Vector2(40f, -24f), new Vector2(-80f, 80f));
             TextMeshProUGUI level = UiFactory.CreateUIText("Level", sheet.transform, "Seviye 1/3", 40f, UiFactory.Cream);
             level.alignment = TextAlignmentOptions.MidlineRight;
-            Anchor(level.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-40f, -30f), new Vector2(300f, 60f));
+            Anchor(level.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-130f, -30f), new Vector2(300f, 60f));
             List<Image> dots = new List<Image>();
             for (int i = 0; i < 3; i++)
             {
                 Image dot = UiFactory.CreateImage("Dot " + i, sheet.transform, ArtGenerator.LoadSprite(ArtGenerator.CirclePath), Color.white);
-                Anchor(dot.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(-230f + i * 52f, -112f), new Vector2(40f, 40f));
+                Anchor(dot.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(-320f + i * 52f, -112f), new Vector2(40f, 40f));
                 dots.Add(dot);
             }
             TextMeshProUGUI speed = UiFactory.CreateUIText("Speed", sheet.transform, "Hız ×1.00 → ×1.35", 46f, Color.white);
@@ -594,6 +597,7 @@ namespace KayipAda.EditorTools
             Anchor(coin.rectTransform, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-28f, 0f), new Vector2(64f, 64f));
 
             BuildingUpgradePanel panel = root.AddComponent<BuildingUpgradePanel>();
+            BuilderUtil.SetField(panel, "closeButton", AddCloseButton(sheet.transform));
             BuilderUtil.SetField(panel, "config", config);
             BuilderUtil.SetField(panel, "sheet", sheet.rectTransform);
             BuilderUtil.SetField(panel, "title", title);
@@ -648,6 +652,7 @@ namespace KayipAda.EditorTools
             TextMeshProUGUI takeText = take.GetComponentInChildren<TextMeshProUGUI>();
 
             StoragePanel panel = root.AddComponent<StoragePanel>();
+            BuilderUtil.SetField(panel, "closeButton", AddCloseButton(sheet.transform));
             BuilderUtil.SetField(panel, "config", config);
             BuilderUtil.SetField(panel, "sheet", sheet.rectTransform);
             BuilderUtil.SetField(panel, "title", title);
@@ -697,6 +702,7 @@ namespace KayipAda.EditorTools
             done.textWrappingMode = TextWrappingModes.Normal;
             Anchor(done.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 1f), new Vector2(60f, -385f), new Vector2(-100f, 360f));
             QuestBoardPanel panel = root.AddComponent<QuestBoardPanel>();
+            BuilderUtil.SetField(panel, "closeButton", AddCloseButton(sheet.transform));
             BuilderUtil.SetField(panel, "sheet", sheet.rectTransform);
             BuilderUtil.SetField(panel, "title", title);
             BuilderUtil.SetField(panel, "activeText", active);

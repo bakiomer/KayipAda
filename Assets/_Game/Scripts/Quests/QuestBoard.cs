@@ -1,20 +1,20 @@
 // QuestBoard.cs
-// Kamptaki ahşap görev panosu (üstünde kâğıtlar): oyuncu önündeki alana girince görev panosu paneli açılır.
+// Kamptaki ahşap görev panosu (üstünde kâğıtlar): oyuncu önündeki alanda durunca (PanelZone) görev panosu paneli açılır.
 
 using UnityEngine;
 
 namespace KayipAda
 {
-    public class QuestBoard : InteractionZone
+    public class QuestBoard : PanelZone
     {
-        protected override void OnVisitorEnter(CarryStack visitor)
+        protected override void OpenPanel(CarryStack visitor)
         {
-            if (visitor.IsPlayer && QuestBoardPanel.Instance != null) QuestBoardPanel.Instance.Open(transform);
+            if (QuestBoardPanel.Instance != null) QuestBoardPanel.Instance.Open(transform);
         }
 
-        protected override void OnVisitorExit(CarryStack visitor)
+        protected override void ClosePanel()
         {
-            if (visitor.IsPlayer && QuestBoardPanel.Instance != null) QuestBoardPanel.Instance.Close(transform);
+            if (QuestBoardPanel.Instance != null) QuestBoardPanel.Instance.Close(transform);
         }
     }
 }

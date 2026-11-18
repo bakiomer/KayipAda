@@ -38,17 +38,19 @@ namespace KayipAda.Tests
         }
 
         [UnityTest]
-        public IEnumerator UpgradeStation_OpensPanelAndBlocksMovement()
+        public IEnumerator UpgradeStation_OpensPanelWithoutBlockingMovement()
         {
             UpgradeStation station = Find<UpgradeStation>("UpgradeStation"); // (Tayfa Barakası da bir UpgradeStation)
             Assert.IsNotNull(station, "Geliştirme tezgahı yok");
+            UpgradePanel panel = Find<UpgradePanel>("UpgradePanel");
             Teleport(station.transform.position);
-            yield return WaitFor(() => PlayerController.InputBlocked, 3f);
-            Assert.IsTrue(PlayerController.InputBlocked, "Panel açılınca oyuncu durmadı");
+            yield return WaitFor(() => panel.IsOpen, 3f);
+            Assert.IsTrue(panel.IsOpen, "Durunca panel açılmadı");
+            Assert.IsFalse(PlayerController.InputBlocked, "Panel yürümeyi engellememeli");
             yield return new WaitForSeconds(0.5f);
             Shot("B_gelistirme_paneli");
-            Find<UpgradePanel>("UpgradePanel").Close();
-            Assert.IsFalse(PlayerController.InputBlocked);
+            panel.Close(null);
+            Assert.IsFalse(panel.IsOpen);
         }
 
         [UnityTest]

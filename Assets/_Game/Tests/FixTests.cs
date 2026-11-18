@@ -125,9 +125,10 @@ namespace KayipAda.Tests
             UpgradeStation barracks = Find<UpgradeStation>("CrewBarracks");
             Assert.IsNotNull(barracks, "Tayfa Barakası yok");
             Teleport(barracks.transform.position);
-            yield return new WaitForSeconds(0.8f);
             UpgradePanel panel = Find<UpgradePanel>("CrewPanel");
+            yield return WaitFor(() => panel.IsOpen, 2.5f);
             Assert.IsTrue(panel.IsOpen, "Baraka paneli açılmadı");
+            yield return new WaitForSeconds(0.4f);
             Shot("A_tayfa_barakasi_panel");
             CrewCard card = null;
             foreach (CrewCard c in panel.GetComponentsInChildren<CrewCard>(true)) if (c.Type == lumberjack) card = c;
@@ -136,7 +137,7 @@ namespace KayipAda.Tests
             panel.Hire(card);
             Assert.AreEqual(1, crew.GetHired(lumberjack), "Oduncu tutulmadı");
             Assert.AreEqual(coins - price, CurrencyManager.Instance.Coins, "Fiyat düşülmedi");
-            panel.Close();
+            panel.Close(null);
 
             Transform door = barracks.transform.Find("Door");
             yield return WaitFor(() => Object.FindObjectsByType<LumberjackWorker>(FindObjectsSortMode.None).Length > 0, 3f);

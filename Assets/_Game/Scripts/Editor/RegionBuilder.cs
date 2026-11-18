@@ -365,6 +365,7 @@ namespace KayipAda.EditorTools
             BuilderUtil.SetField(sign, "config", config);
             BuilderUtil.SetField(sign, "building", pb);
             BuilderUtil.SetField(sign, "label", label);
+            PrefabFactory.AddPanelHint(sign, new Vector3(0f, 0f, -0.75f), 1.5f, ArtGenerator.CoinIconPath, new Color(0.6f, 1f, 0.5f), 1.9f);
             return sign;
         }
 
@@ -483,6 +484,7 @@ namespace KayipAda.EditorTools
 
             StorageDropZone drop = CreateStorageZone<StorageDropZone>(content.transform, "DropZone", new Vector3(-1.45f, 0f, -0.75f), new Color(0.45f, 0.85f, 1f), true, "Bırak");
             StoragePickZone pick = CreateStorageZone<StoragePickZone>(content.transform, "PickZone", new Vector3(1.45f, 0f, -0.75f), new Color(1f, 0.82f, 0.25f), false, "Al");
+            PrefabFactory.AddPanelHint(pick, Vector3.zero, 2.2f, ArtGenerator.StarPath, new Color(1f, 0.82f, 0.25f), 2.4f);
             Transform doorPoint = new GameObject("Door").transform;
             doorPoint.SetParent(content.transform, false);
             doorPoint.localPosition = new Vector3(0f, 1.0f, 0.5f);
@@ -721,6 +723,7 @@ namespace KayipAda.EditorTools
             trigger.center = new Vector3(0f, 0.6f, 0f);
             QuestBoard qb = root.AddComponent<QuestBoard>();
             BuilderUtil.SetField(qb, "config", config);
+            PrefabFactory.AddPanelHint(qb, Vector3.zero, 1.8f, ArtGenerator.StarPath, new Color(1f, 0.85f, 0.4f), 2.0f);
             return qb;
         }
 

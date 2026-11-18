@@ -1,7 +1,7 @@
 // UpgradePanel.cs
 // Alttan kayarak açılan panel: kamptaki geliştirme tezgahında oyuncu geliştirmeleri, Tayfa Barakası'nda işçi kartları
-// (tut) + işçi geliştirmeleri. Açıkken oyuncu yürümez (PlayerController.InputBlocked).
-// Panelin dışına (karartılmış alana) ya da X tuşuna dokununca kapanır. Satın alınca satır zıplar,
+// (tut) + işçi geliştirmeleri. Yürümeyi engellemez: oyuncu hareket edince (PanelZone) kapanır.
+// X butonu ya da geri tuşu da kapatır. Satın alma sadece butonla; satın alınca satır zıplar,
 // tezgahta parlama efekti ve ses çıkar.
 
 using UnityEngine;
@@ -14,8 +14,6 @@ namespace KayipAda
         [SerializeField] private GameConfig config;
         [Tooltip("Alttan kayan panel gövdesi.")]
         [SerializeField] private RectTransform sheet;
-        [Tooltip("Panelin arkasındaki karartma (dokununca kapatır).")]
-        [SerializeField] private GameObject dimmer;
         [SerializeField] private Button closeButton;
         [SerializeField] private UpgradeRow[] rows = new UpgradeRow[0];
         [Tooltip("Tayfa Barakası: işçi kartları (boş olabilir).")]
@@ -33,8 +31,7 @@ namespace KayipAda
             hiddenY = shownY - sheet.rect.height - 60f;
             foreach (UpgradeRow row in rows) row.Init(this);
             foreach (CrewCard card in cards) card.Init(this);
-            if (closeButton != null) closeButton.onClick.AddListener(Close);
-            if (dimmer != null && dimmer.TryGetComponent(out Button dimButton)) dimButton.onClick.AddListener(Close);
+            if (closeButton != null) closeButton.onClick.AddListener(() => Close(null));
             SetVisible(false);
             sheet.anchoredPosition = new Vector2(sheet.anchoredPosition.x, hiddenY);
         }
@@ -47,7 +44,13 @@ namespace KayipAda
         private void OnDestroy()
         {
             if (CurrencyManager.Instance != null) CurrencyManager.Instance.CoinsChanged -= OnCoinsChanged;
-            PlayerController.InputBlocked = false;
+        }
+
+        // Tezgah gizlenirse, tören/Test Menüsü açılırsa ya da geri tuşuna basılırsa kapanır.
+        private void Update()
+        {
+            if (!IsOpen) return;
+            if (station == null || !station.isActiveAndEnabled || PlayerController.InputBlocked || PanelZone.BackPressed()) Close(null);
         }
 
         private void OnCoinsChanged(int coins)
@@ -60,18 +63,16 @@ namespace KayipAda
             if (IsOpen) return;
             station = from;
             IsOpen = true;
-            PlayerController.InputBlocked = true;
             SetVisible(true);
             RefreshAll();
             AudioManager.Play(SoundId.Button);
             Slide(hiddenY, shownY);
         }
 
-        public void Close()
+        public void Close(UpgradeStation from)
         {
-            if (!IsOpen) return;
+            if (!IsOpen || (from != null && from != station)) return;
             IsOpen = false;
-            PlayerController.InputBlocked = false;
             Slide(sheet.anchoredPosition.y, hiddenY, () => { if (!IsOpen) SetVisible(false); });
         }
 
@@ -119,7 +120,6 @@ namespace KayipAda
         private void SetVisible(bool visible)
         {
             sheet.gameObject.SetActive(visible);
-            if (dimmer != null) dimmer.SetActive(visible);
         }
 
         private void Slide(float from, float to, System.Action done = null)

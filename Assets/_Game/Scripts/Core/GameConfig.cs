@@ -75,6 +75,10 @@ namespace KayipAda
 
         [field: SerializeField, Min(0f)] public float CameraFollowSpeed { get; private set; } = 6f;
 
+        [field: Header("Paneller (Barak, Tezgah, Ambar, Görev Panosu, Yükselt)")]
+        [field: SerializeField, Tooltip("Oyuncu alanda bu kadar sn durunca (joystick bırakılmış) panel açılır.")]
+        public float PanelOpenDelay { get; private set; } = 0.5f;
+
         [field: Header("Joystick")]
         [field: Tooltip("Joystick topunun merkezden en fazla uzaklaşabileceği mesafe (UI birimi).")]
         [field: SerializeField, Min(1f)] public float JoystickRange { get; private set; } = 110f;

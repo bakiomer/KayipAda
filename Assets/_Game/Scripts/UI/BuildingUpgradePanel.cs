@@ -1,6 +1,6 @@
 // BuildingUpgradePanel.cs
-// Bina yükseltme paneli: oyuncu binanın yanındaki "Yükselt" tabelasına gelince alttan kayarak açılır, uzaklaşınca
-// kapanır. Oyuncunun yürümesini engellemez. Gösterilenler: bina adı, seviye (●●○), sonraki seviyenin hız ve kapasite
+// Bina yükseltme paneli: oyuncu binanın yanındaki "Yükselt" tabelasına gelince alttan kayarak açılır, hareket edince ya
+// da uzaklaşınca kapanır (X / geri tuşu da kapatır). Oyuncunun yürümesini engellemez. Gösterilenler: bina adı, seviye (●●○), sonraki seviyenin hız ve kapasite
 // artışı, fiyat ve "Yükselt" butonu (para yetmezse soluk; en son seviyede "MAKS SEVİYE").
 
 using TMPro;
@@ -15,6 +15,8 @@ namespace KayipAda
 
         [SerializeField] private GameConfig config;
         [SerializeField] private RectTransform sheet;
+        [Tooltip("Sağ üstteki X butonu.")]
+        [SerializeField] private Button closeButton;
         [SerializeField] private TMP_Text title;
         [SerializeField] private TMP_Text levelText;
         [SerializeField] private Image[] levelDots = new Image[0];
@@ -42,6 +44,7 @@ namespace KayipAda
             buyButton.onClick.AddListener(Buy);
             sheet.anchoredPosition = new Vector2(sheet.anchoredPosition.x, hiddenY);
             sheet.gameObject.SetActive(false);
+            if (closeButton != null) closeButton.onClick.AddListener(() => Close(null));
         }
 
         private void Start()
@@ -63,7 +66,7 @@ namespace KayipAda
         // Tabela gizlenirse (bina kapandı, tören) panel de kapansın.
         private void Update()
         {
-            if (IsOpen && (sign == null || !sign.isActiveAndEnabled || PlayerController.InputBlocked)) Close(sign);
+            if (IsOpen && (sign == null || !sign.isActiveAndEnabled || PlayerController.InputBlocked || PanelZone.BackPressed())) Close(null);
         }
 
         public void Open(BuildingUpgradeSign from)

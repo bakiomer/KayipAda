@@ -482,6 +482,7 @@ namespace KayipAda.EditorTools
             UpgradeStation station = root.AddComponent<UpgradeStation>();
             BuilderUtil.SetField(station, "config", config);
             BuilderUtil.SetField(station, "effectPoint", fx);
+            AddPanelHint(station, Vector3.zero, 2.6f, ArtGenerator.CoinIconPath, new Color(0.45f, 0.85f, 1f));
             return Save(root, Folder + "/World/UpgradeStation.prefab");
         }
 
@@ -1361,6 +1362,38 @@ namespace KayipAda.EditorTools
             BuilderUtil.SetBool(ring, "hideWhenEmpty", true);
             BuilderUtil.SetField(ring, "visualRoot", visual);
             return ring;
+        }
+
+        // Panel alanı ipucu (PanelZone): oyuncu içerideyken görünen parlak yer dairesi + durma süresiyle dolan halka +
+        // üstte süzülen küçük ikon. Alanın "hint" ve "dwellRing" alanlarına bağlanır.
+        public static void AddPanelHint(PanelZone zone, Vector3 localPos, float diameter, string iconPath, Color color, float iconHeight = 2.2f)
+        {
+            GameObject hint = new GameObject("PanelHint");
+            hint.transform.SetParent(zone.transform, false);
+            hint.transform.localPosition = localPos;
+            float px = diameter * 100f;
+            Canvas canvas = UiFactory.CreateWorldCanvas("Ground", hint.transform, Vector3.up * 0.03f, Quaternion.Euler(90f, 0f, 0f), new Vector2(px, px));
+            Image glow = UiFactory.CreateImage("Glow", canvas.transform, ArtGenerator.LoadSprite(ArtGenerator.SoftCirclePath), new Color(color.r, color.g, color.b, 0.55f));
+            UiFactory.Size(glow, Vector2.zero, new Vector2(px * 1.1f, px * 1.1f));
+            Image back = UiFactory.CreateImage("RingBack", canvas.transform, ArtGenerator.LoadSprite(ArtGenerator.RingPath), new Color(1f, 1f, 1f, 0.35f));
+            UiFactory.Size(back, Vector2.zero, new Vector2(px, px));
+            Image fill = UiFactory.CreateImage("RingFill", canvas.transform, ArtGenerator.LoadSprite(ArtGenerator.RingPath), Color.white);
+            UiFactory.Size(fill, Vector2.zero, new Vector2(px, px));
+            MakeRadial(fill);
+            ProgressRing ring = canvas.gameObject.AddComponent<ProgressRing>();
+            BuilderUtil.SetField(ring, "fill", fill);
+
+            Canvas iconCanvas = UiFactory.CreateWorldCanvas("Icon", hint.transform, Vector3.up * iconHeight, Quaternion.identity, new Vector2(80f, 80f));
+            Image circle = UiFactory.CreateImage("Back", iconCanvas.transform, ArtGenerator.LoadSprite(ArtGenerator.CirclePath), new Color(0.1f, 0.13f, 0.19f, 0.85f));
+            UiFactory.Size(circle, Vector2.zero, new Vector2(80f, 80f));
+            Image icon = UiFactory.CreateImage("Image", iconCanvas.transform, ArtGenerator.LoadSprite(iconPath), Color.white);
+            icon.preserveAspect = true;
+            UiFactory.Size(icon, Vector2.zero, new Vector2(56f, 56f));
+            iconCanvas.gameObject.AddComponent<Billboard>();
+            hint.SetActive(false);
+
+            BuilderUtil.SetField(zone, "hint", hint);
+            BuilderUtil.SetField(zone, "dwellRing", ring);
         }
 
         private static void MakeRadial(Image image)

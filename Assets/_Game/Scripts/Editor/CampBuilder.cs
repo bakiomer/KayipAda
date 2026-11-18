@@ -76,6 +76,7 @@ namespace KayipAda.EditorTools
             UpgradeStation station = root.AddComponent<UpgradeStation>();
             BuilderUtil.SetField(station, "config", config);
             BuilderUtil.SetField(station, "effectPoint", fx);
+            PrefabFactory.AddPanelHint(station, Vector3.zero, 2.8f, ArtGenerator.StarPath, new Color(0.45f, 0.85f, 1f));
             return PrefabFactorySave(root, Folder + "/World/CrewBarracks.prefab");
         }
 

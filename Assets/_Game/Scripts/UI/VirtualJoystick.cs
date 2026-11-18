@@ -16,6 +16,7 @@ namespace KayipAda
         [SerializeField] private RectTransform handle;     // İçteki top
 
         public Vector2 Direction { get; private set; }
+        public bool IsPressed { get; private set; }
 
         private RectTransform area;
 
@@ -31,6 +32,7 @@ namespace KayipAda
             background.anchoredPosition = ScreenToLocal(eventData.position);
             handle.anchoredPosition = Vector2.zero;
             background.gameObject.SetActive(true);
+            IsPressed = true;
             OnDrag(eventData);
         }
 
@@ -48,6 +50,7 @@ namespace KayipAda
         public void OnPointerUp(PointerEventData eventData)
         {
             Direction = Vector2.zero;
+            IsPressed = false;
             background.gameObject.SetActive(false);
         }
 

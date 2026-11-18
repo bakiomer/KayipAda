@@ -1,12 +1,12 @@
 // UpgradeStation.cs
-// Kamptaki geliştirme tezgahı. Oyuncu üstüne gelince alttan geliştirme paneli açılır; çıkınca kapanır.
-// Panel kapatıldıktan sonra oyuncu alandan çıkıp tekrar girene kadar yeniden açılmaz.
+// Kamptaki geliştirme tezgahı / Tayfa Barakası. Oyuncu alanda durunca (PanelZone) alttan panel açılır;
+// hareket edince ya da çıkınca kapanır.
 
 using UnityEngine;
 
 namespace KayipAda
 {
-    public class UpgradeStation : InteractionZone
+    public class UpgradeStation : PanelZone
     {
         [SerializeField] private UpgradePanel panel;
         [Tooltip("Satın alınca parlayan nokta (tezgahın üstü).")]
@@ -14,14 +14,14 @@ namespace KayipAda
 
         public Transform EffectPoint => effectPoint != null ? effectPoint : transform;
 
-        protected override void OnVisitorEnter(CarryStack visitor)
+        protected override void OpenPanel(CarryStack visitor)
         {
-            if (visitor.IsPlayer && panel != null) panel.Open(this);
+            if (panel != null) panel.Open(this);
         }
 
-        protected override void OnVisitorExit(CarryStack visitor)
+        protected override void ClosePanel()
         {
-            if (visitor.IsPlayer && panel != null) panel.Close();
+            if (panel != null) panel.Close(this);
         }
     }
 }

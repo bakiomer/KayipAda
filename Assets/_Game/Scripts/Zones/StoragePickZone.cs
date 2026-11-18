@@ -1,25 +1,27 @@
 // StoragePickZone.cs
-// Ambarın alma alanı: oyuncu içinde durunca alttan Ambar paneli açılır (her kaynak ikon + miktar, seçilen kaynaktan
+// Ambarın alma alanı: oyuncu içinde durunca (PanelZone) alttan Ambar paneli açılır (her kaynak ikon + miktar, seçilen kaynaktan
 // "Al" ile kapasite kadar alınır); çıkınca kapanır. Taşıyıcı işçi bu alanı hedef alıp ambardan malzeme çeker.
 
 using UnityEngine;
 
 namespace KayipAda
 {
-    public class StoragePickZone : InteractionZone
+    public class StoragePickZone : PanelZone
     {
         [SerializeField] private Storage storage;
 
         public Storage Storage => storage;
 
-        protected override void OnVisitorEnter(CarryStack visitor)
+        protected override bool CanOpen => storage != null && storage.IsOpen;
+
+        protected override void OpenPanel(CarryStack visitor)
         {
-            if (visitor.IsPlayer && storage != null && storage.IsOpen && StoragePanel.Instance != null) StoragePanel.Instance.Open(this, visitor);
+            if (StoragePanel.Instance != null) StoragePanel.Instance.Open(this, visitor);
         }
 
-        protected override void OnVisitorExit(CarryStack visitor)
+        protected override void ClosePanel()
         {
-            if (visitor.IsPlayer && StoragePanel.Instance != null) StoragePanel.Instance.Close(this);
+            if (StoragePanel.Instance != null) StoragePanel.Instance.Close(this);
         }
 
         // İşçi (ya da panel) bir parça ister: ambardan çıkıp sırta uçar. Sırt doluysa / ambarda yoksa false.

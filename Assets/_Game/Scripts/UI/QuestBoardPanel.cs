@@ -1,9 +1,11 @@
 // QuestBoardPanel.cs
-// Kamptaki ahşap görev panosu: oyuncu panoya yaklaşınca alttan panel açılır (yürümeyi engellemez), uzaklaşınca kapanır.
+// Kamptaki ahşap görev panosu: oyuncu panonun önünde durunca alttan panel açılır (yürümeyi engellemez),
+// hareket edince / uzaklaşınca / X / geri tuşuyla kapanır.
 // Üstte aktif yan görevler (başlık + "12/20"), altta tamamlananlar (✓ başlık, soluk). Ekrandaki görev kartları da kalır.
 
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace KayipAda
 {
@@ -12,6 +14,8 @@ namespace KayipAda
         public static QuestBoardPanel Instance { get; private set; }
 
         [SerializeField] private RectTransform sheet;
+        [Tooltip("Sağ üstteki X butonu.")]
+        [SerializeField] private Button closeButton;
         [SerializeField] private TMP_Text activeText;
         [SerializeField] private TMP_Text doneText;
         [SerializeField] private TMP_Text title;
@@ -30,6 +34,7 @@ namespace KayipAda
             hiddenY = shownY - sheet.rect.height - 80f;
             sheet.anchoredPosition = new Vector2(sheet.anchoredPosition.x, hiddenY);
             sheet.gameObject.SetActive(false);
+            if (closeButton != null) closeButton.onClick.AddListener(() => Close(null));
         }
 
         private void OnDestroy()
@@ -57,7 +62,7 @@ namespace KayipAda
 
         private void Update()
         {
-            if (IsOpen && PlayerController.InputBlocked) Close(board);
+            if (IsOpen && (PlayerController.InputBlocked || PanelZone.BackPressed())) Close(null);
         }
 
         public void Refresh()

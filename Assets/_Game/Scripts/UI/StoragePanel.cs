@@ -24,6 +24,8 @@ namespace KayipAda
 
         [SerializeField] private GameConfig config;
         [SerializeField] private RectTransform sheet;
+        [Tooltip("Sağ üstteki X butonu.")]
+        [SerializeField] private Button closeButton;
         [SerializeField] private TMP_Text title;
         [SerializeField] private Slot[] slots = new Slot[0];
         [SerializeField] private Button takeButton;
@@ -54,6 +56,7 @@ namespace KayipAda
             takeButton.onClick.AddListener(Take);
             sheet.anchoredPosition = new Vector2(sheet.anchoredPosition.x, hiddenY);
             sheet.gameObject.SetActive(false);
+            if (closeButton != null) closeButton.onClick.AddListener(() => Close(null));
         }
 
         private void OnDestroy()
@@ -89,7 +92,7 @@ namespace KayipAda
         private void Update()
         {
             if (!IsOpen) return;
-            if (zone == null || !zone.isActiveAndEnabled || PlayerController.InputBlocked) { Close(zone); return; }
+            if (zone == null || !zone.isActiveAndEnabled || PlayerController.InputBlocked || PanelZone.BackPressed()) { Close(null); return; }
             // "Al": seçilen kaynaktan sırt dolana / ambarda bitene kadar tek tek uçar.
             if (!taking) return;
             if (takeTimer > 0f) { takeTimer -= Time.deltaTime; return; }

@@ -19,8 +19,12 @@ namespace KayipAda
         [Tooltip("Kıyıdan ne kadar içeride kalır (metre). Harita yerleşimine aittir.")]
         [SerializeField] private float coastMargin = 0.4f;
 
-        // Açık bir panel (geliştirmeler, kaçış ekranı) varken oyuncu yürümez.
+        // Test Menüsü, tören ya da kaçış ekranı açıkken oyuncu yürümez (alttan açılan paneller yürümeyi engellemez).
         public static bool InputBlocked { get; set; }
+
+        // Oyuncu şu an hareket etmek istiyor mu (joystick sürükleniyor / tuş basılı)? Panel alanları buna bakar:
+        // hareket başlayınca panel kapanır, durunca açılır.
+        public static bool MoveInputActive { get; private set; }
 
         // Testler ve sinematikler için: joystick yerine bu yön kullanılır (sıfırsa joystick).
         public Vector2 ScriptedInput { get; set; }
@@ -44,7 +48,8 @@ namespace KayipAda
 
             Vector2 input = ScriptedInput != Vector2.zero ? ScriptedInput : joystick != null ? joystick.Direction : Vector2.zero;
             if (input == Vector2.zero) input = ReadKeyboard();
-            if (InputBlocked) input = Vector2.zero; // geliştirme paneli açıkken yürümez
+            MoveInputActive = input.sqrMagnitude > 0.0001f;
+            if (InputBlocked) input = Vector2.zero; // Test Menüsü / tören / kaçış ekranı açıkken yürümez
 
             // Joystick yukarısı = kameranın baktığı yön.
             Quaternion yaw = Quaternion.Euler(0f, config.CameraYaw, 0f);

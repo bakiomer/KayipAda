@@ -1,5 +1,5 @@
 // BuildingUpgradeSign.cs
-// Binanın yan tarafındaki küçük ahşap "Yükselt" tabelası. Oyuncu yanına gelince alttan bina yükseltme paneli açılır
+// Binanın yan tarafındaki küçük ahşap "Yükselt" tabelası. Oyuncu yanında durunca (PanelZone) alttan bina yükseltme paneli açılır
 // (mevcut seviye, sonraki seviyenin hız/kapasite artışı, fiyat, "Yükselt" butonu); uzaklaşınca kapanır.
 // Tabela binayla birlikte görünür (bina kapalıyken gizli). En son seviyede tabelada "MAKS" yazar. Ambar'da da aynı
 // tabela kapasiteyi yükseltir.
@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace KayipAda
 {
-    public class BuildingUpgradeSign : InteractionZone
+    public class BuildingUpgradeSign : PanelZone
     {
         [SerializeField] private ProcessingBuilding building;
         [Tooltip("Bina yerine Ambar (kapasite yükseltmesi).")]
@@ -89,14 +89,14 @@ namespace KayipAda
             if (label != null) label.text = NextLevelArea == null ? "MAKS" : "Yükselt";
         }
 
-        protected override void OnVisitorEnter(CarryStack visitor)
+        protected override void OpenPanel(CarryStack visitor)
         {
-            if (visitor.IsPlayer && BuildingUpgradePanel.Instance != null) BuildingUpgradePanel.Instance.Open(this);
+            if (BuildingUpgradePanel.Instance != null) BuildingUpgradePanel.Instance.Open(this);
         }
 
-        protected override void OnVisitorExit(CarryStack visitor)
+        protected override void ClosePanel()
         {
-            if (visitor.IsPlayer && BuildingUpgradePanel.Instance != null) BuildingUpgradePanel.Instance.Close(this);
+            if (BuildingUpgradePanel.Instance != null) BuildingUpgradePanel.Instance.Close(this);
         }
 
         // Satın al: para yeterse sonraki seviye açılır (bina büyür, hızlanır).
