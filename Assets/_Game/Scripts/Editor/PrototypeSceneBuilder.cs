@@ -654,13 +654,20 @@ namespace KayipAda.EditorTools
                                                          fiberDust, FindDecor("Bucket"), new Vector3(-2.3f, 0f, 1.4f), MachineBuilder.Kind.RopeWheel);
             p.Loom = PrefabFactory.BuildBuilding(ModelCatalog.Loom, Data<BuildingType>(BuildingTypesFolder, "Loom"), config,
                                                  fiberDust, FindDecor("Crate"), new Vector3(-2.3f, 0f, 1.4f), MachineBuilder.Kind.Loom);
-            p.Market = CampBuilder.BuildMarket(config);
             p.UnlockPad = PrefabFactory.BuildUnlockPad(config);
             p.Camp = PrefabFactory.BuildCamp();
 
             foreach (ModelSpec spec in ModelCatalog.Decor) p.Decor[spec.Key] = PrefabFactory.BuildDecor(spec);
             foreach (ModelSpec spec in new[] { ModelCatalog.Fence, ModelCatalog.Sign, ModelCatalog.ShipFlag, ModelCatalog.Dock, ModelCatalog.DockPole, ModelCatalog.ShipWreck })
                 p.Decor[spec.Key] = PrefabFactory.BuildDecor(spec);
+            p.Market = CampBuilder.BuildMarket(config, new[]
+            {
+                Data<ResourceType>(ResourceTypesFolder, "Wood"), Data<ResourceType>(ResourceTypesFolder, "Plank"),
+                Data<ResourceType>(ResourceTypesFolder, "Rope"), Data<ResourceType>(ResourceTypesFolder, "Cloth"),
+                Data<ResourceType>(ResourceTypesFolder, "Fruit"), Data<ResourceType>(ResourceTypesFolder, "Fiber"),
+                Data<ResourceType>(ResourceTypesFolder, "Stone"), Data<ResourceType>(ResourceTypesFolder, "Brick"),
+                Data<ResourceType>(ResourceTypesFolder, "Scrap"), Data<ResourceType>(ResourceTypesFolder, "Nail")
+            }, p.Decor[ModelCatalog.ShipFlag.Key]);
 
             p.UpgradeStation = PrefabFactory.BuildUpgradeStation(config);
             p.Barracks = CampBuilder.BuildBarracks(config, p.Decor[ModelCatalog.ShipFlag.Key]);
@@ -821,7 +828,7 @@ namespace KayipAda.EditorTools
                 Reserve(reserved, MapLayout.Palms[i], 2.2f);
             }
             Market market = Place(p.Market, beach, MapLayout.Market, 0f).GetComponent<Market>();
-            Reserve(reserved, MapLayout.Market + new Vector3(0f, 0f, 1f), 3.6f);
+            Reserve(reserved, MapLayout.Market + new Vector3(0f, 0f, 1.8f), 6.2f);
 
             GameObject sawmill = PlaceBuilding("Sawmill", beach, MapLayout.Sawmill, p.Sawmill, sawmillArea, config);
             RegionBuilder.AddUpgradeSign(sawmill, config, MapLayout.UpgradeSignOffset);
@@ -917,7 +924,7 @@ namespace KayipAda.EditorTools
             RegionBuilder.BuildCamp(MapLayout.Camp, MapLayout.CampShelter, config, p.Decor, p.Decor[ModelCatalog.ShipFlag.Key], null);
             Reserve(reserved, MapLayout.Camp, 2.6f);
             Reserve(reserved, MapLayout.CampShelter + new Vector3(0f, 0f, 0.3f), 2.4f);
-            RegionBuilder.BuildQuestBoard(MapLayout.QuestBoard, 200f, config);
+            RegionBuilder.BuildQuestBoard(MapLayout.QuestBoard, MapLayout.QuestBoardYaw, config);
             Reserve(reserved, MapLayout.QuestBoard, 1.8f);
             UiBuilder.CreateQuestBoardPanel();
             List<Object> benchTypes = new List<Object>(), crewUpgradeTypes = new List<Object>();
@@ -2210,9 +2217,6 @@ namespace KayipAda.EditorTools
             List<Vector3> placed = new List<Vector3>(reserved);
 
             // Pazar ve bıçkıhane çevresinde liman eşyaları
-            PlaceNear(p, root, "Barrel", MapLayout.Market + new Vector3(-2.6f, 0f, 1.6f), placed);
-            PlaceNear(p, root, "Crate", MapLayout.Market + new Vector3(-2.9f, 0f, 0.4f), placed);
-            PlaceNear(p, root, "CrateBottles", MapLayout.Market + new Vector3(2.9f, 0f, 2.6f), placed);
             PlaceNear(p, root, "Crate", MapLayout.Sawmill + new Vector3(3.1f, 0f, 1.8f), placed);
 
             // Kumsal (kıyı şeridi): çakıllar, taşlar, kemikler, süs palmiyeleri

@@ -75,6 +75,22 @@ namespace KayipAda
 
         [field: SerializeField, Min(0f)] public float CameraFollowSpeed { get; private set; } = 6f;
 
+        [field: Header("Pazar")]
+        [field: SerializeField, Tooltip("Satışta kasa kapağının açılma açısı (derece).")]
+        public float MarketLidAngle { get; private set; } = 75f;
+        [field: SerializeField, Tooltip("Kasa kapağının açılıp kapanma hızı (derece/sn).")]
+        public float MarketLidSpeed { get; private set; } = 520f;
+        [field: SerializeField, Tooltip("Son satıştan sonra kapak bu kadar sn açık kalır.")]
+        public float MarketLidOpenTime { get; private set; } = 0.35f;
+        [field: SerializeField, Tooltip("Satılan türün tezgah yığını ne kadar büyür (0.3 = %30).")]
+        public float MarketPileGrow { get; private set; } = 0.3f;
+        [field: SerializeField, Tooltip("Yığının büyüyüp eski boyuna dönme süresi (sn).")]
+        public float MarketPileGrowTime { get; private set; } = 0.7f;
+        [field: SerializeField, Tooltip("Satıcı bu kadar sn el sallar.")]
+        public float MerchantWaveTime { get; private set; } = 3f;
+        [field: SerializeField, Tooltip("Satıcı bu kadar sn ürün düzenler.")]
+        public float MerchantArrangeTime { get; private set; } = 2.4f;
+
         [field: Header("Paneller (Barak, Tezgah, Ambar, Görev Panosu, Yükselt)")]
         [field: SerializeField, Tooltip("Oyuncu alanda bu kadar sn durunca (joystick bırakılmış) panel açılır.")]
         public float PanelOpenDelay { get; private set; } = 0.5f;

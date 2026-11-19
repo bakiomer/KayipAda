@@ -29,18 +29,21 @@ namespace KayipAda.EditorTools
         public static readonly Vector3 PlayerStart = new Vector3(0f, 0f, -6.2f);
 
         // Başlangıç sahili
-        public static readonly Vector3[] Palms = { new Vector3(-3.9f, 0f, 3.4f), new Vector3(3.6f, 0f, 1.8f), new Vector3(-7.8f, 0f, -7.6f) };
-        public static readonly Vector3 Market = new Vector3(-5f, 0f, -11.5f);
+        public static readonly Vector3[] Palms = { new Vector3(-3.9f, 0f, 3.4f), new Vector3(3.6f, 0f, 1.8f), new Vector3(-12.3f, 0f, -9.4f) };
+        // Liman Pazarı: kampın batısındaki açık hava çarşısı (kök = satış alanı; tezgahlar kuzeyinde, kameraya dönük).
+        public static readonly Vector3 Market = new Vector3(-8.8f, 0f, -6.2f);
+        public const float MarketZoneRadius = 1.9f;
         public static readonly Vector3 Sawmill = new Vector3(5f, 0f, -12f);
         // Kamp (adanın merkezi): ateş, büyüyen barınak (çadır → kulübe → ev), görev panosu; oyuncu burada başlar.
         public static readonly Vector3 Camp = new Vector3(0f, 0f, -2.9f);          // kamp ateşi
         public static readonly Vector3 CampShelter = new Vector3(0f, 0f, 0.9f);    // barınak (ateşin kuzeyinde)
-        public static readonly Vector3 QuestBoard = new Vector3(-2.6f, 0f, -5.1f); // görev panosu (önündeki alan)
+        public static readonly Vector3 QuestBoard = new Vector3(-3.4f, 0f, -0.4f); // görev panosu (önündeki alan; ateşin kuzeybatısı)
+        public const float QuestBoardYaw = -30f;                                     // pano alanın kuzeybatısında, ateşe dönük
 
-        // Tayfa Barakası: kampın kuzeyinde. Kök = oyuncunun girdiği alan; ev bunun BarracksDepth kadar arkasında.
-        public static readonly Vector3 Barracks = new Vector3(-4.6f, 0f, -2.3f);
+        // Tayfa Barakası: kampın güneybatısında. Kök = oyuncunun girdiği alan; ev bunun BarracksDepth kadar arkasında.
+        public static readonly Vector3 Barracks = new Vector3(-3.4f, 0f, -8.6f);
         public const float BarracksDepth = 2.6f;
-        public const float BarracksYaw = -110f;                // baraka kapısı kamp ateşine dönük (ev batıda)
+        public const float BarracksYaw = 180f;                 // ev güneyde, kapısı kampa (kuzeye) dönük
         public const float BarracksHouseYaw = 0f;              // ev modelinin kapısı alana baksın diye dönüş
         public static readonly Vector2 BarracksObstacle = new Vector2(4.7f, 1.8f);
 
@@ -69,7 +72,7 @@ namespace KayipAda.EditorTools
         public static readonly Vector3 Loom = new Vector3(13.0f, 0f, -7.9f);
 
         // Kampın yanındaki geliştirme tezgahı
-        public static readonly Vector3 UpgradeStation = new Vector3(3.0f, 0f, -4.7f);
+        public static readonly Vector3 UpgradeStation = new Vector3(4.3f, 0f, -5.0f); // ateşin güneydoğusu (ateş çevresi açık kalsın)
 
         // Tersane: gemi iskelenin doğusunda kumsalda, kızağın üstünde; pruvası denize bakar.
         public const float ShipX = 6.5f;
@@ -192,7 +195,7 @@ namespace KayipAda.EditorTools
         public static readonly Vector2[][] Paths =
         {
             new[] { new Vector2(0f, -15f), new Vector2(0f, 24f) },                                   // ana yol: sahil → iskele
-            new[] { new Vector2(0f, -9f), new Vector2(-5f, -10f) },                                  // pazar
+            new[] { new Vector2(0f, -5.4f), new Vector2(-4.8f, -6.4f), new Vector2(-8.8f, -6.2f) }, // pazar (kampın batısı)
             new[] { new Vector2(0f, -9f), new Vector2(5f, -10.5f) },                                 // bıçkıhane
             new[] { new Vector2(0f, 4.4f), new Vector2(-6.5f, 4.4f), new Vector2(-6.5f, 10.5f) },    // kayalık
             new[] { new Vector2(0f, 4.4f), new Vector2(5.25f, 4.4f), new Vector2(5.25f, 10.5f) },    // meyve bahçesi

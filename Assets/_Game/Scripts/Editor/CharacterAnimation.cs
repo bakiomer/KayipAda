@@ -204,6 +204,26 @@ namespace KayipAda.EditorTools
             return controller;
         }
 
+        // Birden çok klip (durum adı = klip adı); ilk klip varsayılan. Pazar satıcısı: el sallama, düzenleme, bekleme.
+        public static RuntimeAnimatorController GetClipSet(string fbxPath, string[] clipNames, string key)
+        {
+            BuilderUtil.EnsureFolder(Folder);
+            string path = Folder + "/" + key + ".controller";
+            AnimatorController existing = BuilderUtil.Load<AnimatorController>(path);
+            if (existing != null) return existing;
+            AnimatorController controller = AnimatorController.CreateAnimatorControllerAtPath(path);
+            foreach (string name in clipNames)
+            {
+                AnimationClip clip = FindClip(fbxPath, name);
+                if (clip == null) continue;
+                AnimatorState state = controller.layers[0].stateMachine.AddState(name);
+                state.motion = clip;
+                if (controller.layers[0].stateMachine.defaultState == null) controller.layers[0].stateMachine.defaultState = state;
+            }
+            EditorUtility.SetDirty(controller);
+            return controller;
+        }
+
         // Tek klip çalan denetleyici (köpek balığı yüzme, dokunaç bekleme).
         public static RuntimeAnimatorController GetSingleClip(string fbxPath, string clipName, string key)
         {
