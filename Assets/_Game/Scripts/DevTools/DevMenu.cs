@@ -31,6 +31,8 @@ namespace KayipAda
 
         private GameObject panel;
         private TMP_Text infiniteLabel;
+        private Button zoomButton;
+        private TMP_Text zoomLabel;
         private Image infiniteButton;
         private TMP_Text resourceLabel;
         private readonly List<Image> speedButtons = new List<Image>();
@@ -153,6 +155,14 @@ namespace KayipAda
                 DevCommands.SkipToCeremony();
             });
 
+            // Kamera mesafesi: Yakın / Normal / Uzak (sırayla).
+            zoomButton = CreateButton(p, "", ButtonColor, () =>
+            {
+                if (CameraFollow.Main != null) CameraFollow.Main.CycleZoom();
+                Refresh();
+            });
+            zoomLabel = zoomButton.GetComponentInChildren<TMP_Text>();
+
             Transform speeds = CreateRow(p);
             foreach (float speed in config.DevSpeeds)
             {
@@ -204,6 +214,7 @@ namespace KayipAda
         {
             bool infinite = DevCommands.InfiniteMoney;
             infiniteLabel.text = "Sınırsız Para: " + (infinite ? "AÇIK" : "KAPALI");
+            if (zoomLabel != null && CameraFollow.Main != null) zoomLabel.text = "Kamera: " + CameraFollow.Main.ZoomName;
             infiniteButton.color = infinite ? ActiveColor : ButtonColor;
             resourceLabel.text = resources.Length > 0 ? resources[resourceIndex].DisplayName : "-";
             for (int i = 0; i < speedButtons.Count; i++)

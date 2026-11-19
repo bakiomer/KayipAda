@@ -232,6 +232,35 @@ namespace KayipAda.Tests
             Assert.IsFalse(data.TempleSolved, "Yeni oyunda tapınak sıfırlanmadı");
         }
 
+        [UnityTest]
+        public IEnumerator Camera_DefaultIsFartherAndPresetsChange()
+        {
+            CameraFollow cam = CameraFollow.Main;
+            Assert.IsNotNull(cam);
+            GameConfig cfg = cam.Config;
+            Assert.AreEqual(3, cfg.CameraZoomPresets.Length, "Yakın/Normal/Uzak ön ayarları yok");
+            Assert.AreEqual("Normal", cam.ZoomName);
+            float ratio = cam.Distance / cfg.CameraDistance;
+            Assert.That(ratio, Is.InRange(1.09f, 1.16f), "Varsayılan kamera %10-15 geriden değil");
+            Quaternion rot = cam.transform.rotation;
+            yield return new WaitForSeconds(1.5f);
+            Shot("K_kamera_normal");
+            float[] distances = new float[3];
+            for (int i = 0; i < 3; i++)
+            {
+                cam.SetZoom(i);
+                yield return new WaitForSeconds(2f);
+                distances[i] = Vector3.Distance(cam.transform.position, Player.transform.position);
+                Assert.AreEqual(Quaternion.Angle(rot, cam.transform.rotation), 0f, 0.5f, "Kamera açısı değişti");
+                Shot("K_kamera_" + CameraFollow.ZoomNames[i].ToLowerInvariant().Replace("ı", "i"));
+            }
+            Assert.Less(distances[0], distances[1], "Yakın, Normal'den uzak");
+            Assert.Less(distances[1], distances[2], "Normal, Uzak'tan uzak");
+            cam.CycleZoom(); // Uzak → Yakın
+            Assert.AreEqual(0, cam.ZoomIndex);
+            PlayerPrefs.DeleteKey("kayipada_camera_zoom");
+        }
+
         private static string Path(Transform t)
         {
             return t.parent != null ? t.parent.name + "/" + t.name : t.name;

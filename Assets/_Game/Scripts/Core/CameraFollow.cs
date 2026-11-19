@@ -86,7 +86,48 @@ namespace KayipAda
         {
             Quaternion yaw = Quaternion.Euler(0f, config.CameraYaw, 0f);
             Vector3 focus = target.position + yaw * Vector3.forward * config.CameraFocusOffset;
-            return focus - Rotation * Vector3.forward * config.CameraDistance;
+            return focus - Rotation * Vector3.forward * Distance;
+        }
+
+        // ---------------------------------------------------------------- Mesafe ön ayarları (Yakın / Normal / Uzak)
+
+        public static readonly string[] ZoomNames = { "Yakın", "Normal", "Uzak" };
+        private const string ZoomPref = "kayipada_camera_zoom";
+
+        // Seçili ön ayar (cihazda hatırlanır; yoksa GameConfig.CameraZoomDefault).
+        public int ZoomIndex
+        {
+            get
+            {
+                int n = config.CameraZoomPresets != null ? config.CameraZoomPresets.Length : 0;
+                if (n == 0) return 0;
+                return Mathf.Clamp(PlayerPrefs.GetInt(ZoomPref, config.CameraZoomDefault), 0, n - 1);
+            }
+        }
+
+        public string ZoomName => ZoomIndex < ZoomNames.Length ? ZoomNames[ZoomIndex] : (ZoomIndex + 1).ToString();
+
+        // Takip mesafesi = temel mesafe × ön ayar çarpanı.
+        public float Distance
+        {
+            get
+            {
+                float[] p = config.CameraZoomPresets;
+                return config.CameraDistance * (p != null && p.Length > 0 ? p[ZoomIndex] : 1f);
+            }
+        }
+
+        // Sıradaki ön ayara geç (Yakın → Normal → Uzak → Yakın).
+        public void CycleZoom()
+        {
+            int n = config.CameraZoomPresets != null ? config.CameraZoomPresets.Length : 0;
+            if (n == 0) return;
+            PlayerPrefs.SetInt(ZoomPref, (ZoomIndex + 1) % n);
+        }
+
+        public void SetZoom(int index)
+        {
+            PlayerPrefs.SetInt(ZoomPref, index);
         }
     }
 }

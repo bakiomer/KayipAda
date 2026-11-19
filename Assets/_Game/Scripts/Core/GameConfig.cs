@@ -70,6 +70,11 @@ namespace KayipAda
         [field: Tooltip("Kameranın baktığı noktaya uzaklığı (metre). Büyük = daha geniş görüş.")]
         [field: SerializeField, Min(1f)] public float CameraDistance { get; private set; } = 34f;
 
+        [field: Tooltip("Kamera mesafesi ön ayarları (CameraDistance çarpanı): Yakın, Normal, Uzak. Açı aynı kalır.")]
+        [field: SerializeField] public float[] CameraZoomPresets { get; private set; } = { 1.0f, 1.13f, 1.3f };
+        [field: Tooltip("Varsayılan ön ayar (0 Yakın, 1 Normal, 2 Uzak). Oyuncu/Test Menüsü değiştirirse cihazda hatırlanır.")]
+        [field: SerializeField, Min(0)] public int CameraZoomDefault { get; private set; } = 1;
+
         [field: Tooltip("Kamera oyuncunun ne kadar önüne bakar (metre). Oyuncu ekranın biraz altında durur.")]
         [field: SerializeField] public float CameraFocusOffset { get; private set; } = 4.5f;
 

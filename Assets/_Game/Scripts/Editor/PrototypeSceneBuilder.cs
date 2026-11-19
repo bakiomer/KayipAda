@@ -1451,7 +1451,8 @@ namespace KayipAda.EditorTools
             go.tag = "MainCamera";
             Quaternion rotation = Quaternion.Euler(config.CameraPitch, config.CameraYaw, 0f);
             Vector3 focus = target.position + Quaternion.Euler(0f, config.CameraYaw, 0f) * Vector3.forward * config.CameraFocusOffset;
-            go.transform.SetPositionAndRotation(focus - rotation * Vector3.forward * config.CameraDistance, rotation);
+            float zoom = config.CameraZoomPresets != null && config.CameraZoomPresets.Length > config.CameraZoomDefault ? config.CameraZoomPresets[config.CameraZoomDefault] : 1f;
+            go.transform.SetPositionAndRotation(focus - rotation * Vector3.forward * config.CameraDistance * zoom, rotation);
 
             Camera cam = go.AddComponent<Camera>();
             cam.orthographic = false;

@@ -21,6 +21,7 @@ namespace KayipAda.Tests
             Time.timeScale = 1f;
             SaveManager.Enabled = false;          // testler kayıt okumaz/yazmaz, hep temiz başlar
             PlayerController.InputBlocked = false;
+            PlayerPrefs.DeleteKey("kayipada_camera_zoom"); // kamera ön ayarı varsayılan
             SceneManager.LoadScene("Prototype");
             yield return null;
             yield return null;
