@@ -26,6 +26,9 @@ namespace KayipAda
         [SerializeField] private NavObstacle[] shipObstacles = new NavObstacle[0];
         [Tooltip("Kayma yönü (geminin yanından denize doğru, yatay).")]
         [SerializeField] private Vector3 slideDirection = Vector3.forward;
+        [Tooltip("Kızak raylarının eğimi (metre düşüş / metre yol) ve geminin ortasından rayların ucuna kadar mesafe (metre).")]
+        [SerializeField] private float railSlope = 0.1f;
+        [SerializeField] private float railEnd = 6f;
         [Tooltip("Gemi suya inince burnunu çevireceği açık deniz yönü.")]
         [SerializeField] private Vector3 sailDirection = Vector3.forward;
         [Tooltip("Oyuncu ve işçilerin toplanacağı noktalar (iskelede).")]
@@ -120,16 +123,25 @@ namespace KayipAda
             Vector3 dir = Flat(slideDirection);
             Vector3 start = shipRoot.position;
             float height = ShipHeight();
-            Vector3 end = start + dir * ship.SlideDistance + Vector3.down * (height * ship.SinkFraction);
             Quaternion baseRotation = shipRoot.rotation;
             Vector3 tiltAxis = Vector3.Cross(Vector3.up, dir);
+            // Gemi raylar boyunca iner (rayların eğimini izler, kumun üstünde havada kalmaz); rayların ucundan sonra
+            // suya oturur (toplam batma: yüksekliğin SinkFraction'ı ya da rayın düşüşü, hangisi büyükse).
+            float railLength = Mathf.Min(railEnd, ship.SlideDistance);
+            float railDrop = railSlope * railLength;
+            float sink = Mathf.Max(height * ship.SinkFraction, railDrop);
+            float slopeAngle = Mathf.Atan(railSlope) * Mathf.Rad2Deg;
             bool splashed = false;
             for (float t = 0f; t < 1f; t += Time.deltaTime / ship.SlideDuration)
             {
-                float k = t * t;
-                shipRoot.position = Vector3.Lerp(start, end, k);
-                shipRoot.rotation = Quaternion.AngleAxis(Mathf.Sin(t * Mathf.PI) * 7f, tiltAxis) * baseRotation;
-                Orbit(ShipCenter(), endYaw, ship.OrbitDistance, ship.OrbitHeight, 2f); // denizden adaya bakar
+                float d = ship.SlideDistance * t * t;
+                float y = -railSlope * Mathf.Min(d, railLength);
+                float afloat = ship.SlideDistance > railLength ? Mathf.Clamp01((d - railLength) / (ship.SlideDistance - railLength)) : 0f;
+                y -= (sink - railDrop) * Mathf.SmoothStep(0f, 1f, afloat);
+                shipRoot.position = start + dir * d + Vector3.up * y;
+                float pitch = slopeAngle * (1f - afloat); // raydayken eğimle, suda düzelir
+                shipRoot.rotation = Quaternion.AngleAxis(pitch + Mathf.Sin(t * Mathf.PI) * 4f, tiltAxis) * baseRotation;
+                Orbit(ShipCenter(), endYaw, ship.OrbitDistance * ship.SlideCameraBack, ship.OrbitHeight * ship.SlideCameraBack, 2f); // denizden adaya bakar, biraz geriden
                 HideOccluders(ShipCenter(), crowd);
                 if (!splashed && t > 0.65f)
                 {

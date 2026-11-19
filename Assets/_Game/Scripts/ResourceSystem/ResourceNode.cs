@@ -20,6 +20,7 @@ namespace KayipAda
         public static event System.Action<ResourceType, bool> Gathered;
 
         [SerializeField] private ResourceNodeType nodeType;
+        public ResourceNodeType Type => nodeType;
         [Tooltip("Sallanma/sıkışma/küçülme efektlerinin uygulandığı görsel kök (model).")]
         [SerializeField] private Transform visual;
         [Tooltip("Kaynağın çıktığı yükseklik (metre).")]

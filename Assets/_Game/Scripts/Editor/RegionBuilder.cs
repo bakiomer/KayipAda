@@ -902,6 +902,8 @@ namespace KayipAda.EditorTools
 
         // İki kalın ahşap ray geminin altından denize doğru (kayma yönünde) uzanır; suya girdikçe alçalır, direklerle
         // desteklenir. Gemi raylar üstündeki beşikte durur (beşik gemiyle birlikte kayar).
+        public const float SlipwayDrop = 1.4f; // raylar baştan uca bu kadar alçalır (metre)
+
         public static void BuildSlipway(Transform parent, Vector3 shipCenter, Vector3 bowDir, Vector3 slideDir, float shipLength,
                                         float landBehind, float seaLength)
         {
@@ -913,7 +915,7 @@ namespace KayipAda.EditorTools
             for (int s = -1; s <= 1; s += 2)
             {
                 Vector3 from = ground + bowDir * (s * spread) - slideDir * landBehind;
-                Vector3 to = from + slideDir * (landBehind + seaLength) + Vector3.down * 1.4f;
+                Vector3 to = from + slideDir * (landBehind + seaLength) + Vector3.down * SlipwayDrop;
                 Vector3 mid = (from + to) * 0.5f + Vector3.up * 0.16f;
                 Quaternion along = Quaternion.LookRotation(to - from);
                 float len = Vector3.Distance(from, to);
@@ -930,7 +932,7 @@ namespace KayipAda.EditorTools
             for (float d = 0.4f; d < landBehind * 2f + 0.6f; d += 1.3f) // traversler sadece gemi altında (suda yok)
             {
                 float k = d / (landBehind + seaLength);
-                Vector3 c = ground - slideDir * landBehind + slideDir * d + Vector3.down * (1.4f * k) + Vector3.up * 0.02f;
+                Vector3 c = ground - slideDir * landBehind + slideDir * d + Vector3.down * (SlipwayDrop * k) + Vector3.up * 0.02f;
                 GameObject tie = Part(root, PrimitiveType.Cube, "Tie", Vector3.zero, new Vector3(spread * 2f + 0.8f, 0.1f, 0.24f), rot, PlankDark);
                 tie.transform.position = c;
             }

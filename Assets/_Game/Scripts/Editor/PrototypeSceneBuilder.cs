@@ -27,6 +27,7 @@ namespace KayipAda.EditorTools
     {
         private static TempleRiddle templeRiddle; // Kayıp Tapınak bulmacası (sandık ve kafatası buna bağlanır)
         private const int TempleChestIndex = 6;
+        private static float slipwaySlope = 0.1f, slipwayEnd = 6f; // kızak raylarının eğimi ve gemiden uca mesafesi (törene)
 
         private const string Root = BuilderUtil.Root;
         private const string ConfigPath = Root + "/Data/GameConfig.asset";
@@ -468,7 +469,10 @@ namespace KayipAda.EditorTools
                 Sound(SoundId.Discovery, 0.9f, 0f, A + "asama_jingle/mintodog_cozy_clear||" + Y + "acilma"),
                 Sound(SoundId.ChestOpen, 0.8f, normal, "RPG/doorOpen_1", "RPG/doorOpen_2"),
                 Sound(SoundId.Anvil, 0.35f, 0.08f, "Impact/impactMetal_heavy_000", "Impact/impactMetal_heavy_001", "Impact/impactMetal_heavy_002"),
-                Sound(SoundId.QuestDone, 0.85f, 0f, A + "asama_jingle/fupi_WinGrandPiano||" + Y + "asama_tamam")
+                Sound(SoundId.QuestDone, 0.85f, 0f, A + "asama_jingle/fupi_WinGrandPiano||" + Y + "asama_tamam"),
+                Sound(SoundId.CelebrateSmall, 0.7f, 0.04f, Y + "kutlama_kucuk_1", Y + "kutlama_kucuk_2", Y + "kutlama_kucuk_3"),
+                Sound(SoundId.CelebrateMedium, 0.8f, 0f, Y + "kesif_melodi_1", Y + "kesif_melodi_2", Y + "kesif_melodi_3", Y + "kesif_melodi_4"),
+                Sound(SoundId.CelebrateBig, 1f, 0f, A + "asama_jingle/fupi_WinSteelDrums||" + Y + "asama_tamam", A + "asama_jingle/fupi_WinBrass||" + Y + "asama_tamam")
             };
             AudioClip ambient = LoadSound(A + "ortam_dalga_kus/dalga_kus_dongu");
             AudioClip music = LoadSound(A + "arka_plan_muzik/dizzycrow_pirates_orchestra");
@@ -585,24 +589,25 @@ namespace KayipAda.EditorTools
             p.Carrier = PrefabFactory.BuildCharacter(ModelCatalog.Carrier,
                 CharacterAnimation.GetOverride(baseController, ModelCatalog.Carrier.Path, ModelCatalog.Carrier.Key), config, dust, false);
             p.FiberWorker = PrefabFactory.BuildCharacter(ModelCatalog.FiberWorker,
-                CharacterAnimation.GetOverride(baseController, ModelCatalog.FiberWorker.Path, ModelCatalog.FiberWorker.Key), config, dust, false);
+                CharacterAnimation.GetOverride(baseController, ModelCatalog.FiberWorker.Path, ModelCatalog.FiberWorker.Key), config, dust, false, "straw_hat");
             // Tayfa Barakası kartlarındaki işçi resimleri.
             SetPortrait("Lumberjack", CampBuilder.RenderPortrait(p.Lumberjack, ModelCatalog.Lumberjack));
             SetPortrait("Carrier", CampBuilder.RenderPortrait(p.Carrier, ModelCatalog.Carrier));
             SetPortrait("FiberGatherer", CampBuilder.RenderPortrait(p.FiberWorker, ModelCatalog.FiberWorker));
-            RuntimeAnimatorController skeleton = CharacterAnimation.GetEnemyController(ModelCatalog.Smith.Path, "Enemy_Skeleton");
-            p.Smith = PrefabFactory.BuildCharacter(ModelCatalog.Smith, skeleton, config, dust, false);
+            RuntimeAnimatorController skeleton = CharacterAnimation.GetEnemyController(ModelCatalog.SkeletonCostume.Path, "Enemy_Skeleton");
+            p.Smith = PrefabFactory.BuildCharacter(ModelCatalog.Smith,
+                CharacterAnimation.GetOverride(baseController, ModelCatalog.Smith.Path, ModelCatalog.Smith.Key), config, dust, false, "apron");
             SetPortrait("Smith", CampBuilder.RenderPortrait(p.Smith, ModelCatalog.Smith));
             // Kostüm modelleri (oyuncunun yerine geçer).
             SetCostumeModel("C_Sailor", PrefabFactory.BuildCostumeModel(ModelCatalog.Lumberjack,
                 CharacterAnimation.GetOverride(baseController, ModelCatalog.Lumberjack.Path, ModelCatalog.Lumberjack.Key), "sailor"));
             SetCostumeModel("C_Anne", PrefabFactory.BuildCostumeModel(ModelCatalog.Carrier,
                 CharacterAnimation.GetOverride(baseController, ModelCatalog.Carrier.Path, ModelCatalog.Carrier.Key), "anne"));
-            SetCostumeModel("C_Mako", PrefabFactory.BuildCostumeModel(ModelCatalog.FiberWorker,
-                CharacterAnimation.GetOverride(baseController, ModelCatalog.FiberWorker.Path, ModelCatalog.FiberWorker.Key), "mako"));
+            SetCostumeModel("C_Mako", PrefabFactory.BuildCostumeModel(ModelCatalog.MakoCostume,
+                CharacterAnimation.GetOverride(baseController, ModelCatalog.MakoCostume.Path, ModelCatalog.MakoCostume.Key), "mako"));
             ModelSpec sharky = ModelCatalog.Enemies[2];
             SetCostumeModel("C_Sharky", PrefabFactory.BuildCostumeModel(sharky, CharacterAnimation.GetOverride(baseController, sharky.Path, sharky.Key), "sharky"));
-            SetCostumeModel("C_Skeleton", PrefabFactory.BuildCostumeModel(ModelCatalog.Smith, skeleton, "skeleton"));
+            SetCostumeModel("C_Skeleton", PrefabFactory.BuildCostumeModel(ModelCatalog.SkeletonCostume, skeleton, "skeleton"));
             // Karakter izleri (ayak izi, su halkası, yaprak).
             p.Footprint = PrefabFactory.BuildFootprint();
             p.Ripple = PrefabFactory.BuildRipple();
@@ -1856,6 +1861,8 @@ namespace KayipAda.EditorTools
 
             // Kızak: denize uzanan iki paralel ray; gemi raylar üstündeki beşikte (beşik gemiyle birlikte kayar).
             RegionBuilder.BuildSlipway(root, shipCenter, bowDir, slideDir, sb.size.z, halfWidth + 0.6f, MapLayout.ShipInland + halfWidth + 3f);
+            slipwaySlope = RegionBuilder.SlipwayDrop / (halfWidth + 0.6f + MapLayout.ShipInland + halfWidth + 3f);
+            slipwayEnd = MapLayout.ShipInland + halfWidth + 3f;
             RegionBuilder.BuildCradle(shipRoot.transform, shipCenter, bowDir, slideDir, sb.size.z, sb.size.x, MapLayout.ShipCradleHeight);
             GameObject scaffolding = CreateScaffolding(p, root, shipCenter, bowDir, slideDir, sb.size.z, halfWidth);
 
@@ -1933,6 +1940,8 @@ namespace KayipAda.EditorTools
             BuilderUtil.SetField(ceremony, "shipRoot", shipRoot.transform);
             BuilderUtil.SetArray(ceremony, "shipObstacles", blocks.ToArray());
             BuilderUtil.SetVector3(ceremony, "slideDirection", slideDir);
+            BuilderUtil.SetFloat(ceremony, "railSlope", slipwaySlope);
+            BuilderUtil.SetFloat(ceremony, "railEnd", slipwayEnd);
             BuilderUtil.SetVector3(ceremony, "sailDirection", sailDir);
             BuilderUtil.SetArray(ceremony, "gatherPoints", gatherPoints.ToArray());
             BuilderUtil.SetField(ceremony, "hatPrefab", hatPrefab);

@@ -68,6 +68,8 @@ namespace KayipAda
         public float OrbitDegrees = 150f;
         [Min(1f)] public float OrbitDistance = 16f;
         public float OrbitHeight = 4.5f;
+        [Tooltip("Kızaktan kayma çekiminde kamera dönme uzaklığının bu kadar katı geriden bakar (gemi + raylar + su birlikte).")]
+        [Min(1f)] public float SlideCameraBack = 1.3f;
         [Tooltip("Toplanma çekimi: kamera kalabalığa denize doğru (Side) ve gemi boyunca (Back) karışık bir yönden, bu uzaklık ve yükseklikten bakar (çitlerin üstünden); kalabalık ve gemi birlikte görünür.")]
         public float GatherShotBack = 0.15f;   // gemi boyunca (eksi: burun tarafı)
         public float GatherShotSide = 1f;      // denize doğru: kamera kara tarafında, kalabalık önde, gemi arkada

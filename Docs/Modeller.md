@@ -11,7 +11,7 @@
 | Oyuncu (kaptan) | Player | Quaternius | Characters_Captain_Barbarossa.fbx | 1,9 m (yükseklik) | ✅ |
 | Oduncu işçi | Worker_Lumberjack | Quaternius | Characters_Henry.fbx | 1,75 m (yükseklik) | ✅ |
 | Taşıyıcı işçi | Worker_Carrier | Quaternius | Characters_Anne.fbx | 1,7 m (yükseklik) | ✅ |
-| Lifçi işçi (lif toplar, Halat Atölyesi'ne götürür) | Worker_Fiber | Quaternius | Characters_Mako.fbx | 1,75 m (yükseklik) | ✅ |
+| Lifçi işçi (korsan kadın + hasır şapka; lif toplar, Halat Atölyesi'ne götürür) | Worker_Fiber | Quaternius | Characters_Anne.fbx | 1,72 m (yükseklik) | ✅ |
 
 ## Kullanılmayan karakterler (prefab hazır, sahnede yok)
 
@@ -93,7 +93,7 @@
 | Demircinin örsü | Anvil | KenneySurvival | workbench-anvil.fbx | 1,15 m (en büyük kenar) | ✅ |
 | Demircinin çekici (örse vurur) | Hammer | KenneySurvival | tool-hammer.fbx | 0,75 m (en büyük kenar) | ✅ |
 | Kırık iskele (yan görevde onarılır) | BrokenPier | Quaternius | Environment_Dock_Broken.fbx | 3,4 m (en büyük kenar) | ✅ |
-| Demirci Çırağı (iskelet korsan; hurda toplar, Demirci'ye götürür) | Worker_Smith | Quaternius | Characters_Skeleton.fbx | 1,7 m (yükseklik) | ✅ |
+| Demirci Çırağı (korsan + deri önlük; hurda toplar, Demirci'ye götürür) | Worker_Smith | Quaternius | Characters_Henry.fbx | 1,75 m (yükseklik) | ✅ |
 
 ## Süsler
 

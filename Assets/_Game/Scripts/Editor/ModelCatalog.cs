@@ -61,7 +61,10 @@ namespace KayipAda.EditorTools
         public static readonly ModelSpec Player = M("Player", ModelPack.Quaternius, "Characters_Captain_Barbarossa", 1.9f, SizeAxis.Height, false, true, "Oyuncu (kaptan)");
         public static readonly ModelSpec Lumberjack = M("Worker_Lumberjack", ModelPack.Quaternius, "Characters_Henry", 1.75f, SizeAxis.Height, false, true, "Oduncu işçi");
         public static readonly ModelSpec Carrier = M("Worker_Carrier", ModelPack.Quaternius, "Characters_Anne", 1.7f, SizeAxis.Height, false, true, "Taşıyıcı işçi");
-        public static readonly ModelSpec FiberWorker = M("Worker_Fiber", ModelPack.Quaternius, "Characters_Mako", 1.75f, SizeAxis.Height, false, true, "Lifçi işçi (lif toplar, Halat Atölyesi'ne götürür)");
+        public static readonly ModelSpec FiberWorker = M("Worker_Fiber", ModelPack.Quaternius, "Characters_Anne", 1.72f, SizeAxis.Height, false, true, "Lifçi işçi (korsan kadın + hasır şapka; lif toplar, Halat Atölyesi'ne götürür)");
+        // Kostüm modelleri (oyuncunun giyebildiği köpek balığı / iskelet korsan; işçiler artık hep insan).
+        public static readonly ModelSpec MakoCostume = M("Costume_Mako", ModelPack.Quaternius, "Characters_Mako", 1.75f, SizeAxis.Height, false, true, "Kostüm: köpek balığı korsan");
+        public static readonly ModelSpec SkeletonCostume = M("Costume_Skeleton", ModelPack.Quaternius, "Characters_Skeleton", 1.7f, SizeAxis.Height, false, true, "Kostüm: iskelet korsan");
 
         // Kullanılmayan karakterler (savunma kaldırıldı; prefab'ları ileride lazım olursa diye duruyor).
         public static readonly ModelSpec[] Enemies =
@@ -148,7 +151,7 @@ namespace KayipAda.EditorTools
         public static readonly ModelSpec Anvil = M("Anvil", ModelPack.KenneySurvival, "workbench-anvil", 1.15f, SizeAxis.Largest, true, true, "Demircinin örsü");
         public static readonly ModelSpec Hammer = M("Hammer", ModelPack.KenneySurvival, "tool-hammer", 0.75f, SizeAxis.Largest, true, false, "Demircinin çekici (örse vurur)");
         public static readonly ModelSpec BrokenPier = M("BrokenPier", ModelPack.Quaternius, "Environment_Dock_Broken", 3.4f, SizeAxis.Largest, true, true, "Kırık iskele (yan görevde onarılır)");
-        public static readonly ModelSpec Smith = M("Worker_Smith", ModelPack.Quaternius, "Characters_Skeleton", 1.7f, SizeAxis.Height, false, true, "Demirci Çırağı (iskelet korsan; hurda toplar, Demirci'ye götürür)");
+        public static readonly ModelSpec Smith = M("Worker_Smith", ModelPack.Quaternius, "Characters_Henry", 1.75f, SizeAxis.Height, false, true, "Demirci Çırağı (korsan + deri önlük; hurda toplar, Demirci'ye götürür)");
 
         // ---------------------------------------------------------------- Süsler (Prefabs/Decor)
         public static readonly ModelSpec[] Decor =

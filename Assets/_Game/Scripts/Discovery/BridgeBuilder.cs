@@ -18,6 +18,8 @@ namespace KayipAda
         [SerializeField] private Transform[] planks = new Transform[0];
         [Tooltip("Korkuluk halatları (halat teslim edildikçe belirir; boş olabilir).")]
         [SerializeField] private Transform[] ropes = new Transform[0];
+        [Tooltip("Köprü iskeleti bölümleri (kiriş + direk), kıyıdan karşıya sırayla; tahtalar ilerledikçe belirir.")]
+        [SerializeField] private Transform[] frames = new Transform[0];
         [Tooltip("Köprünün iki ucu (kıyıların içinde) ve yarı genişliği: bitince bu şerit yürünebilir olur.")]
         [SerializeField] private Transform endA;
         [SerializeField] private Transform endB;
@@ -47,7 +49,15 @@ namespace KayipAda
             base.Awake();
             foreach (Transform t in planks) t.gameObject.SetActive(false);
             foreach (Transform t in ropes) t.gameObject.SetActive(false);
+            foreach (Transform t in frames) t.gameObject.SetActive(false);
         }
+
+        // Kaç iskelet bölümü görünür (testler için).
+        public int VisibleFrames
+        {
+            get { int n = 0; foreach (Transform t in frames) if (t != null && t.gameObject.activeSelf) n++; return n; }
+        }
+        public int FrameCount => frames.Length;
 
         protected override void OnDestroy()
         {
@@ -104,7 +114,6 @@ namespace KayipAda
                 yield return null;
             }
             // Karşı kıyı canlanır: nesneler sırayla zıplayarak gelir.
-            AudioManager.Play(SoundId.Discovery);
             if (revealRoot != null)
             {
                 int k = 0;
@@ -155,19 +164,31 @@ namespace KayipAda
                 list[i].gameObject.SetActive(true);
                 if (animate) Tween.PopIn(list[i], list[i].localScale, config.PopInDuration);
             }
+            // İskelet bölümleri tahtaların ulaştığı yere kadar (bir bölüm önden) görünür.
+            if (list == planks && frames.Length > 0)
+            {
+                int show = Mathf.Min(frames.Length, Mathf.CeilToInt((upTo + 1f) / planks.Length * frames.Length) + 1);
+                for (int i = 0; i < show; i++)
+                {
+                    if (frames[i] == null || frames[i].gameObject.activeSelf) continue;
+                    frames[i].gameObject.SetActive(true);
+                    if (animate) Tween.PopIn(frames[i], frames[i].localScale, config.PopInDuration);
+                }
+            }
         }
 
         protected override void OnCompleted(bool animate)
         {
             foreach (Transform t in planks) t.gameObject.SetActive(true);
             foreach (Transform t in ropes) t.gameObject.SetActive(true);
+            foreach (Transform t in frames) t.gameObject.SetActive(true);
             if (!open.Contains(this)) open.Add(this);
             if (IslandShape.Instance != null)
                 IslandShape.Instance.OpenBridge(new Vector2(endA.position.x, endA.position.z), new Vector2(endB.position.x, endB.position.z), halfWidth);
             NavObstacle.Touch(); // NavMesh köprüyü eklesin
             if (islandArea != null && AreaManager.Instance != null && !AreaManager.Instance.IsUnlocked(islandArea)) AreaManager.Instance.Unlock(islandArea);
             if (!animate) return;
-            AudioManager.Play(SoundId.StageComplete);
+            AudioManager.Celebrate(CelebrationTier.Big); // adacık açılışı
             if (isActiveAndEnabled) StartCoroutine(Reveal());
         }
     }

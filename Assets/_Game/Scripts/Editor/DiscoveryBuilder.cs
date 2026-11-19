@@ -207,27 +207,37 @@ namespace KayipAda.EditorTools
                 PrefabFactory.AddGroundDecal("Arrow " + i, zone.transform, Vector3.forward * (1.9f + i * 0.6f), new Vector2(0.6f, 0.6f), new Color(1f, 1f, 1f, 0.7f), ArtGenerator.ArrowPath, 0f);
             ShipProgressView view = PrototypeSceneBuilder.CreateShipProgressView(zone.transform, 2.7f, 0.7f);
 
-            // Köprü: iki kıyı arasında yan kirişler ve direkler (hep görünür = inşaat), tahtalar ve halatlar sırayla belirir.
+            // Köprü: başta sadece kıyıdaki ilk direkler; kirişler, direkler (ve halat istenmiyorsa korkuluk) bölüm bölüm
+            // tahtalarla birlikte belirir (denizde boş kiriş/direk sırası "merdiven" gibi görünmesin).
             Transform deck = new GameObject("Deck").transform;
             deck.SetParent(root.transform, false);
             deck.SetPositionAndRotation(a, along);
             float w = MapLayout.BridgeHalfWidth;
-            for (int s = -1; s <= 1; s += 2)
-                MachineBuilder.Part(deck, PrimitiveType.Cube, "Stringer", new Vector3(s * (w - 0.1f), MapLayout.BridgeDeckY - 0.12f, length * 0.5f),
-                                    new Vector3(0.16f, 0.16f, length), Quaternion.identity, Wood);
             int postCount = Mathf.Max(2, Mathf.RoundToInt(length / 2.2f) + 1);
+            float seg = length / (postCount - 1);
             List<Vector3> postTops = new List<Vector3>();
+            List<Transform> frameList = new List<Transform>();
             for (int i = 0; i < postCount; i++)
             {
                 float z = length * i / (postCount - 1);
                 bool end = i == 0 || i == postCount - 1;
                 float thick = end ? 0.34f : 0.24f;
+                Transform frame = deck;
+                if (i > 0)
+                {
+                    frame = new GameObject("Frame " + i).transform;
+                    frame.SetParent(deck, false);
+                    frameList.Add(frame);
+                    for (int s = -1; s <= 1; s += 2)
+                        MachineBuilder.Part(frame, PrimitiveType.Cube, "Stringer", new Vector3(s * (w - 0.1f), MapLayout.BridgeDeckY - 0.12f, z - seg * 0.5f),
+                                            new Vector3(0.16f, 0.16f, seg + 0.02f), Quaternion.identity, Wood);
+                }
                 for (int s = -1; s <= 1; s += 2)
                 {
-                    MachineBuilder.Part(deck, PrimitiveType.Cylinder, "Post", new Vector3(s * (w + 0.06f), -0.25f, z), new Vector3(thick, 1.1f, thick), Quaternion.identity, Wood);
-                    MachineBuilder.Part(deck, PrimitiveType.Cylinder, "Lash", new Vector3(s * (w + 0.06f), 0.72f, z), new Vector3(thick + 0.05f, 0.05f, thick + 0.05f), Quaternion.identity, RopeMat);
+                    MachineBuilder.Part(frame, PrimitiveType.Cylinder, "Post", new Vector3(s * (w + 0.06f), -0.25f, z), new Vector3(thick, 1.1f, thick), Quaternion.identity, Wood);
+                    MachineBuilder.Part(frame, PrimitiveType.Cylinder, "Lash", new Vector3(s * (w + 0.06f), 0.72f, z), new Vector3(thick + 0.05f, 0.05f, thick + 0.05f), Quaternion.identity, RopeMat);
                     if (end) // kıyıya çakılı ek kazık
-                        MachineBuilder.Part(deck, PrimitiveType.Cylinder, "Stake", new Vector3(s * (w + 0.4f), 0.15f, z + (i == 0 ? -0.35f : 0.35f)), new Vector3(0.2f, 0.4f, 0.2f), Quaternion.identity, Wood);
+                        MachineBuilder.Part(frame, PrimitiveType.Cylinder, "Stake", new Vector3(s * (w + 0.4f), 0.15f, z + (i == 0 ? -0.35f : 0.35f)), new Vector3(0.2f, 0.4f, 0.2f), Quaternion.identity, Wood);
                     postTops.Add(new Vector3(s * (w + 0.06f), 0.75f, z));
                 }
             }
@@ -250,7 +260,7 @@ namespace KayipAda.EditorTools
                     {
                         Vector3 from = postTops[i * 2 + s], to = postTops[(i + 1) * 2 + s];
                         Vector3 mid = (from + to) * 0.5f + Vector3.down * 0.12f;
-                        GameObject rope = MachineBuilder.Part(deck, PrimitiveType.Cylinder, "Rope", mid, new Vector3(0.06f, Vector3.Distance(from, to) * 0.5f, 0.06f),
+                        GameObject rope = MachineBuilder.Part(spec.Ropes > 0 ? deck : frameList[i], PrimitiveType.Cylinder, "Rope", mid, new Vector3(0.06f, Vector3.Distance(from, to) * 0.5f, 0.06f),
                                                               Quaternion.Euler(90f, 0f, 0f), RopeMat);
                         if (spec.Ropes > 0) ropes.Add(rope.transform); // halat istenmiyorsa korkuluk baştan hazır
                     }
@@ -280,6 +290,7 @@ namespace KayipAda.EditorTools
             BuilderUtil.SetField(bridge, "farShore", far);
             BuilderUtil.SetField(bridge, "revealRoot", spec.RevealRoot);
             BuilderUtil.SetArray(bridge, "planks", planks.ToArray());
+            BuilderUtil.SetArray(bridge, "frames", frameList.ToArray());
             BuilderUtil.SetArray(bridge, "ropes", ropes.ToArray());
             BuilderUtil.SetField(bridge, "endA", endA);
             BuilderUtil.SetField(bridge, "endB", endB);

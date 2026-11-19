@@ -373,12 +373,13 @@ namespace KayipAda.EditorTools
         // ================================================================ Karakterler
 
         public static GameObject BuildCharacter(ModelSpec spec, RuntimeAnimatorController controller, GameConfig config,
-                                                GameObject dustPrefab, bool isPlayer)
+                                                GameObject dustPrefab, bool isPlayer, string accessory = null)
         {
             GameObject root = new GameObject(spec.Key);
             Transform body = new GameObject("Body").transform; // yürüme yönüne döner
             body.SetParent(root.transform, false);
             GameObject model = CreateModel(spec, body);
+            AddAccessory(model, accessory);
 
             Animator animator = model.GetComponent<Animator>();
             if (animator == null) animator = model.AddComponent<Animator>();
@@ -1257,6 +1258,52 @@ namespace KayipAda.EditorTools
             text.enableAutoSizing = true;
             text.fontSizeMin = 3f;
             text.fontSizeMax = 6.5f;
+            // Kameraya yakınken ekranı kaplamasın.
+            BuilderUtil.SetVector2(sign.AddComponent<ScreenSizeLimit>(), "size", new Vector2(width + 0.12f, 0.9f));
+        }
+
+        // İşçiyi ayırt eden eşya (kemiğe bağlı, animasyonla hareket eder): "straw_hat" = hasır şapka (Lifçi),
+        // "apron" = deri önlük + alet kemeri (Demirci Çırağı). Portre de sahnedeki modelden çekilir.
+        private static void AddAccessory(GameObject model, string kind)
+        {
+            if (string.IsNullOrEmpty(kind)) return;
+            Bounds b = WorldBounds(model);
+            Transform head = FindBone(model.transform, "head") ?? model.transform;
+            Transform chest = FindBone(model.transform, "chest") ?? FindBone(model.transform, "spine") ?? model.transform;
+            Vector3 fwd = model.transform.forward;
+            if (kind == "straw_hat")
+            {
+                Material straw = ArtGenerator.GetLit("M_Straw", null, new Color(0.88f, 0.74f, 0.42f));
+                Material band = ArtGenerator.GetLit("M_HatBand", null, new Color(0.75f, 0.25f, 0.2f));
+                Transform hat = new GameObject("StrawHat").transform;
+                hat.position = new Vector3(head.position.x, b.max.y - 0.13f, head.position.z) + fwd * 0.02f;
+                MachineBuilder.Part(hat, PrimitiveType.Cylinder, "Brim", Vector3.zero, new Vector3(0.78f, 0.012f, 0.78f), Quaternion.identity, straw);
+                MachineBuilder.Part(hat, PrimitiveType.Cylinder, "Crown", new Vector3(0f, 0.09f, 0f), new Vector3(0.4f, 0.09f, 0.4f), Quaternion.identity, straw);
+                MachineBuilder.Part(hat, PrimitiveType.Cylinder, "Band", new Vector3(0f, 0.04f, 0f), new Vector3(0.41f, 0.025f, 0.41f), Quaternion.identity, band);
+                hat.SetParent(head, true);
+                BuilderUtil.SetShadows(hat.gameObject, false);
+            }
+            else if (kind == "apron")
+            {
+                Material leather = ArtGenerator.GetLit("M_Leather", null, new Color(0.42f, 0.26f, 0.15f));
+                Material metal = ArtGenerator.GetLit("M_ToolMetal", null, new Color(0.55f, 0.56f, 0.6f));
+                Transform apron = new GameObject("Apron").transform;
+                float h = b.size.y;
+                apron.position = new Vector3(chest.position.x, b.min.y + h * 0.43f, chest.position.z) + fwd * 0.2f;
+                apron.rotation = model.transform.rotation;
+                MachineBuilder.Part(apron, PrimitiveType.Cube, "Leather", Vector3.zero, new Vector3(0.44f, h * 0.36f, 0.03f), Quaternion.identity, leather);
+                MachineBuilder.Part(apron, PrimitiveType.Cube, "Pocket", new Vector3(0f, -h * 0.06f, 0.02f), new Vector3(0.2f, 0.1f, 0.02f), Quaternion.identity, leather);
+                MachineBuilder.Part(apron, PrimitiveType.Cube, "Hammer", new Vector3(0.16f, -h * 0.04f, 0.04f), new Vector3(0.04f, 0.2f, 0.04f), Quaternion.identity, metal);
+                apron.SetParent(chest, true);
+                BuilderUtil.SetShadows(apron.gameObject, false);
+            }
+        }
+
+        private static Transform FindBone(Transform root, string part)
+        {
+            foreach (Transform t in root.GetComponentsInChildren<Transform>(true))
+                if (t.name.ToLowerInvariant().Contains(part) && t.GetComponent<Renderer>() == null) return t;
+            return null;
         }
 
         // Giriş/çıkış alanı: yerde daire + büyük kaynak ikonu + ok (giriş: binaya doğru, çıkış: binadan dışarı);

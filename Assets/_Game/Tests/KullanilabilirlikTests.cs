@@ -298,6 +298,107 @@ namespace KayipAda.Tests
             }
         }
 
+        [UnityTest]
+        public IEnumerator Quests_SellCountsInInfiniteMoneyMode()
+        {
+            QuestManager qm = QuestManager.Instance;
+            QuestDefinition sell = null, wood = null;
+            foreach (QuestDefinition q in qm.Active) { if (q.Kind == QuestKind.Sell) sell = q; if (q.Kind == QuestKind.Collect) wood = q; }
+            Assert.IsNotNull(sell, "Satış görevi aktif değil");
+            Assert.IsNotNull(wood, "Odun toplama görevi aktif değil");
+            DevCommands.SetInfiniteMoney(CameraFollow.Main.Config, true);
+            ResourceType woodType = null;
+            foreach (ResourceType t in Resources.FindObjectsOfTypeAll<ResourceType>()) if (t.Id == "wood") woodType = t;
+            DevCommands.FillPlayerStack(woodType);
+            Teleport(FindAny<Market>().transform.position);
+            yield return WaitFor(() => qm.Progress(sell) >= 5 || qm.IsCompleted(sell), 5f);
+            Assert.IsTrue(qm.Progress(sell) >= 5 || qm.IsCompleted(sell), "Sınırsız Para modunda satış sayılmadı");
+            DevCommands.SetInfiniteMoney(CameraFollow.Main.Config, false);
+            // Odun toplama: oyuncu palmiyeden toplarken ilerler.
+            int before = qm.Progress(wood);
+            ResourceNode palm = null;
+            foreach (ResourceNode n in Object.FindObjectsByType<ResourceNode>(FindObjectsSortMode.None))
+                if (n.isActiveAndEnabled && n.Type != null && n.Type.Resource == woodType) { palm = n; break; }
+            Assert.IsNotNull(palm);
+            Teleport(palm.GetStandPoint(Player.transform.position));
+            yield return WaitFor(() => qm.Progress(wood) > before || qm.IsCompleted(wood), 6f);
+            Assert.IsTrue(qm.Progress(wood) > before || qm.IsCompleted(wood), "Odun toplama görevi ilerlemedi");
+        }
+
+        [UnityTest]
+        public IEnumerator Workers_AreHumanPirates()
+        {
+            yield return null;
+            int checkedWorkers = 0;
+            foreach (Worker w in Object.FindObjectsByType<Worker>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                foreach (SkinnedMeshRenderer r in w.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+                {
+                    string n = (r.sharedMesh != null ? r.sharedMesh.name : r.name).ToLowerInvariant();
+                    Assert.IsFalse(n.Contains("mako") || n.Contains("shark") || n.Contains("skeleton"), w.name + " insan değil: " + n);
+                }
+                checkedWorkers++;
+            }
+            Assert.GreaterOrEqual(checkedWorkers, 4, "İşçi şablonları bulunamadı");
+            Assert.IsNotNull(GameObject.Find("StrawHat") ?? FindHidden("StrawHat"), "Lifçi'nin hasır şapkası yok");
+            Assert.IsNotNull(GameObject.Find("Apron") ?? FindHidden("Apron"), "Demirci Çırağı'nın önlüğü yok");
+        }
+
+        private static GameObject FindHidden(string name)
+        {
+            foreach (Transform t in Object.FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None)) if (t.name == name) return t.gameObject;
+            return null;
+        }
+
+        [UnityTest]
+        public IEnumerator FloatingText_StaysOnScreen_AndSignsAreCapped()
+        {
+            yield return new WaitForSeconds(0.5f);
+            Camera cam = Camera.main;
+            // Ekranın sağ kenarına çok yakın uzun yazı.
+            Vector3 edge = cam.ViewportToWorldPoint(new Vector3(0.99f, 0.5f, 30f));
+            edge.y = 1f;
+            Effects.Instance.ShowText(edge, "Demirci Seviye 2!", Color.green);
+            yield return new WaitForSeconds(0.4f);
+            FloatingText ft = null;
+            foreach (FloatingText f in Object.FindObjectsByType<FloatingText>(FindObjectsSortMode.None)) if (f.Text == "Demirci Seviye 2!") ft = f;
+            Assert.IsNotNull(ft, "Yazı çıkmadı");
+            Bounds b = ft.GetComponentInChildren<TMPro.TMP_Text>().bounds;
+            TMPro.TMP_Text label = ft.GetComponentInChildren<TMPro.TMP_Text>();
+            Vector3 right = cam.WorldToViewportPoint(label.transform.TransformPoint(new Vector3(label.textBounds.max.x, 0f, 0f)));
+            Vector3 left = cam.WorldToViewportPoint(label.transform.TransformPoint(new Vector3(label.textBounds.min.x, 0f, 0f)));
+            Assert.LessOrEqual(Mathf.Max(left.x, right.x), 1.001f, "Uçan yazı sağ kenarda kesiliyor");
+            Assert.GreaterOrEqual(Mathf.Min(left.x, right.x), -0.001f, "Uçan yazı sol kenarda kesiliyor");
+            Shot("K_ucan_yazi_kenar");
+
+            // Kamera bir tabelaya çok yakınken tabela ekranı kaplamaz.
+            GameConfig cfg = CameraFollow.Main.Config;
+            ScreenSizeLimit sign = null;
+            foreach (ScreenSizeLimit s in Object.FindObjectsByType<ScreenSizeLimit>(FindObjectsSortMode.None)) if (s.transform.parent != null && s.transform.parent.name == "UpgradeStation") sign = s;
+            Assert.IsNotNull(sign, "Tabela sınırlayıcı yok");
+            Vector3 p = sign.transform.position - cam.transform.forward * 4f;
+            CameraFollow.Main.SetShot(p, cam.transform.rotation, 50f);
+            yield return new WaitForSeconds(1f);
+            Assert.LessOrEqual(sign.LastScreenHeight, cfg.SignMaxScreenHeight + 0.002f, "Tabela yakında ekranı kaplıyor");
+            Assert.LessOrEqual(sign.LastScreenWidth, cfg.SignMaxScreenWidth + 0.002f);
+            Shot("K_tabela_yakin");
+            CameraFollow.Main.ClearShot();
+        }
+
+        [UnityTest]
+        public IEnumerator Bridge_FrameHiddenUntilPlanks()
+        {
+            yield return null;
+            BridgeBuilder wreck = null;
+            foreach (BridgeBuilder b in Object.FindObjectsByType<BridgeBuilder>(FindObjectsInactive.Include, FindObjectsSortMode.None)) if (b.Id == "bridge_wreck") wreck = b;
+            Assert.IsNotNull(wreck);
+            Assert.Greater(wreck.FrameCount, 3);
+            Assert.AreEqual(0, wreck.VisibleFrames, "Köprü kirişleri baştan denizde görünüyor");
+            DevCommands.CompleteBridges();
+            yield return new WaitForSeconds(0.5f);
+            Assert.AreEqual(wreck.FrameCount, wreck.VisibleFrames, "Köprü bitince iskelet tamam değil");
+        }
+
         private static string Path(Transform t)
         {
             return t.parent != null ? t.parent.name + "/" + t.name : t.name;
