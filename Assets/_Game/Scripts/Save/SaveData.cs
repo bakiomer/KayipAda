@@ -34,6 +34,7 @@ namespace KayipAda
         public List<IdValue> ShipDelivered = new List<IdValue>();
         public List<IdValue> Storage = new List<IdValue>(); // Ambar içeriği (kaynak → adet)
         public int CampLevel; // kamp: 0 çadır, 1 kulübe, 2 ev
+        public bool TempleSolved; // Kayıp Tapınak bulmacası çözüldü mü
         public float PlayTime;
         public int EarnedCoins; // bu adada kazanılan toplam para (kaçış ekranında sayılır)
 
@@ -65,6 +66,7 @@ namespace KayipAda
             ShipDelivered.Clear();
             Storage.Clear();
             CampLevel = 0;
+            TempleSolved = false;
             PlayTime = 0f;
             EarnedCoins = 0;
         }

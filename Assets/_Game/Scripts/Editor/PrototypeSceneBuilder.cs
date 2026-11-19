@@ -25,6 +25,9 @@ namespace KayipAda.EditorTools
 {
     public static class PrototypeSceneBuilder
     {
+        private static TempleRiddle templeRiddle; // Kayıp Tapınak bulmacası (sandık ve kafatası buna bağlanır)
+        private const int TempleChestIndex = 6;
+
         private const string Root = BuilderUtil.Root;
         private const string ConfigPath = Root + "/Data/GameConfig.asset";
         private const string ResourceTypesFolder = Root + "/Data/ResourceTypes";
@@ -1058,7 +1061,7 @@ namespace KayipAda.EditorTools
 
             // Kayıp Tapınak: harabe + süsler.
             Transform templeRoot = new GameObject("Islet Temple Content").transform;
-            DiscoveryBuilder.BuildTemple(templeRoot, random);
+            templeRiddle = DiscoveryBuilder.BuildTemple(templeRoot, random, config);
             Reserve(reserved, MapLayout.Temple, MapLayout.TempleRadius + 1.6f);
             DecorateIslet(p, templeRoot, island, 1, new[] { "DecorPalm", "BushRound", "DecorPalm", "Bush", "GrassPatch", "FlowerPurple", "DecorPalm" }, random, reserved);
 
@@ -1098,7 +1101,10 @@ namespace KayipAda.EditorTools
             for (int i = 0; i < MapLayout.Chests.Length; i++)
             {
                 Vector3 pos = Inside(island, MapLayout.Chests[i], 2.4f);
-                GameObject chest = Place(p.Chest, chests, pos, (float)random.NextDouble() * 360f);
+                // 7. sandık: Kayıp Tapınak bulmacasının sandığı (çözülünce topraktan yükselir).
+                bool riddleChest = i == TempleChestIndex && templeRiddle != null;
+                if (riddleChest) pos = templeRiddle.ChestHolder.position;
+                GameObject chest = Place(p.Chest, riddleChest ? templeRiddle.ChestHolder : chests, pos, riddleChest ? 180f : (float)random.NextDouble() * 360f);
                 chest.name = "Chest " + (i + 1);
                 TreasureChest component = chest.GetComponent<TreasureChest>();
                 BuilderUtil.SetString(component, "id", "chest_" + (i + 1));
@@ -1115,8 +1121,33 @@ namespace KayipAda.EditorTools
             {
                 // Kaptan dürbünü uzun iskelenin ucunda.
                 Vector3 pos = keys[i] == "spyglass" ? pierEnd + Vector3.back * 0.6f : Inside(island, MapLayout.Collectibles[i], 2.2f);
+                if (keys[i] == "skull" && templeRiddle != null)
+                {
+                    // Altın kafatası tapınak bulmacasının sandığından çıkar (sandığın önüne düşer).
+                    pos = templeRiddle.ChestHolder.position + Vector3.back * 1.2f;
+                    GameObject skull = Place(p.Collectibles[keys[i]], templeRiddle.transform, pos, 0f);
+                    BuilderUtil.SetField(templeRiddle, "reward", skull.GetComponent<Collectible>());
+                    Reserve(reserved, pos, 1.3f);
+                    continue;
+                }
                 Place(p.Collectibles[keys[i]], collect, pos, 0f);
                 Reserve(reserved, pos, 1.3f);
+            }
+            if (templeRiddle != null)
+            {
+                // Bulmaca sandığı ve kafatası adacık kapalıyken de sahnede etkin olsun (sandık/koleksiyon sayımı 8 ve 5):
+                // sandık toprağın altında ve açılamaz, kafatası görünmez; bulmaca çözülünce TempleRiddle gösterir.
+                Transform items = new GameObject("Temple Riddle Items").transform;
+                Transform holder = templeRiddle.ChestHolder;
+                holder.SetParent(items, true);
+                holder.position = new Vector3(holder.position.x, -1.4f, holder.position.z);
+                foreach (TreasureChest tc in holder.GetComponentsInChildren<TreasureChest>(true)) tc.enabled = false;
+                if (templeRiddle.Reward != null)
+                {
+                    templeRiddle.Reward.transform.SetParent(items, true);
+                    templeRiddle.Reward.transform.localScale = Vector3.zero;
+                    templeRiddle.Reward.enabled = false;
+                }
             }
             string[] figure = { "figure_head", "figure_wing", "figure_tail" };
             for (int i = 0; i < figure.Length; i++)

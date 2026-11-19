@@ -124,6 +124,8 @@ namespace KayipAda.EditorTools
         // Kayıp Tapınak: harabe halkası (sütunlar), dikili taş, altar.
         public static readonly Vector3 Temple = new Vector3(-30.5f, 0f, 9.4f);
         public const float TempleRadius = 3.4f;
+        public const float TemplePlateRing = 2.35f;   // bulmaca levhaları merkezden bu uzaklıkta
+        public const float TempleChestGap = 2.2f;     // bulmaca sandığı çemberin bu kadar güneyinde
 
         // Gizli sandıklar (8): ana adada 4, her adacıkta 2. Kıyıya fazla yakınsa içeri doğru kaydırılır.
         public static readonly Vector3[] Chests =

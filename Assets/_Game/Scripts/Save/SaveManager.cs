@@ -120,6 +120,8 @@ namespace KayipAda
             if (ShipBuilder.Instance != null) ShipBuilder.Instance.Restore(data.ShipStage, SaveData.ToDictionary(data.ShipDelivered));
             if (KayipAda.Storage.Instance != null) KayipAda.Storage.Instance.Restore(data.Storage);
             if (CampSite.Instance != null) CampSite.Instance.Restore(data.CampLevel);
+            TempleRiddle riddle = FindAnyObjectByType<TempleRiddle>(FindObjectsInactive.Include);
+            if (riddle != null) riddle.Restore(data.TempleSolved);
             Dictionary<string, int> sites = SaveData.ToDictionary(data.Sites);
             foreach (ConstructionSite site in ConstructionSite.All) site.Restore(sites, data.SitesDone.Contains(site.Id));
             if (QuestManager.Instance != null) QuestManager.Instance.Restore(data);
@@ -165,6 +167,8 @@ namespace KayipAda
             if (QuestManager.Instance != null) QuestManager.Instance.Collect(data);
             if (KayipAda.Storage.Instance != null) KayipAda.Storage.Instance.Collect(data.Storage);
             if (CampSite.Instance != null) data.CampLevel = CampSite.Instance.Level;
+            TempleRiddle temple = FindAnyObjectByType<TempleRiddle>(FindObjectsInactive.Include);
+            data.TempleSolved = temple != null && temple.Solved;
             data.Sites.Clear();
             data.SitesDone.Clear();
             foreach (ConstructionSite site in ConstructionSite.All)

@@ -75,6 +75,16 @@ namespace KayipAda
 
         [field: SerializeField, Min(0f)] public float CameraFollowSpeed { get; private set; } = 6f;
 
+        [field: Header("Kayıp Tapınak")]
+        [field: SerializeField, Tooltip("Oyuncu levhanın merkezine bu kadar yaklaşınca levha yanar (metre).")]
+        public float TemplePlateRadius { get; private set; } = 0.8f;
+        [field: SerializeField, Tooltip("Çözülünce taş çemberin dönme hızı (derece/sn).")]
+        public float TempleRingSpin { get; private set; } = 70f;
+        [field: SerializeField, Tooltip("Çember çalıştıktan kaç sn sonra sandık yükselmeye başlar.")]
+        public float TempleSolveDelay { get; private set; } = 1.0f;
+        [field: SerializeField, Tooltip("Sandığın topraktan yükselme süresi (sn).")]
+        public float TempleChestRiseTime { get; private set; } = 1.4f;
+
         [field: Header("Pazar")]
         [field: SerializeField, Tooltip("Satışta kasa kapağının açılma açısı (derece).")]
         public float MarketLidAngle { get; private set; } = 75f;

@@ -455,26 +455,36 @@ namespace KayipAda.EditorTools
 
         // ================================================================ Tapınak ve batık
 
-        public static void BuildTemple(Transform parent, System.Random random)
+        // Harabe: sütun halkası (katı), ortada taş çember (katı; bulmaca çözülünce döner), dikili taş, yükseltilmiş bloklar
+        // ve bulmaca: üç sembollü taş levha (geçilebilir), çemberin güneyinde topraktan yükselecek sandığın yeri.
+        public static TempleRiddle BuildTemple(Transform parent, System.Random random, GameConfig config)
         {
             Vector3 c = MapLayout.Temple;
             ModelSpec[] columns = { ModelCatalog.TempleColumn, ModelCatalog.TempleColumnBroken };
             for (int i = 0; i < 7; i++)
             {
                 float angle = i * 360f / 7f + 25f;
-                if (Mathf.Abs(Mathf.DeltaAngle(angle, 270f)) < 22f) continue; // batı (köprüden gelen yol) açık
+                if (Mathf.Abs(Mathf.DeltaAngle(angle, 270f)) < 22f || Mathf.Abs(Mathf.DeltaAngle(angle, 180f)) < 22f) continue; // batı (köprü yolu) ve güney (bulmaca sandığı, kameraya dönük) açık
                 Vector3 p = c + Quaternion.Euler(0f, angle, 0f) * Vector3.forward * MapLayout.TempleRadius;
                 Transform t = new GameObject("Column").transform;
                 t.SetParent(parent, false);
                 t.position = p;
                 t.rotation = Quaternion.Euler(0f, (float)random.NextDouble() * 360f, 0f);
                 PrefabFactory.CreateModel(columns[i % 2], t);
-                BuilderUtil.SetVector2(t.gameObject.AddComponent<NavObstacle>(), "size", new Vector2(0.7f, 0.7f));
+                NavObstacle colOb = t.gameObject.AddComponent<NavObstacle>();
+                BuilderUtil.SetVector2(colOb, "size", new Vector2(0.95f, 0.95f));
+                BuilderUtil.SetFloat(colOb, "cornerRadius", 0.4f);
             }
             Transform ring = new GameObject("AltarRing").transform;
             ring.SetParent(parent, false);
             ring.position = c;
             PrefabFactory.CreateModel(ModelCatalog.TempleRing, ring);
+            GameObject ringBlock = new GameObject("RingBlock");
+            ringBlock.transform.SetParent(parent, false);
+            ringBlock.transform.position = c;
+            NavObstacle ringOb = ringBlock.AddComponent<NavObstacle>();
+            BuilderUtil.SetVector2(ringOb, "size", new Vector2(2.5f, 2.5f));
+            BuilderUtil.SetFloat(ringOb, "cornerRadius", 1.15f);
             Transform obelisk = new GameObject("Obelisk").transform;
             obelisk.SetParent(parent, false);
             obelisk.position = c + new Vector3(-0.6f, 0f, 5.2f);
@@ -490,6 +500,66 @@ namespace KayipAda.EditorTools
                 BuilderUtil.SetVector2(blk.gameObject.AddComponent<NavObstacle>(), "size", new Vector2(0.9f, 0.9f));
             }
             BuilderUtil.MarkStatic(parent.gameObject);
+            return BuildTempleRiddle(parent, ring, config);
+        }
+
+        // Bulmaca: üç levha (Yıldız, Ay, Dalga), çember parıltısı, sandık yeri, eşyanın düşeceği yer.
+        private static TempleRiddle BuildTempleRiddle(Transform parent, Transform ring, GameConfig config)
+        {
+            Vector3 c = MapLayout.Temple;
+            Transform root = new GameObject("Riddle").transform;
+            root.SetParent(parent, false);
+            root.position = c;
+            Material slab = ArtGenerator.GetLit("M_TempleSlab", null, new Color(0.62f, 0.62f, 0.56f));
+            Material slabEdge = ArtGenerator.GetLit("M_TempleSlabEdge", null, new Color(0.46f, 0.47f, 0.42f));
+            string[] symbols = { ArtGenerator.StarPath, ArtGenerator.RingPath, ArtGenerator.ArrowPath };
+            float[] angles = { 35f, 115f, 245f };
+            List<Object> plates = new List<Object>(), lights = new List<Object>();
+            for (int i = 0; i < 3; i++)
+            {
+                Transform plate = new GameObject("Plate " + (i + 1)).transform;
+                plate.SetParent(root, false);
+                plate.localPosition = Quaternion.Euler(0f, angles[i], 0f) * Vector3.forward * MapLayout.TemplePlateRing;
+                plate.localRotation = Quaternion.Euler(0f, angles[i], 0f);
+                MachineBuilder.Part(plate, PrimitiveType.Cylinder, "Base", new Vector3(0f, 0.03f, 0f), new Vector3(1.35f, 0.03f, 1.35f), Quaternion.identity, slabEdge);
+                MachineBuilder.Part(plate, PrimitiveType.Cylinder, "Top", new Vector3(0f, 0.07f, 0f), new Vector3(1.15f, 0.02f, 1.15f), Quaternion.identity, slab);
+                Canvas carve = UiFactory.CreateWorldCanvas("Symbol", plate, new Vector3(0f, 0.095f, 0f), Quaternion.Euler(90f, 0f, 0f), new Vector2(80f, 80f));
+                UnityEngine.UI.Image dim = UiFactory.CreateImage("Dim", carve.transform, ArtGenerator.LoadSprite(symbols[i]), new Color(0.32f, 0.33f, 0.3f, 0.9f));
+                UiFactory.Size(dim, Vector2.zero, new Vector2(70f, 70f));
+                dim.preserveAspect = true;
+                GameObject light = new GameObject("Light");
+                light.transform.SetParent(plate, false);
+                Canvas lc = UiFactory.CreateWorldCanvas("Glow", light.transform, new Vector3(0f, 0.1f, 0f), Quaternion.Euler(90f, 0f, 0f), new Vector2(160f, 160f));
+                UnityEngine.UI.Image halo = UiFactory.CreateImage("Halo", lc.transform, ArtGenerator.LoadSprite(ArtGenerator.SoftCirclePath), new Color(1f, 0.85f, 0.35f, 0.75f));
+                UiFactory.Size(halo, Vector2.zero, new Vector2(160f, 160f));
+                UnityEngine.UI.Image bright = UiFactory.CreateImage("Symbol", lc.transform, ArtGenerator.LoadSprite(symbols[i]), new Color(1f, 0.95f, 0.6f));
+                UiFactory.Size(bright, Vector2.zero, new Vector2(70f, 70f));
+                bright.preserveAspect = true;
+                BuilderUtil.SetShadows(plate.gameObject, false);
+                light.SetActive(false);
+                plates.Add(plate);
+                lights.Add(light);
+            }
+            // Çember parıltısı (çemberle birlikte döner).
+            GameObject glow = new GameObject("RingGlow");
+            glow.transform.SetParent(ring, false);
+            PrefabFactory.AddGroundDecal("Glow", glow.transform, new Vector3(0f, 0.03f, 0f), new Vector2(3.4f, 3.4f), new Color(0.45f, 0.95f, 1f, 0.6f), ArtGenerator.SoftCirclePath, 0f);
+            PrefabFactory.AddGroundDecal("Ring", glow.transform, new Vector3(0f, 0.04f, 0f), new Vector2(3.0f, 3.0f), new Color(0.7f, 1f, 1f, 0.9f), ArtGenerator.RingPath, 0f);
+            glow.SetActive(false);
+            // Sandığın yükseleceği yer: çemberin güneyinde (kameraya dönük); topraktan çıkacağı yerde çatlak toprak.
+            Transform holder = new GameObject("ChestHolder").transform;
+            holder.SetParent(root, false);
+            holder.localPosition = new Vector3(0f, 0f, -MapLayout.TempleChestGap);
+            PrefabFactory.AddGroundDecal("Crack", root, holder.localPosition + Vector3.up * 0.02f, new Vector2(1.6f, 1.6f), new Color(0.4f, 0.32f, 0.22f, 0.55f), ArtGenerator.SoftCirclePath, 0f);
+
+            TempleRiddle riddle = root.gameObject.AddComponent<TempleRiddle>();
+            BuilderUtil.SetField(riddle, "config", config);
+            BuilderUtil.SetArray(riddle, "plates", plates.ToArray());
+            BuilderUtil.SetArray(riddle, "plateLights", lights.ToArray());
+            BuilderUtil.SetField(riddle, "ring", ring);
+            BuilderUtil.SetField(riddle, "ringGlow", glow);
+            BuilderUtil.SetField(riddle, "chestHolder", holder);
+            return riddle;
         }
 
         // ================================================================ Kırık yapılar (yan görev: onar)

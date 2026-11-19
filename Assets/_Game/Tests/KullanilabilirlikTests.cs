@@ -161,6 +161,77 @@ namespace KayipAda.Tests
             Shot("K_pazar");
         }
 
+        [UnityTest]
+        public IEnumerator Temple_PlatesSolveRiddleAndChestRises()
+        {
+            DevCommands.CompleteBridges();
+            yield return new WaitForSeconds(4f);
+            TempleRiddle riddle = FindAny<TempleRiddle>();
+            Assert.IsNotNull(riddle, "Tapınak bulmacası yok");
+            Assert.IsTrue(riddle.isActiveAndEnabled, "Tapınak adası açılmadı");
+            TreasureChest chest = riddle.ChestHolder.GetComponentInChildren<TreasureChest>(true);
+            Assert.IsNotNull(chest, "Bulmaca sandığı yok");
+            Assert.Less(riddle.ChestHolder.position.y, -1f, "Sandık baştan yerin üstünde");
+            Assert.IsFalse(chest.IsOpen);
+            Assert.AreEqual(3, riddle.Plates.Length);
+            for (int i = 0; i < riddle.Plates.Length; i++)
+            {
+                Teleport(riddle.Plates[i].position);
+                yield return new WaitForSeconds(0.35f);
+                Assert.AreEqual(i + 1, riddle.LitCount, "Levha " + (i + 1) + " yanmadı");
+                if (i == 1) Shot("K_tapinak_levhalar");
+                if (i < 2) { Teleport(riddle.transform.position + new Vector3(-4.5f, 0f, -1f)); yield return new WaitForSeconds(0.2f); }
+            }
+            Assert.IsTrue(riddle.Solved, "Üç levha yanınca bulmaca çözülmedi");
+            Teleport(riddle.transform.position + new Vector3(-3.6f, 0f, -3.6f));
+            yield return new WaitForSeconds(1.6f);
+            Shot("K_tapinak_cember");
+            yield return new WaitForSeconds(1.4f);
+            Assert.Greater(riddle.ChestHolder.position.y, -0.05f, "Sandık yükselmedi");
+            Teleport(riddle.ChestHolder.position + Vector3.back * 1.3f);
+            yield return WaitFor(() => chest.IsOpen, 2f);
+            Assert.IsTrue(chest.IsOpen, "Sandık açılmadı");
+            Assert.IsNotNull(riddle.Reward, "Koleksiyon eşyası bağlı değil");
+            yield return WaitFor(() => riddle.Reward.IsTaken, 3f);
+            Assert.IsTrue(riddle.Reward.IsTaken, "Sandıktan çıkan koleksiyon eşyası alınamadı");
+            Shot("K_tapinak_sandik");
+        }
+
+        [UnityTest]
+        public IEnumerator Temple_RingAndColumnsSolid_PlatesWalkable_StateRestores()
+        {
+            DevCommands.CompleteBridges();
+            yield return new WaitForSeconds(4f);
+            TempleRiddle riddle = FindAny<TempleRiddle>();
+            Vector3 c = riddle.transform.position;
+            Vector2 center = new Vector2(c.x, c.z);
+            Assert.Greater((NavObstacle.PushOut(center, 0.4f) - center).magnitude, 1.2f, "Taş çemberin içinden geçiliyor");
+            int columns = 0;
+            foreach (Transform t in riddle.transform.parent)
+            {
+                if (t.name != "Column") continue;
+                Vector2 p = new Vector2(t.position.x, t.position.z);
+                Assert.Greater((NavObstacle.PushOut(p, 0.4f) - p).magnitude, 0.5f, "Sütunun içinden geçiliyor");
+                columns++;
+            }
+            Assert.GreaterOrEqual(columns, 5, "Sütun bulunamadı");
+            foreach (Transform plate in riddle.Plates)
+            {
+                Vector2 p = new Vector2(plate.position.x, plate.position.z);
+                Assert.Less((NavObstacle.PushOut(p, 0.4f) - p).magnitude, 0.05f, "Levhanın üstüne basılamıyor");
+            }
+            // Kayıttan: çözülmüş durum geri gelir (sandık yerinde), yeni oyunda sıfır.
+            riddle.Restore(true);
+            Assert.IsTrue(riddle.Solved);
+            Assert.Greater(riddle.ChestHolder.position.y, -0.05f, "Kayıttan yüklenince sandık yerinde değil");
+            riddle.Restore(false);
+            Assert.IsFalse(riddle.Solved);
+            Assert.AreEqual(0, riddle.LitCount);
+            SaveData data = new SaveData { TempleSolved = true };
+            data.ResetRun();
+            Assert.IsFalse(data.TempleSolved, "Yeni oyunda tapınak sıfırlanmadı");
+        }
+
         private static string Path(Transform t)
         {
             return t.parent != null ? t.parent.name + "/" + t.name : t.name;
