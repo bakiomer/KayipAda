@@ -107,7 +107,7 @@ namespace KayipAda
             int price = AreaManager.Instance.GetRemaining(next);
             if (!CurrencyManager.Instance.TrySpend(price)) return false;
             AreaManager.Instance.Unlock(next);
-            AudioManager.Play(SoundId.Upgrade);
+            AudioManager.Celebrate(CelebrationTier.Small);
             if (Effects.Instance != null) Effects.Instance.Sparkle(EffectPosition);
             Tween.PunchScale(transform, 0.12f, 0.3f);
             Refresh();

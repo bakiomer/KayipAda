@@ -118,7 +118,7 @@ namespace KayipAda
                 Effects.Instance.Sparkle(productSpawnPoint.position + Vector3.up);
                 Effects.Instance.ShowText(productSpawnPoint.position + Vector3.up * 2.4f, type.DisplayName + " Seviye " + shownLevel + "!", new Color(0.6f, 1f, 0.6f));
             }
-            AudioManager.Play(SoundId.Upgrade);
+            AudioManager.Play(SoundId.Upgrade, 0.5f);
         }
 
         private void ApplyLevelScale()

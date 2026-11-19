@@ -36,7 +36,7 @@ namespace KayipAda
                 Effects.Instance.Sparkle(fixedVisual.transform.position + Vector3.up);
                 Effects.Instance.ShowText(fixedVisual.transform.position + Vector3.up * 2.4f, DisplayName + " onarıldı!", new Color(0.6f, 1f, 0.6f));
             }
-            AudioManager.Play(SoundId.Unlock);
+            AudioManager.Celebrate(CelebrationTier.Small);
         }
     }
 }

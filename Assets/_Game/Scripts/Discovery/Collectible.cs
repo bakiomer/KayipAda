@@ -86,7 +86,7 @@ namespace KayipAda
         {
             if (taken) return;
             taken = true;
-            AudioManager.Play(SoundId.UnlockJingle);
+            AudioManager.Celebrate(CelebrationTier.Medium);
             Haptics.Vibrate();
             if (Effects.Instance != null) Effects.Instance.Sparkle(transform.position + Vector3.up);
             if (kind == Kind.Collection)

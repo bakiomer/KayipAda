@@ -87,7 +87,7 @@ namespace KayipAda
 
             RefreshAll();
             Tween.PunchScale(row.transform, 0.08f, 0.3f);
-            AudioManager.Play(SoundId.Upgrade);
+            AudioManager.Celebrate(CelebrationTier.Small);
             if (Effects.Instance != null && station != null)
             {
                 Vector3 p = station.EffectPoint.position;
@@ -107,7 +107,7 @@ namespace KayipAda
             }
             RefreshAll();
             Tween.PunchScale(card.transform, 0.08f, 0.3f);
-            AudioManager.Play(SoundId.Upgrade);
+            AudioManager.Celebrate(CelebrationTier.Small);
             if (Effects.Instance != null && station != null) Effects.Instance.Sparkle(station.EffectPoint.position);
         }
 

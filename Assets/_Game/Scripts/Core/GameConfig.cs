@@ -80,6 +80,20 @@ namespace KayipAda
 
         [field: SerializeField, Min(0f)] public float CameraFollowSpeed { get; private set; } = 6f;
 
+        [field: Header("Ekrandaki yazılar")]
+        [field: SerializeField, Tooltip("Uçan yazılar ekran kenarından en az bu kadar içeride kalır (ekran oranı).")]
+        public float FloatingTextScreenMargin { get; private set; } = 0.04f;
+        [field: SerializeField, Tooltip("Uçan yazılar üstte arayüz (para, görev kartları) için bu kadar boşluk bırakır (ekran oranı).")]
+        public float FloatingTextTopMargin { get; private set; } = 0.2f;
+        [field: SerializeField, Tooltip("Bina başlık levhası ekran yüksekliğinin en fazla bu kadarını kaplar (yakınken küçülür).")]
+        public float SignMaxScreenHeight { get; private set; } = 0.045f;
+        [field: SerializeField, Tooltip("Bina başlık levhası ekran genişliğinin en fazla bu kadarını kaplar.")]
+        public float SignMaxScreenWidth { get; private set; } = 0.42f;
+
+        [field: Header("Kutlama sesleri")]
+        [field: SerializeField, Tooltip("Son kutlama melodisinden bu kadar sn içinde yeni bir orta kutlama gelirse melodi çalmaz, sadece küçük efekt.")]
+        public float CelebrationMelodyCooldown { get; private set; } = 6f;
+
         [field: Header("Kayıp Tapınak")]
         [field: SerializeField, Tooltip("Oyuncu levhanın merkezine bu kadar yaklaşınca levha yanar (metre).")]
         public float TemplePlateRadius { get; private set; } = 0.8f;

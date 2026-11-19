@@ -39,6 +39,9 @@ namespace KayipAda
         Discovery = 33,     // bulut dağıldı / yeni bölge keşfedildi
         ChestOpen = 34,     // sandık açıldı
         Anvil = 35,         // demirci örsü (çekiç)
-        QuestDone = 36      // yan görev tamamlandı
+        QuestDone = 36,     // yan görev tamamlandı
+        CelebrateSmall = 37,  // küçük kutlama efekti (pop + yaprak + hafif çan)
+        CelebrateMedium = 38, // kısa keşif melodileri (1-2 sn)
+        CelebrateBig = 39     // büyük kutlama müziği (2-4 sn)
     }
 }

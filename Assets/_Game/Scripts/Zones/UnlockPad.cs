@@ -79,10 +79,9 @@ namespace KayipAda
                 // Bu kare tamamlandı: konfeti, "AÇILDI!" yazısı, whoosh + çan + kısa müzik, titreşim; kare küçülerek kaybolur.
                 if (Effects.Instance != null) Effects.Instance.Confetti(transform.position + Vector3.up * 0.5f);
                 if (BurstText.Instance != null) BurstText.Instance.Show("AÇILDI!", area.DisplayName);
-                AudioManager.Play(SoundId.Unlock);
+                AudioManager.Play(SoundId.Unlock, 0.6f);
                 AudioManager.Play(SoundId.Whoosh);
-                AudioManager.Play(SoundId.UnlockJingle);
-                AudioManager.Duck(config.MusicDuckTime);
+                AudioManager.Celebrate(CelebrationTier.Medium); // bölge/bina açılışı: kısa keşif melodisi
                 Haptics.Vibrate();
                 hiding = true;
                 Tween.PopOut(transform, 0.3f, () => gameObject.SetActive(false));

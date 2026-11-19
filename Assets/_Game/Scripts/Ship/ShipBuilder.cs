@@ -202,8 +202,7 @@ namespace KayipAda
             if (Effects.Instance != null) Effects.Instance.Confetti(deliveryTarget.position + Vector3.up);
             string title = finished.Name.ToUpper(new CultureInfo("tr-TR")) + " TAMAMLANDI!";
             if (CelebrationBanner.Instance != null) CelebrationBanner.Instance.Show(title, finished.UnlockMessage, ship.CelebrationDuration);
-            AudioManager.Play(SoundId.StageComplete);
-            AudioManager.Duck(config.MusicDuckTime);
+            AudioManager.Celebrate(CelebrationTier.Big); // gemi aşaması
             Haptics.Vibrate();
             StageCompleted?.Invoke();
 

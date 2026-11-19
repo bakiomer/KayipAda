@@ -121,7 +121,7 @@ namespace KayipAda
             }
             if (Effects.Instance != null) Effects.Instance.Sparkle(plates[index].position + Vector3.up * 0.3f);
             AudioManager.Play(SoundId.Pop);
-            AudioManager.Play(SoundId.Discovery, 0.5f);
+            AudioManager.Play(SoundId.Unlock, 0.5f);
             Tween.PunchScale(plates[index], 0.15f, 0.3f);
             if (LitCount == plates.Length) StartCoroutine(Solve());
         }
@@ -144,7 +144,7 @@ namespace KayipAda
                 Tween.PopIn(ringGlow.transform, ringGlow.transform.localScale, 0.5f);
             }
             AudioManager.Play(SoundId.Whoosh);
-            AudioManager.Play(SoundId.Discovery);
+            AudioManager.Celebrate(CelebrationTier.Medium);
             if (Effects.Instance != null)
                 for (int i = 0; i < 6; i++)
                     Effects.Instance.Dust(center + Quaternion.Euler(0f, i * 60f, 0f) * Vector3.forward * 1.4f);

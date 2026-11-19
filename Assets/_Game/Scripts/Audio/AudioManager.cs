@@ -4,6 +4,9 @@
 // Arka planda sürekli bir dalga sesi ve ara sıra kuş cıvıltıları çalar (ses dosyası yoksa kendisi üretir).
 // Her çalışta perde hafifçe rastgele değişir (Entry.PitchJitter). Müzik (final) ayrı kaynaktan sırayla çalar.
 // Ayarlar: ses açık/kapalı (PlayerPrefs "ses").
+// Kutlamalar tek kapıdan: AudioManager.Celebrate(küçük/orta/büyük). Melodiler ayrı kaynaktan, üst üste binmez; son
+// melodiden GameConfig.CelebrationMelodyCooldown sn içinde orta kutlama sadece efekt çalar; aynı melodi üst üste gelmez;
+// büyük kutlama orta melodiyi keser. Arka plan müziği kesilmez, sadece kısılır (Duck).
 // Ses dosyası eksikse sessizce geçer, hata vermez.
 
 using System.Collections.Generic;
@@ -28,6 +31,16 @@ namespace KayipAda
         private AudioSource birdSource;
         private AudioSource musicSource;
         private AudioSource backgroundSource;
+        private AudioSource celebrationSource;
+        private float lastMelodyTime = -999f;
+        private float melodyEnd = -1f;
+        private CelebrationTier melodyTier;
+        private AudioClip lastMelodyClip;
+
+        // Testler için: son kutlamada ne çaldı ve kaç melodi çaldı.
+        public static CelebrationTier LastCelebrationPlayed { get; private set; }
+        public static int MelodiesPlayed { get; private set; }
+        public static AudioClip LastMelody => instance != null ? instance.lastMelodyClip : null;
         private float duckUntil = -1f;
         private float backgroundLevel = 1f;   // 0..1, ducking ve finale geçiş bunu değiştirir
         private bool victoryStarted;
@@ -74,6 +87,10 @@ namespace KayipAda
             musicSource.playOnAwake = false;
             musicSource.spatialBlend = 0f;
 
+            celebrationSource = gameObject.AddComponent<AudioSource>();
+            celebrationSource.playOnAwake = false;
+            celebrationSource.spatialBlend = 0f;
+            MelodiesPlayed = 0;
             backgroundSource = gameObject.AddComponent<AudioSource>();
             backgroundSource.loop = true;
             backgroundSource.playOnAwake = false;
@@ -138,6 +155,57 @@ namespace KayipAda
             instance.musicSource.Stop();
             instance.musicVolume = entry.Volume;
             foreach (AudioClip clip in entry.Clips) if (clip != null) instance.musicQueue.Enqueue(clip);
+        }
+
+        // Kutlama sesi (öncelik + tekrar engelleme). Bkz. CelebrationTier.
+        public static void Celebrate(CelebrationTier tier)
+        {
+            if (instance != null) instance.CelebrateInternal(tier);
+        }
+
+        private void CelebrateInternal(CelebrationTier tier)
+        {
+            float now = Time.unscaledTime;
+            bool busy = now < melodyEnd;
+            bool cooling = now - lastMelodyTime < config.CelebrationMelodyCooldown;
+            bool melody = tier == CelebrationTier.Big ? !(busy && melodyTier == CelebrationTier.Big)
+                        : tier == CelebrationTier.Medium && !busy && !cooling;
+            if (!melody)
+            {
+                PlayInternal(SoundId.CelebrateSmall, 1f);
+                LastCelebrationPlayed = CelebrationTier.Small;
+                return;
+            }
+            SoundLibrary.Entry entry = library != null ? library.Find(tier == CelebrationTier.Big ? SoundId.CelebrateBig : SoundId.CelebrateMedium) : null;
+            AudioClip clip = PickMelody(entry);
+            if (clip == null)
+            {
+                PlayInternal(SoundId.CelebrateSmall, 1f);
+                LastCelebrationPlayed = CelebrationTier.Small;
+                return;
+            }
+            celebrationSource.Stop(); // büyük, devam eden orta melodiyi keser (üst üste binmez)
+            celebrationSource.clip = clip;
+            celebrationSource.volume = entry.Volume * config.SfxVolume;
+            celebrationSource.pitch = 1f;
+            celebrationSource.Play();
+            if (tier == CelebrationTier.Medium) PlayInternal(SoundId.CelebrateSmall, 0.6f);
+            Duck(clip.length);
+            lastMelodyTime = now;
+            melodyEnd = now + clip.length;
+            melodyTier = tier;
+            lastMelodyClip = clip;
+            LastCelebrationPlayed = tier;
+            MelodiesPlayed++;
+        }
+
+        // Aynı melodi üst üste çalmaz.
+        private AudioClip PickMelody(SoundLibrary.Entry entry)
+        {
+            if (entry == null || entry.Clips == null || entry.Clips.Length == 0) return null;
+            List<AudioClip> pool = new List<AudioClip>();
+            foreach (AudioClip c in entry.Clips) if (c != null && (c != lastMelodyClip || entry.Clips.Length == 1)) pool.Add(c);
+            return pool.Count > 0 ? pool[Random.Range(0, pool.Count)] : null;
         }
 
         public static void Play(SoundId id, float volumeScale = 1f)

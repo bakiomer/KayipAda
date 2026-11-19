@@ -104,7 +104,7 @@ namespace KayipAda
             Vector3 p = levels.Length > Level && levels[Level] != null ? levels[Level].transform.position : transform.position;
             if (Effects.Instance != null) { Effects.Instance.Confetti(p + Vector3.up * 1.5f); Effects.Instance.Dust(p); }
             if (CelebrationBanner.Instance != null) CelebrationBanner.Instance.Show("KAMP BÜYÜDÜ!", Level == 1 ? "Ahşap kulübe" : "Küçük ev", 2f);
-            AudioManager.Play(SoundId.UnlockJingle);
+            AudioManager.Celebrate(CelebrationTier.Medium);
             Haptics.Vibrate();
         }
 

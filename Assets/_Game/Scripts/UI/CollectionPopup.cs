@@ -49,7 +49,6 @@ namespace KayipAda
             root.SetActive(true);
             shownAt = Time.unscaledTime;
             card.localScale = Vector3.zero;
-            AudioManager.Play(SoundId.UnlockJingle);
         }
 
         public void Hide()

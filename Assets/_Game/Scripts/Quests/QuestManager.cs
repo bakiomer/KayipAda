@@ -75,8 +75,10 @@ namespace KayipAda
 
         // ---------------------------------------------------------------- Olaylar
 
-        private void OnGathered(ResourceType type, bool byPlayer) { if (byPlayer) Advance(QuestKind.Collect, type, 1); }
-        private void OnSold(ResourceType type, bool byPlayer) { if (byPlayer) Advance(QuestKind.Sell, type, 1); }
+        // Toplama ve satış: oyuncunun ve tayfasının (işçiler) yaptığı da sayılır; Sınırsız Para modunda da satış sayılır
+        // (satış olayı paradan bağımsızdır).
+        private void OnGathered(ResourceType type, bool byPlayer) => Advance(QuestKind.Collect, type, 1);
+        private void OnSold(ResourceType type, bool byPlayer) => Advance(QuestKind.Sell, type, 1);
         private void OnProduced(ResourceType type, int amount) => Advance(QuestKind.Produce, type, amount);
         private void OnChestOpened(TreasureChest chest) => Advance(QuestKind.FindChest, null, 1);
         private void OnSiteCompleted(string id) => CheckStates();
@@ -152,7 +154,7 @@ namespace KayipAda
             active.Remove(q);
             if (q.RewardCoins > 0 && CurrencyManager.Instance != null) CurrencyManager.Instance.Add(q.RewardCoins);
             if (q.RewardCrystals > 0 && ProfileManager.Instance != null) ProfileManager.Instance.AddCrystals(q.RewardCrystals);
-            AudioManager.Play(SoundId.QuestDone);
+            AudioManager.Celebrate(CelebrationTier.Medium);
             Haptics.Vibrate();
             PlayerController player = FindAnyObjectByType<PlayerController>();
             if (Effects.Instance != null && player != null)

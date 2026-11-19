@@ -261,6 +261,43 @@ namespace KayipAda.Tests
             PlayerPrefs.DeleteKey("kayipada_camera_zoom");
         }
 
+        [UnityTest]
+        public IEnumerator Celebration_NoRepeatedMelodyAndPriorities()
+        {
+            yield return new WaitForSeconds(0.5f);
+            GameConfig cfg = CameraFollow.Main.Config;
+            int m0 = AudioManager.MelodiesPlayed;
+            AudioManager.Celebrate(CelebrationTier.Medium);
+            Assert.AreEqual(m0 + 1, AudioManager.MelodiesPlayed, "Orta kutlama melodi çalmadı");
+            AudioClip first = AudioManager.LastMelody;
+            Assert.IsNotNull(first);
+            Assert.That(first.length, Is.InRange(0.9f, 2.2f), "Orta melodi 1-2 sn değil");
+            // Art arda açılış: melodi tekrar çalmaz, sadece efekt.
+            AudioManager.Celebrate(CelebrationTier.Medium);
+            AudioManager.Celebrate(CelebrationTier.Medium);
+            Assert.AreEqual(m0 + 1, AudioManager.MelodiesPlayed, "Art arda açılışta melodi tekrar çaldı");
+            Assert.AreEqual(CelebrationTier.Small, AudioManager.LastCelebrationPlayed);
+            AudioManager.Celebrate(CelebrationTier.Small);
+            Assert.AreEqual(m0 + 1, AudioManager.MelodiesPlayed, "Küçük kutlama melodi çaldı");
+            // Büyük kutlama önceliklidir (ortayı keser) ama büyük büyüğün üstüne binmez.
+            AudioManager.Celebrate(CelebrationTier.Big);
+            Assert.AreEqual(m0 + 2, AudioManager.MelodiesPlayed, "Büyük kutlama çalmadı");
+            Assert.That(AudioManager.LastMelody.length, Is.InRange(1.9f, 4.2f), "Büyük müzik 2-4 sn değil");
+            AudioManager.Celebrate(CelebrationTier.Big);
+            Assert.AreEqual(m0 + 2, AudioManager.MelodiesPlayed, "Büyük kutlamalar üst üste bindi");
+            // Bekleme süresi geçince yeni orta melodi çalar; aynı melodi üst üste gelmez.
+            AudioClip prev = null;
+            for (int i = 0; i < 2; i++)
+            {
+                yield return new WaitForSecondsRealtime(cfg.CelebrationMelodyCooldown + 0.3f);
+                int before = AudioManager.MelodiesPlayed;
+                AudioManager.Celebrate(CelebrationTier.Medium);
+                Assert.AreEqual(before + 1, AudioManager.MelodiesPlayed, "Bekleme sonrası melodi çalmadı");
+                if (prev != null) Assert.AreNotEqual(prev, AudioManager.LastMelody, "Aynı melodi üst üste çaldı");
+                prev = AudioManager.LastMelody;
+            }
+        }
+
         private static string Path(Transform t)
         {
             return t.parent != null ? t.parent.name + "/" + t.name : t.name;
