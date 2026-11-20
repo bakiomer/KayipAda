@@ -399,6 +399,24 @@ namespace KayipAda.Tests
             Assert.AreEqual(wreck.FrameCount, wreck.VisibleFrames, "Köprü bitince iskelet tamam değil");
         }
 
+        [UnityTest]
+        public IEnumerator Performance_60FpsWithEverythingOpen()
+        {
+            DevCommands.UnlockAllRegions();
+            DevCommands.UnlockAllBuildings();
+            DevCommands.HireAllWorkers();
+            DevCommands.CompleteBridges();
+            yield return new WaitForSeconds(5f);
+            Teleport(new Vector3(-4f, 0f, -4f)); // kamp + Pazar (en kalabalık görüntü)
+            yield return new WaitForSeconds(1f);
+            int frames = 0;
+            float start = Time.realtimeSinceStartup;
+            while (Time.realtimeSinceStartup - start < 3f) { frames++; yield return null; }
+            float fps = frames / (Time.realtimeSinceStartup - start);
+            Debug.Log("KAYIPADA: FPS (masaüstü, her şey açık) = " + fps.ToString("0.0"));
+            Assert.GreaterOrEqual(fps, 55f, "FPS 60'ın belirgin altında: " + fps.ToString("0.0"));
+        }
+
         private static string Path(Transform t)
         {
             return t.parent != null ? t.parent.name + "/" + t.name : t.name;

@@ -265,8 +265,8 @@ namespace KayipAda.EditorTools
             float height = 120f + lines * rowH + 96f;
             Canvas canvas = UiFactory.CreateWorldCanvas("InfoCard", sign.transform, new Vector3(0f, cardHeight, 0f), Quaternion.identity, new Vector2(width, height));
             canvas.gameObject.AddComponent<Billboard>();
-            canvas.sortingOrder = 5;
-            Image bg = UiFactory.CreateImage("Card", canvas.transform, ArtGenerator.LoadSprite(ArtGenerator.RoundedRectPath), new Color(0.16f, 0.1f, 0.05f, 0.92f));
+            canvas.sortingOrder = 100; // arkadaki dünya yazılarının (KÖPRÜ, Yükselt...) üstünde, opak
+            Image bg = UiFactory.CreateImage("Card", canvas.transform, ArtGenerator.LoadSprite(ArtGenerator.RoundedRectPath), new Color(0.16f, 0.1f, 0.05f, 1f));
             bg.type = Image.Type.Sliced;
             UiFactory.Stretch(bg.rectTransform);
             Image border = UiFactory.CreateImage("Border", canvas.transform, ArtGenerator.LoadSprite(ArtGenerator.RoundedRectPath), new Color(0.95f, 0.75f, 0.35f, 0.9f));

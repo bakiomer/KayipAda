@@ -1,7 +1,13 @@
 # Kayıp Ada — Oyun Tasarımı ve Kod Kuralları
 
 > **Yön: 3D low-poly** (2D kutulardan geçildi; 2D son hali `main` dalında "2D son durum" kaydında).
-> **Şu anki durum:** Düzeltme + Keşif + Düzeltme 3 + Bina kimliği / üretim hattı / doğal başlangıç turu yapıldı:
+> **Şu anki durum:** Düzeltme + Keşif + Düzeltme 3 + Bina turu + Kullanılabilirlik ve cila turu yapıldı:
+> - Kullanılabilirlik turu: paneller (Barak, Tezgah, Ambar Al, Görev Panosu, Yükselt) sadece oyuncu alanda DURUNCA açılır
+>   (`PanelZone`, 0,5 sn, yerdeki halka dolar), hareketle anında kapanır, joystick kilitlenmez, X / geri tuşu; Pazar kampın
+>   batısında 3 tezgahlı çarşı (kasa kapağı, büyüyen ürün yığınları, satıcı); Kayıp Tapınak bulmacası (3 levha → dönen
+>   çember → yükselen sandık); kamera Yakın/Normal/Uzak (varsayılan %13 geriden); merkezi kutlama sesleri (küçük/orta/büyük);
+>   işçiler hep insan korsan; uçan yazılar ekranda kalır, tabelalar yakınken küçülür; gemi raylar boyunca iner; köprü
+>   iskeleti tahtalarla belirir; ilk kaçış ~28 dk.
 > - Bina turu: her işleme binasında görünür üretim hattı (giriş kızağı → makine → çıkış kızağı) ve üretime SENKRON
 >   makine (taş ocağı vinci + çukur, su çarklı halat düzeneği, hasır çardaklı dokuma tezgahı, kiremit çatılı demirci);
 >   çizgili tente sadece Pazar'da; Ambar burunda kapalı depo + yük asansörü; yerdeki direkli bölge tabelaları kalktı
@@ -19,7 +25,7 @@
 >   halat çarkı / dokuma tezgahı (sadece üretirken döner); açık Liman Pazarı; ayak izi/yaprak/su halkası; toplanma kadrajı.
 > - Keşif: bulutlu bölgeler, iki adacık (köprüyle), Demirci (hurda → çivi), 8 sandık, 5 koleksiyon, 15 yan görev,
 >   bina seviyeleri (3), altın figür, kristal + 11 kostüm.
-> Testler `Docs/Screenshots` (keşif `Kesif`, Düzeltme 3 `Duzeltme3`, bina turu `Binalar` önce/sonra). İş `3d` dalında.
+> Testler `Docs/Screenshots` (keşif `Kesif`, Düzeltme 3 `Duzeltme3`, bina turu `Binalar`, `Kullanilabilirlik` önce/sonra). İş `3d` dalında.
 
 ## Proje
 - **Motor:** Unity 6 (6000.6), **URP 3D** (Universal Renderer, mobil ayarlı `Assets/_Game/Settings/URP_Mobile`)
@@ -71,10 +77,20 @@ kamera adanın üstünden uzaklaşan gemiyi takip eder (kadrajı kapatan yüksek
 (süre, kaptanlık XP'si, kristal, "Koleksiyon 3/5 · Sandıklar 6/8", altın figür varsa "EFSANEVİ GEMİ!", "Tekrar oyna").
 Miktarlar ve süreler `Data/Ship.asset`'te.
 
+### Paneller (ortak kural, `PanelZone`)
+Tayfa Barakası, Geliştirme Tezgahı, Ambar "Al", Görev Panosu ve bina "Yükselt" tabelası: alana girince yer halkası
+belirginleşir + küçük ikon; panel ancak oyuncu alanda durursa (joystick bırakılmış, `GameConfig.PanelOpenDelay` = 0,5 sn,
+halka dolar) açılır; hareket başlayınca anında kapanır; yanından geçerken açılmaz; X butonu ve Android geri tuşu kapatır
+(sonra oyuncu tekrar durana kadar açılmaz). Joystick hiç kilitlenmez (`PlayerController.MoveInputActive`). Satın alma
+sadece butonla. Kaynak bırakma alanları (Pazar, bina girişleri, Ambar Bırak, gemi teslim) otomatik çalışmaya devam eder.
+Panel gövdeleri opak (arkadaki dünya yazıları görünmez).
+
 ### Tayfa Barakası (işçiler)
-Kampın kuzeyindeki korsan evi (Quaternius House1). Üstündeki daireye girince alttan panel açılır: her işçi türü için kart
+Kampın güneybatısındaki korsan evi. Önündeki alanda durunca alttan panel açılır: her işçi türü için kart
 (resim, "1/3", "TUT" + fiyat; binası kapalıysa "Bıçkıhane gerekli") + İşçi Hızı / İşçi Kapasitesi geliştirmeleri.
 Tutulan işçi kapıdan çıkar, kısa sevinir (konfeti), işe koşar. Sayılar `CrewManager`'da, kayıtta `Crew`.
+İşçilerin hepsi insan korsan: Oduncu (Henry), Taşıyıcı (Anne), Lifçi (Anne + hasır şapka), Demirci Çırağı (Henry + deri
+önlük); kart resimleri sahnedeki modelden çekilir. Köpek balığı / iskelet sadece kostüm.
 Kamptaki tezgahta sadece oyuncu geliştirmeleri (+ Bina Hızı) kaldı.
 
 ### Keşif
@@ -108,6 +124,11 @@ Kamptaki tezgahta sadece oyuncu geliştirmeleri (+ Bina Hızı) kaldı.
   fiyat, Yükselt). Hız ve kapasite artar, bina büyür.
 - **Ağaç/kaya yeniden belirme**: kütük bir süre kalır, gömülür; fidan → genç ağaç → tam ağaç zıplayarak büyür; kaya
   ve hurda yerden yükselir (`ResourceNode.RegrowStyle`).
+- **Kayıp Tapınak bulmacası** (`TempleRiddle`): üretim yok, gizem adası. Çemberin çevresinde 3 sembollü taş levha
+  (Yıldız, Ay, Dalga; geçilebilir): basınca yanar (ışık + ses). Üçü yanınca ortadaki taş çember döner/parlar/toz kalkar,
+  kamera odaklanır, çemberin güneyinden özel sandık yükselir; içinden altın kafatası (koleksiyon) + kristal. Sütunlar,
+  bloklar ve çember katı. Durum kayıtta (`SaveData.TempleSolved`), yeni oyunda sıfır. Sandık kapalı ada sayımında yer alsın
+  diye toprağın altında bekler (`Temple Riddle Items`).
 - **Altın figür**: tapınaktaki 3 parça → geminin burnunda altın figür, kaçışta "EFSANEVİ GEMİ!" + ek kristal.
 - **Kristal** kalıcı ikinci para (sadece sandık, görev, koleksiyon, kaçış). **Kostümler** (`Data/Costumes`): 7 karakter +
   4 yelken/bayrak; bazıları sadece sandıktan. Bu turda mağaza yok; Test Menüsü'nden giyilir.
@@ -121,6 +142,11 @@ Kamptaki tezgahta sadece oyuncu geliştirmeleri (+ Bina Hızı) kaldı.
   çizgili rulo), Demirci (ocak, körük, eksantrikli çekiç, kıvılcım), Bıçkıhane (model + hat).
 - **Yakınlık görünürlüğü** (`InteractionVisibility`): yakında halkalar/ikonlar tam ve Yükselt tabelası açık; uzakta soluk
   ve küçük (gizlenmez), tabela yok. Eşikler `GameConfig` > "Yakınlık görünürlüğü".
+- **Liman Pazarı** (`Market`, `MerchantIdle`): kampın batısında açık hava çarşısı, kameraya dönük: ortada kırmızı-krem
+  çizgili ana tezgah (satıcı, kasa sandığı, kereste/halat/bez), solda hasır tenteli meyve tezgahı, sağda mavi-krem taş/tuğla/
+  hurda tezgahı, iki direkli kemerde büyük "Pazar" tabelası, sandık/çuval/fıçı/bayrak/fener. Satışta para kasaya uçar
+  (kapak açılıp kapanır), satılan türün yığını kısa süre büyür; satıcı el sallar / yan tezgahlara dönüp ürün düzenler.
+  Sayılar `GameConfig` > "Pazar".
 - **Kamp** (`CampSite`): merkezde ateş (alev, kıvılcım, duman, kodla üretilen çıtırtı), tabureler; barınak gemi 2. aşamada
   kulübe, 4. aşamada ev olur (kutlama; `SaveData.CampLevel`). Boştaki işçi `CampRestAfter` sn sonra ateşin başında
   `CampRestTime` sn dinlenir. Görev panosu (`QuestBoard` + `QuestBoardPanel`): aktif ve tamamlanan yan görevler.
@@ -129,6 +155,11 @@ Kamptaki tezgahta sadece oyuncu geliştirmeleri (+ Bina Hızı) kaldı.
 - Hepsi **CC0** (ya da ticari kullanıma açık); kaynak/yazar/lisans **Docs/Lisanslar.md**'de. 8-bit/chiptune ses kullanılmaz.
   Adaylar `ThirdParty/Audio/Adaylar/<ihtiyaç>/`, yedekler `ThirdParty/Audio/Claude_Uretim/`; daha iyisi için elle indirilecekler
   **Docs/IndirilecekSesler.md**. Bağlantılar `PrototypeSceneBuilder.CreateSoundLibraryIfMissing` (değiştirince `SoundVersion`++).
+- **Kutlamalar tek kapıdan:** `AudioManager.Celebrate(CelebrationTier)`. Küçük (0,4-0,8 sn: işçi, geliştirme, onarım) = pop +
+  yaprak + hafif çan (`kutlama_kucuk_1..3`, melodisiz); Orta (1-2 sn: bölge/bina açılışı, keşif, yan görev) = 4 kısa keşif
+  melodisinden biri (`kesif_melodi_1..4`, aynısı üst üste çalmaz); Büyük (2-4 sn: gemi aşaması, adacık açılışı) = Fupi Win
+  jingle'ları; final zafer müziği ayrı. Son melodiden `CelebrationMelodyCooldown` (6 sn) içinde orta kutlama sadece efekt;
+  büyük, ortayı keser; melodiler üst üste binmez; arka plan müziği kesilmez, kısılır.
 - Toplama sesleri 3-4 çeşit, perde ±%8, kısık; para ve kutlamalar öne çıkar. Arka plan müziği (Dizzy Crow "Pirate's Orchestra")
   döngüde kısık çalar, kutlamalarda kısılır (`AudioManager.Duck`), finalde zafer müziğine (RandomMind, 28 sn) yumuşak geçer.
   Ortam: dalga + kuş döngüsü; ara sıra martı sesi. Uzun müzikler telefonda akışla (Streaming) okunur.
@@ -215,7 +246,7 @@ Assets/_Game/
   ThirdParty/        Quaternius_Pirate (+ Textures/Atlas_Pirate.png), Kenny_Pirate, Kenny_Nature, Kenny_Survival,
                      Audio (Impact, Interface, RPG, Jingles = Kenney Music Jingles CC0)
 Docs/Modeller.md     Model ve ses seçim tablosu (proje kökünde)
-Docs/Denge.md        Fiyat/hız denge tablosu (ilk kaçış ~33 dk)
+Docs/Denge.md        Fiyat/hız denge tablosu, dakika dakika (ilk kaçış ~28 dk, yan içerikle ~40 dk)
 Docs/Lisanslar.md    Her sesin/modelin/fontun kaynağı, yazarı ve lisansı
 Docs/IndirilecekSesler.md  Elle indirilecek daha iyi ses adayları (Freesound/Pixabay/Mixkit linkleri)
 Docs/GeceRaporu.md   Gece çalışmasının raporu
@@ -223,6 +254,7 @@ Docs/Screenshots/    Otomatik ekran görüntüleri (testler üretir)
 Docs/Screenshots/Kesif/  Keşif turu ekran görüntüleri
 Docs/Screenshots/Duzeltme3/  Oyuncu testi düzeltme turu: once/ ve sonra/
 Docs/Screenshots/Binalar/  Bina turu: once/ ve sonra/ (binalar, açılma anları, yakınlık görünürlüğü)
+Docs/Screenshots/Kullanilabilirlik/  Kullanılabilirlik turu: once/ ve sonra/ (paneller, Pazar, tapınak, kamera, final)
 ```
 
 ### Ayar dosyaları (`Data/`)
@@ -251,9 +283,13 @@ SoundLibrary.asset   Hangi olayda hangi ses (Docs/Modeller.md'de liste; komut sa
 ## Sınıfların Görevleri
 | Sınıf | Klasör | Görevi |
 |---|---|---|
-| `GameConfig` | Core | ScriptableObject. Oyuncu hızı/kapasitesi, satış, açma hızı, kamera (açı, FOV, uzaklık), joystick, yığın sallanması, efekt ve ses sayıları |
+| `GameConfig` | Core | ScriptableObject. Oyuncu hızı/kapasitesi, satış, açma hızı, kamera (açı, FOV, uzaklık, Yakın/Normal/Uzak), joystick, paneller, Pazar, tapınak, kutlama sesleri, ekrandaki yazılar |
+| `PanelZone` | Zones | Panel açan alanların temeli: durunca açılır, hareketle kapanır, ipucu halkası + ikon; `BackPressed()` |
+| `TempleRiddle` / `MerchantIdle` | Discovery / Zones | Kayıp Tapınak bulmacası; Pazar satıcısının boştaki hareketleri |
+| `ScreenSizeLimit` | Core | Bina başlık levhası yakınken ekranı kaplamasın (ekran boyu üst sınırı) |
+| `CelebrationTier` | Audio | Kutlama büyüklüğü (Small / Medium / Big) |
 | `CurrencyManager` | Core | Parayı tek yerde tutar (`Coins`), `Add` / `TrySpend`, `CoinsChanged` olayı. Singleton (-100) |
-| `CameraFollow` | Core | ~45° eğik, dar açılı perspektif kamera; oyuncuyu yumuşak takip eder, oyuncunun biraz önüne bakar |
+| `CameraFollow` | Core | ~45° eğik, dar açılı perspektif kamera; oyuncuyu yumuşak takip eder, oyuncunun biraz önüne bakar. Mesafe = `CameraDistance` × ön ayar (Yakın 1,0 / Normal 1,13 / Uzak 1,3; cihazda hatırlanır) |
 | `Tween` / `TweenRunner` | Core | Basit animasyon yardımcısı: `PunchScale`, `Shake`, `PopIn`, `PopOut`, `MoveArc`, `Value`. Runner sahneye kendini ekler |
 | `Effects` | Core | Efektlerin tek giriş noktası: `Confetti`, `CoinPop` (+ "+5" yazısı), `FlyCoin`, `ShowText`. Havuz kullanır |
 | `FloatingText` | Core | Yükselip kaybolan dünya yazısı |
@@ -310,7 +346,7 @@ SoundLibrary.asset   Hangi olayda hangi ses (Docs/Modeller.md'de liste; komut sa
 | `ProgressionGuide` | Core | Sonraki hedef: en ucuz açılabilir karenin üstünde zıplayan ok + halkası nabız atar; ekran dışındaysa kenarda ok. Kare kalmadıysa gemi |
 | `ScreenshotUtil` | Core | Test/kontrol için 1080x1920 PNG ekran görüntüsü (arayüz dahil) |
 | `UpgradeType` / `UpgradeManager` | Upgrades | Geliştirme ayarı; seviyeleri tek yerde tutar. `Multiplier(stat)` (hızlar), `Extra(stat, temel)` (kapasite), kaptanlık bonusu dahil |
-| `UpgradeStation` / `UpgradePanel` / `UpgradeRow` | Upgrades | Kamptaki tezgah; üstüne gelince alttan panel açılır (açıkken oyuncu yürümez, `PlayerController.InputBlocked`); satırlar seviye noktaları, fiyat, "MAKS" |
+| `UpgradeStation` / `UpgradePanel` / `UpgradeRow` | Upgrades | Kamptaki tezgah / Tayfa Barakası (`PanelZone`); alttan panel (yürümeyi engellemez); satırlar seviye noktaları, fiyat, "MAKS" |
 | `ShipConfig` | Ship | ScriptableObject: 5 aşama (malzeme, `UnlockOnComplete` kilidi, kutlama yazısı), tören süreleri |
 | `ShipBuilder` / `ShipDelivery` | Ship | Gemi inşası: her aşamanın parçaları tek tek gelir (omurga+kaburgalar düşer, gövde aşağıdan kapanır, direkler yükselir, yelkenler açılır, erzak+bayrak zıplar; toz+kıvılcım). Aşama bitince yavaşlama, kamera gemiye, altın ışık, üst band, müzik, titreşim, kilit açma; teslim alanı (oyuncu + Taşıyıcı) |
 | `ShipProgressView` | Ship | Teslim alanı üstündeki kutusuz gösterge: aşama adı + malzeme ikonu + "12/30" + ince çubuk |
@@ -356,7 +392,7 @@ SoundLibrary.asset   Hangi olayda hangi ses (Docs/Modeller.md'de liste; komut sa
   **Tools > Kayıp Ada > Test** menüsünde. Komutlar: Sınırsız Para, +1000 Para, Tüm Bölgeleri Aç, Tüm Binaları Aç,
   Her İşçiden 1 Tane, Sırttaki Yığını Seçili Malzemeyle Doldur, Gemi Aşamasını Tamamla, Final Törenine Atla,
   Oyun Hızı x1/x2/x5, +100 Kristal, Tüm Kostümleri Aç, Sıradaki Kostümü Giy, Tüm Sandıkları Göster (ışık sütunu),
-  Koleksiyonu Tamamla, Görevleri Tamamla, Köprüleri Tamamla, Kampı Büyüt, Ambarı Aç ve Doldur,
+  Koleksiyonu Tamamla, Görevleri Tamamla, Köprüleri Tamamla, Kampı Büyüt, Ambarı Aç ve Doldur, Kamera: Yakın/Normal/Uzak,
   Kaydı Sil ve Yeniden Başlat.
   Sayılar `GameConfig` > "Test Menüsü".
 - Satış sürümü: Build Settings'te **Development Build kapalı** olmalı; o zaman menü hiç görünmez.
@@ -381,7 +417,7 @@ Sahne elle kurulmaz. **Tools > Kayıp Ada > Prototip Sahnesini Kur**:
                 └────────[kare]─────────┘  |  └─[kare]──┘ DOKUMA TEZGAHI   z -8
  TAYFA BARAKASI      palmiye    palmiye    palmiye
   KAMP                          oyuncu    kuyu                       z -6
-            PAZAR (açık tezgah)        BIÇKIHANE                     z -12
+   PAZAR (3 tezgah, kampın batısı)  TAYFA BARAKASI   BIÇKIHANE    z -6 .. -12
                                           ║ köprü (güneye)
                                      BATIK KOYU (Demirci, hurda)     z -35
 ```
@@ -394,8 +430,9 @@ Sahne elle kurulmaz. **Tools > Kayıp Ada > Prototip Sahnesini Kur**:
   raylar) üstünde; teslim alanı geminin kara tarafında, inşa iskelesinden uzakta açık zeminde. Gemi + kızak + iskele tek, dönük,
   köşeleri yuvarlak engel (deniz tarafında kıyıya kadar; dar boşluk yok); törende kalkar; gemi yana kayıp suya iner.
 - Bölgeler kapalıyken sadece doğal ipuçları (Koy'un geçidinde devrik kütük). Bahçe açılınca alçak süslü çit + kemerli kapı.
-- Kamp merkezde: ateş (0, -2.9), barınak kuzeyde, görev panosu güneybatıda, Geliştirme Tezgahı güneydoğuda, Tayfa
-  Barakası batıda (kapısı ateşe dönük). Oyuncu ateşin güneyinde başlar.
+- Kamp merkezde: ateş (0, -2.9; çevresi açık), barınak kuzeyde, görev panosu kuzeybatıda (-3.4, -0.4), Geliştirme Tezgahı
+  güneydoğuda (4.3, -5), Tayfa Barakası güneybatıda (-3.4, -8.6; ev güneyde, kapısı kampa dönük), Liman Pazarı batıda
+  (-8.8, -6.2; tezgahlar kuzeyinde). Alanlar çakışmaz (test). Oyuncu ateşin güneyinde başlar.
 - Çarpışma: binalar, ağaç/kaya gövdeleri, büyük süs palmiyesi ve kayalar, çitler, tabelalar, gemi `NavObstacle`; otlar,
   çiçekler, çakıllar, keten tarlası geçilebilir. Oyuncu engele çarpınca yanından kayar; işçiler NavMesh ile dolaşır.
 - Bina düzeni (kök = binanın önü): gövde arkada (z +0.9), giriş solda-önde, çıkış sağda-önde (z -1.5), halka üstte.

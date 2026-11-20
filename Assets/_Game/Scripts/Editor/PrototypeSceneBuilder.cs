@@ -148,15 +148,15 @@ namespace KayipAda.EditorTools
             CreateNodeTypeIfMissing("FiberPalm", "Fiber", 8,    0.35f,           10f);
             CreateNodeTypeIfMissing("Scrap",     "Scrap", 6,    0.5f,            14f);
             //                  dosya             kimlik             ad               fiyat
-            CreateAreaIfMissing("Rocky",          "rocky",           "Kayalık",       150);
-            CreateAreaIfMissing("Orchard",        "orchard",         "Meyve Bahçesi", 600);
-            CreateAreaIfMissing("Sawmill",        "sawmill",         "Bıçkıhane",     250);
-            CreateAreaIfMissing("StoneWorkshop",  "stone_workshop",  "Taş Atölyesi",  800);
+            CreateAreaIfMissing("Rocky",          "rocky",           "Kayalık",       120);
+            CreateAreaIfMissing("Orchard",        "orchard",         "Meyve Bahçesi", 450);
+            CreateAreaIfMissing("Sawmill",        "sawmill",         "Bıçkıhane",     200);
+            CreateAreaIfMissing("StoneWorkshop",  "stone_workshop",  "Taş Atölyesi",  600);
             CreateAreaIfMissing("HireLumberjack", "hire_lumberjack", "Oduncu",        400);
             CreateAreaIfMissing("HireCarrier",    "hire_carrier",    "Taşıyıcı",      600);
-            CreateAreaIfMissing("Cove",           "cove",            "Palmiye Koyu",  500);
-            CreateAreaIfMissing("RopeWorkshop",   "rope_workshop",   "Halat Atölyesi", 700);
-            CreateAreaIfMissing("Loom",           "loom",            "Dokuma Tezgahı", 900);
+            CreateAreaIfMissing("Cove",           "cove",            "Palmiye Koyu",  400);
+            CreateAreaIfMissing("RopeWorkshop",   "rope_workshop",   "Halat Atölyesi", 550);
+            CreateAreaIfMissing("Loom",           "loom",            "Dokuma Tezgahı", 700);
             CreateAreaIfMissing("HireFiber",      "hire_fiber",      "Lifçi",         500);
             // Gemi aşaması kilitleri (kareleri yok; aşama bitince kod açar, sonraki hedefin karesi bunu bekler)
             CreateAreaIfMissing("ShipStage1",     "ship_stage_1",    "Omurga bitti",  1);
@@ -166,7 +166,7 @@ namespace KayipAda.EditorTools
             // Keşif: adacıklar (köprü bitince açılır), Demirci, bina seviyeleri (küçük kareler)
             CreateAreaIfMissing("Islet1",         "islet_wreck",     "Batık Koyu",    1);
             CreateAreaIfMissing("Islet2",         "islet_temple",    "Kayıp Tapınak", 1);
-            CreateAreaIfMissing("Forge",          "forge",           "Demirci",       600);
+            CreateAreaIfMissing("Forge",          "forge",           "Demirci",       450);
             //                  dosya              kimlik                  ad                        fiyat
             CreateAreaIfMissing("SawmillLv2",       "sawmill_lv2",          "Bıçkıhane Sv.2",          350);
             CreateAreaIfMissing("SawmillLv3",       "sawmill_lv3",          "Bıçkıhane Sv.3",          800);
@@ -191,10 +191,10 @@ namespace KayipAda.EditorTools
             CreateWorkerTypeIfMissing("Smith",         "Demirci Çırağı", 3.2f, 6);
             // Tayfa Barakası (eski dosyalarda yoksa bir kez yazılır). İlk fiyatlar eski açma kareleriyle aynı (ekonomi korunur).
             //                 dosya            kimlik         tutma fiyatları (sırayla)      gereken bina      kilit yazısı               eski açma karesi
-            EnsureCrewSetup("Lumberjack",    "lumberjack",   new[] { 400, 950, 1700 },     "Sawmill",        "Bıçkıhane gerekli",       "HireLumberjack");
-            EnsureCrewSetup("Carrier",       "carrier",      new[] { 600, 1300, 2200 },    "Sawmill",        "Bıçkıhane gerekli",       "HireCarrier");
-            EnsureCrewSetup("FiberGatherer", "fiber",        new[] { 500, 1100, 1900 },    "RopeWorkshop",   "Halat Atölyesi gerekli",  "HireFiber");
-            EnsureCrewSetup("Smith",         "smith",        new[] { 700, 1400 },          "Forge",          "Demirci gerekli",         null);
+            EnsureCrewSetup("Lumberjack",    "lumberjack",   new[] { 300, 750, 1400 },     "Sawmill",        "Bıçkıhane gerekli",       "HireLumberjack");
+            EnsureCrewSetup("Carrier",       "carrier",      new[] { 450, 1050, 1800 },    "Sawmill",        "Bıçkıhane gerekli",       "HireCarrier");
+            EnsureCrewSetup("FiberGatherer", "fiber",        new[] { 400, 900, 1600 },    "RopeWorkshop",   "Halat Atölyesi gerekli",  "HireFiber");
+            EnsureCrewSetup("Smith",         "smith",        new[] { 550, 1150 },          "Forge",          "Demirci gerekli",         null);
             //                     dosya             kimlik             ad                    etkilediği                      fiyatlar (5 seviye)                  toplam etki (5 seviye)
             CreateUpgradeIfMissing("PlayerCapacity", "player_capacity", "Taşıma Kapasitesi", UpgradeStat.PlayerCapacity, new[] { 120, 280, 520, 840, 1300 },  new[] { 2f, 4f, 6f, 9f, 12f });
             CreateUpgradeIfMissing("PlayerSpeed",    "player_speed",    "Koşu Hızı",         UpgradeStat.PlayerSpeed,    new[] { 140, 320, 600, 960, 1440 },  new[] { 0.08f, 0.16f, 0.24f, 0.32f, 0.4f });
@@ -247,11 +247,11 @@ namespace KayipAda.EditorTools
             ShipConfig ship = ScriptableObject.CreateInstance<ShipConfig>();
             ship.Stages = new[]
             {
-                Stage("Omurga", 0.25f, "ShipStage1", "Yeni: Palmiye Koyu açılabilir!", Req(plank, 40)),
-                Stage("Gövde", 0.55f, "ShipStage2", "Yeni: Halat Atölyesi açılabilir!", Req(plank, 40), Req(brick, 30)),
-                Stage("Direk", 0.8f, "ShipStage3", "Yeni: Dokuma Tezgahı ve Lifçi işçi!", Req(plank, 30), Req(rope, 20)),
-                Stage("Yelken", 1f, "ShipStage4", "Yeni: Meyve Bahçesi açılabilir!", Req(cloth, 20), Req(rope, 15)),
-                Stage("Erzak", 1f, null, "Suya indirme zamanı!", Req(fruit, 40))
+                Stage("Omurga", 0.25f, "ShipStage1", "Yeni: Palmiye Koyu açılabilir!", Req(plank, 30)),
+                Stage("Gövde", 0.55f, "ShipStage2", "Yeni: Halat Atölyesi açılabilir!", Req(plank, 30), Req(brick, 20)),
+                Stage("Direk", 0.8f, "ShipStage3", "Yeni: Dokuma Tezgahı ve Lifçi işçi!", Req(plank, 24), Req(rope, 15)),
+                Stage("Yelken", 1f, "ShipStage4", "Yeni: Meyve Bahçesi açılabilir!", Req(cloth, 14), Req(rope, 12)),
+                Stage("Erzak", 1f, null, "Suya indirme zamanı!", Req(fruit, 28))
             };
             AssetDatabase.CreateAsset(ship, ShipConfigPath);
         }
@@ -325,8 +325,8 @@ namespace KayipAda.EditorTools
             ShipConfig ship = BuilderUtil.Load<ShipConfig>(ShipConfigPath);
             ResourceType nail = Data<ResourceType>(ResourceTypesFolder, "Nail");
             if (ship == null || nail == null || ship.Stages.Length < 3) return;
-            bool changed = AddRequirement(ship.Stages[1], nail, 8);
-            changed |= AddRequirement(ship.Stages[2], nail, 10);
+            bool changed = AddRequirement(ship.Stages[1], nail, 6);
+            changed |= AddRequirement(ship.Stages[2], nail, 8);
             if (ship.Stages[2].UnlockMessage != null && ship.Stages[2].UnlockMessage.Contains("Lifçi"))
             {
                 ship.Stages[2].UnlockMessage = "Yeni: Dokuma Tezgahı açılabilir!";
@@ -1075,12 +1075,12 @@ namespace KayipAda.EditorTools
             refs.FirstBridge = DiscoveryBuilder.BuildBridge(new DiscoveryBuilder.BridgeSpec
             {
                 Id = "bridge_wreck", Name = "Köprü", Islet = 0, IslandArea = islet1, RequiredArea = Data<AreaDefinition>(AreasFolder, "Sawmill"),
-                Plank = plank, Planks = 40
+                Plank = plank, Planks = 30
             }, island, config, signPrefab, reserved);
             BridgeBuilder templeBridge = DiscoveryBuilder.BuildBridge(new DiscoveryBuilder.BridgeSpec
             {
                 Id = "bridge_temple", Name = "Köprü", Islet = 1, IslandArea = islet2, RequiredArea = Data<AreaDefinition>(AreasFolder, "RopeWorkshop"),
-                Plank = plank, Planks = 30, Rope = rope, Ropes = 12
+                Plank = plank, Planks = 24, Rope = rope, Ropes = 10
             }, island, config, signPrefab, reserved);
 
             WrapIslet("Islet Wreck Area", wreckRoot, islet1, config, p.Decor, RegionBuilder.HintKind.ColdStones);
@@ -1091,12 +1091,12 @@ namespace KayipAda.EditorTools
             {
                 new RegionBuilder.InfoRow { Icon = Icon("Scrap"), Text = "Hurda Metal" },
                 new RegionBuilder.InfoRow { Icon = Icon("Scrap"), Icon2 = Icon("Nail"), Text = "Demirci" }
-            }, 2, Icon("Plank"), "40");
+            }, 2, Icon("Plank"), "30");
             RegionBuilder.AddInfoCard(templeBridge.gameObject, islet2, config, MapLayout.IsletNames[1], new List<RegionBuilder.InfoRow>
             {
                 new RegionBuilder.InfoRow { Icon = IconGenerator.Create("figure"), Text = "Altın figür parçaları" },
                 new RegionBuilder.InfoRow { Icon = IconGenerator.Create("crystal"), Text = "Eski harabe" }
-            }, 2, Icon("Plank"), "30 + 12 halat");
+            }, 2, Icon("Plank"), "24 + 10 halat");
 
             // Gizli sandıklar (bazılarından nadir kostüm çıkar).
             Transform chests = new GameObject("Chests").transform;
